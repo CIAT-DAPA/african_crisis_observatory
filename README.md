@@ -1,1 +1,1 @@
-# african_crisis_observatory
+# African Crisis Observatory (repo)
