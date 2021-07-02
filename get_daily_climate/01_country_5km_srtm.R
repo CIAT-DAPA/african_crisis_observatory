@@ -6,12 +6,9 @@
 # R options and load packages
 options(warn = -1, scipen = 999)
 suppressPackageStartupMessages(suppressMessages(pacman::p_load(tidyverse, raster, sf, RSAGA)))
-source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/base__lowest_gadm.R') # Main functions
+source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/base__lowest_gadm.R') # Get lowest administrative level per country
 
 get_5km_srtm <- function(iso = 'KEN', country = 'Kenya'){
-  
-  # Root directory
-  root <- '//dapadfs/Workspace_cluster_9/Sustainable_Food_System/Grazia'
   
   # CHIRPS data (ref raster 5 km)
   chr_tmp <- raster::raster('//catalogue/BaseLineDataCluster01/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
@@ -36,10 +33,3 @@ get_5km_srtm <- function(iso = 'KEN', country = 'Kenya'){
   return(cat('Done\n'))
   
 }
-
-geodata <- data.frame(iso = c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA'),
-                      country = c('Sudan','Zimbabwe','Senegal','Mali','Nigeria','Kenya','Uganda'))
-1:nrow(geodata) %>%
-  purrr::map(.f = function(i){
-    get_5km_srtm(iso = geodata$iso[i], country = geodata$country[i])
-  })

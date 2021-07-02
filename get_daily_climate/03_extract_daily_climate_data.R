@@ -11,7 +11,8 @@ country <- 'Sudan'
 iso     <- 'SDN'
 
 # Root path
-root <- paste0('//dapadfs.cgiarad.org/workspace_cluster_9/Sustainable_Food_System/',tolower(country))
+out_dir <- paste0('//dapadfs.cgiarad.org/workspace_cluster_9/Sustainable_Food_System/',tolower(country))
+dir.create(path = out_dir, F, T)
 
 # Download shapefile 
 shp <- lowest_gadm(iso = iso, out = NULL) # Define to put out
@@ -39,7 +40,7 @@ do_raster_to_table <- function(date,path_prec,path_temp,path_fst)
     shp2 <- as(shp, 'SpatVector')
     ref  <- ref %>% terra::crop(x = ., y = terra::ext(shp2))
     ref  <- as(ref, 'SpatRaster')
-    shp_r <- shp_r <- terra::rasterize(x = shp2, y = ref) # REVISAR ANTES DE CORRER
+    shp_r <- shp_r <- terra::rasterize(x = shp2, y = ref, field = paste0('NAME_',mxL))
     abc2 <- terra::resample(x = abc2, y = ref, method = "bilinear")
     abc2 <- abc2 %>% terra::mask(mask = shp_r)
   } else {
@@ -50,7 +51,7 @@ do_raster_to_table <- function(date,path_prec,path_temp,path_fst)
     shp2 <- as(shp, 'SpatVector')
     ref  <- ref %>% terra::crop(x = ., y = terra::ext(shp2))
     ref  <- as(ref, 'SpatRaster')
-    shp_r <- shp_r <- terra::rasterize(x = shp2, y = ref) # REVISAR ANTES DE CORRER
+    shp_r <- shp_r <- terra::rasterize(x = shp2, y = ref, field = paste0('NAME_',mxL))
     abc2 <- terra::resample(x = abc2, y = ref, method = "bilinear")
     abc2 <- abc2 %>% terra::mask(mask = shp_r)
   }
@@ -113,7 +114,7 @@ cores <- 10
 plan(cluster, workers = cores)
 options(future.globals.maxSize = 891289600)
 tbl <- tibble::tibble(Date = seq(ymd('1981-01-01'),ymd('2020-12-31'),by='day') %>%
-                        str_replace_all('-', '.')) %>%
+                        stringr::str_replace_all('-', '.')) %>%
   dplyr::mutate(Climate = furrr::future_map(.x = Date, .f = do_raster_to_table, path_prec = path_prec, path_temp = path_temp, path_fst = NULL))
 gc()
 gc(reset = T)
@@ -121,4 +122,4 @@ gc(reset = T)
 tbl2 <- tbl %>%
   tidyr::unnest()
 
-vroom::vroom_write(tbl2, paste0('//dapadfs.cgiarad.org/workspace_cluster_9/Sustainable_Food_System/Grazia/',country,'/',tolower(country),'_daily_data_2019-2020.csv'), delim = ',')
+vroom::vroom_write(tbl2, paste0(out_dir,'/',tolower(country),'_daily_data_1981-2020.csv'), delim = ',')
