@@ -9,6 +9,7 @@ suppressMessages(pacman::p_load(doSNOW,terra,plyr,tidyverse,parallel,countrycode
 source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/base__lowest_gadm.R') # Get lowest administrative level per country
 source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/get_daily_climate/01_country_5km_srtm.R') # Get 5 km elevation raster
 source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/get_daily_climate/02_CPC_downscaling_process.R') # Get 5 km min and max temperature rasters
+source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/get_daily_climate/02_extract_daily_climate_data.R') # Final table with summarized information at the lowest administrative level
 
 # Root directory
 root <- '//dapadfs.cgiarad.org/workspace_cluster_9/Sustainable_Food_System/Grazia'
@@ -24,4 +25,6 @@ geodata <- data.frame(iso = c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA'),
     # Step 2: CPC temperature downscaling
     cpc_downscaling(iso = geodata$iso[i], country = geodata$country[i])
     # Step 3: produce table
+    get_table_wrap(iso = geodata$iso[i], country = geodata$country[i])
+    return('Done\n')
   })
