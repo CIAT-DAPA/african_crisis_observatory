@@ -6,16 +6,21 @@ options(warn = -1, scipen = 999)
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse,raster,sf,RSAGA,parallel,doSNOW))
 
-country <- 'Somalia'
-iso     <- 'SOM'
-root <- '//dapadfs.cgiarad.org/.../african_crisis_observatory/cpc_data'
+country <- 'Sudan'
+iso     <- 'SDN'
+root <- '//dapadfs/Workspace_cluster_9/Sustainable_Food_System/Grazia/cpc_data'
 
 # Load country shapefile
 shp <- raster::getData(name = 'GADM', country = iso, level = 0, download = T)
 
 grep2 <- Vectorize(grep, vectorize.args = 'pattern')
-climate <- list.files(path = paste0(root,'/50km/stack'), full.names = T) %>% grep2(pattern = 2020, x = ., value = T) %>% as.vector() # 1989:2019
+climate <- list.files(path = paste0(root,'/50km/stack'), full.names = T) %>%
+  grep2(pattern = 1981:2020, x = ., value = T) %>%
+  as.vector() # 1989:2019
 clnames <- basename(climate)
+
+trmv  <- list.files(path = paste0(root,'/50km/individuals'), all.files = T, full.names = T)
+trmv %>% purrr::map(file.remove)
 
 # Parallelization
 clusterExport <- local({
@@ -40,7 +45,7 @@ createCluster <- function(noCores, logfile = "/dev/null", export = NULL, lib = N
   registerDoSNOW(cl)
   return(cl)
 }
-env <- rsaga.env(path = 'C:/SAGA')
+env <- rsaga.env(path = 'C:/sagaGIS')
 
 cl  <- createCluster(10, export = list("climate","clnames","shp","root","env","country"), lib = list("tidyverse","raster","sf","RSAGA"))
 1:length(climate) %>% parallel::parLapply(cl, ., function(l){
@@ -56,11 +61,18 @@ cl  <- createCluster(10, export = list("climate","clnames","shp","root","env","c
   # Individualize rasters
   rstck <- raster::unstack(rstck)
   days  <- rstck %>% purrr::map(names) %>% unlist %>% substr(., start = 1, stop = 11) %>% gsub('X','',.)
+  
   1:length(rstck) %>%
     purrr::map(., .f = function(i){raster::writeRaster(rstck[[i]], paste0(root,'/50km/individuals/',gsub('.nc','',clnames[l]) %>% substr(.,1,4),'.',days[i],'.tif'), overwrite = T)})
   
   1:length(rstck) %>%
     purrr::map(., .f = function(i){
+      
+      if(!dir.exists(dirname(paste0(root,'/5km/',tolower(country),'/',gsub('.nc','',clnames[l]) %>% substr(.,1,4),'.',days[i],'.tif')))){
+        dir.create(path = dirname(paste0(root,'/5km/',tolower(country),'/',gsub('.nc','',clnames[l]) %>% substr(.,1,4),'.',days[i],'.tif')),
+                   FALSE,
+                   recursive = TRUE)
+      }
       
       rsaga.geoprocessor(lib    = 'statistics_regression',
                          module = 'GWR for Grid Downscaling',

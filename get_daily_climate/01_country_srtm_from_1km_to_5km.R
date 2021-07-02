@@ -6,26 +6,40 @@
 # R options and load packages
 options(warn = -1, scipen = 999)
 suppressPackageStartupMessages(suppressMessages(pacman::p_load(tidyverse, raster, sf, RSAGA)))
+source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/base__lowest_gadm.R') # Main functions
 
-# Root directory
-root <- '//dapadfs.cgiarad.org/.../african_crisis_observatory'
+get_5km_srtm <- function(iso = 'KEN', country = 'Kenya'){
+  
+  # Root directory
+  root <- '//dapadfs/Workspace_cluster_9/Sustainable_Food_System/Grazia'
+  
+  # CHIRPS data (ref raster 5 km)
+  chr_tmp <- raster::raster('//catalogue/BaseLineDataCluster01/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
+  chr_tmp[which(chr_tmp[] == -9999)] <- NA
+  chr_tmp[which(chr_tmp[] < 0)] <- 0
+  
+  # Get country shapefile
+  shp <- raster::getData(name = 'GADM', country = iso, level = 0, download = TRUE)
+  shp <- lowest_gadm(iso = iso, out = NULL)
+  
+  # SRTM
+  srtm <- raster::getData(name = 'alt', country = iso, mask = TRUE)
+  srtm <- raster::crop(x = srtm, y = raster::extent(shp))
+  srtm_5km <- raster::resample(srtm, chr_tmp, method = 'bilinear')
+  srtm_5km <- srtm_5km %>%
+    raster::crop(., extent(shp)) %>%
+    raster::mask(., mask = shp)
+  out <- paste0(root,'/cpc_data/srtm/',tolower(country),'/srtm_5km.tif')
+  if(!dir.exists(dirname(out))){dir.create(dirname(out), FALSE, TRUE)}
+  raster::writeRaster(srtm_5km, out, overwrite = T)
+  
+  return(cat('Done\n'))
+  
+}
 
-# CHIRPS data (ref raster 5 km)
-chr_tmp <- raster('//catalogue/BaseLineDataCluster01/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
-chr_tmp[which(chr_tmp[] == -9999)] <- NA
-chr_tmp[which(chr_tmp[] < 0)] <- 0
-
-# Country info
-iso     <- 'SOM'
-country <- 'Somalia'
-
-shp_rdc <- raster::getData(name = 'GADM', country = iso, level = 0, download = T)
-
-# SRTM
-srtm <- raster('//dapadfs.cgiarad.org/data_cluster_4/observed/gridded_products/srtm/SRTM_v41_30s/srtm_v41_30s')
-srtm <- raster::crop(x = srtm, y = raster::extent(shp_rdc))
-srtm_5km <- raster::resample(srtm, chr_tmp, method = 'bilinear')
-srtm_5km <- srtm_5km %>%
-  raster::crop(., extent(shp_rdc)) %>%
-  raster::mask(., mask = shp_rdc)
-raster::writeRaster(srtm_5km, paste0(root,'/cpc_data/srtm/',tolower(country),'/srtm_5km.tif'), overwrite = T)
+geodata <- data.frame(iso = c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA'),
+                      country = c('Sudan','Zimbabwe','Senegal','Mali','Nigeria','Kenya','Uganda'))
+1:nrow(geodata) %>%
+  purrr::map(.f = function(i){
+    get_5km_srtm(iso = geodata$iso[i], country = geodata$country[i])
+  })
