@@ -71,12 +71,16 @@ cpc_downscaling <- function(iso = 'SDN', country = 'Sudan'){
                      recursive = TRUE)
         }
         
-        rsaga.geoprocessor(lib    = 'statistics_regression',
-                           module = 'GWR for Grid Downscaling',
-                           param  = list(PREDICTORS = paste0(root,'/cpc_data/srtm/',country,'/srtm_5km.tif'),
-                                         REGRESSION = paste0(root,'/cpc_data/5km/',tolower(country),'/',gsub('.nc','',clnames[l]) %>% substr(.,1,4),'.',days[i],'.tif'),
-                                         DEPENDENT  = paste0(root,'/cpc_data/50km/individuals/',gsub('.nc','',clnames[l]) %>% substr(.,1,4),'.',days[i],'.tif')),
-                           env    = env)
+        if(!file.exists(paste0(root,'/cpc_data/5km/',tolower(country),'/',gsub('.nc','',clnames[l]) %>% substr(.,1,4),'.',days[i],'.tif'))){
+          rsaga.geoprocessor(lib    = 'statistics_regression',
+                             module = 'GWR for Grid Downscaling',
+                             param  = list(PREDICTORS = paste0(root,'/cpc_data/srtm/',country,'/srtm_5km.tif'),
+                                           REGRESSION = paste0(root,'/cpc_data/5km/',tolower(country),'/',gsub('.nc','',clnames[l]) %>% substr(.,1,4),'.',days[i],'.tif'),
+                                           DEPENDENT  = paste0(root,'/cpc_data/50km/individuals/',gsub('.nc','',clnames[l]) %>% substr(.,1,4),'.',days[i],'.tif')),
+                             env    = env)
+        } else {
+          cat('File already exist.\n')
+        }
         
       })
     
