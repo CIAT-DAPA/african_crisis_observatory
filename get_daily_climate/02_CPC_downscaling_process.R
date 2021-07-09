@@ -60,7 +60,7 @@ cpc_downscaling <- function(iso = 'SDN', country = 'Sudan'){
     days  <- rstck %>% purrr::map(names) %>% unlist %>% substr(., start = 1, stop = 11) %>% gsub('X','',.)
     
     1:length(rstck) %>%
-      purrr::map(., .f = function(i){raster::writeRaster(rstck[[i]], paste0(root,'/cpc_data/50km/individuals/',gsub('.nc','',clnames[l]) %>% substr(.,1,4),'.',days[i],'.tif'), overwrite = T)})
+      purrr::map(., .f = function(i){raster::writeRaster(rstck[[i]], paste0(root,'/cpc_data/50km/individuals/',gsub('.nc','',clnames[l]) %>% substr(.,1,4),'.',days[i],'.tif'), overwrite = F)})
     
     1:length(rstck) %>%
       purrr::map(., .f = function(i){
