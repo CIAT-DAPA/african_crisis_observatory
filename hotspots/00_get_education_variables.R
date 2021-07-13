@@ -50,24 +50,33 @@ iso <- 'SDN'
 if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
   dir.create(path = dirname(paste0(root,'/data/',iso,'/_shps/',iso,'.shp')), recursive = TRUE)
   shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+  adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
+  shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
   shp <- as(shp, 'SpatVector')
 } else {
-  shp <- terra::vect(x = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+  shp <- raster::shapefile(x = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+  adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
+  shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
+  shp <- as(shp, 'SpatVector')
 }
+
+# shp of reference preparation
+ref  <- terra::rast(extent = terra::ext(shp), crs = terra::crs(shp), resolution = c(0.008333334, 0.008333334))
+shpr <- terra::rasterize(x = shp, y = ref, field = 'key')
 
 # Crop Median
 mmle_crp <- terra::crop(x = mmle, terra::ext(shp))
-# What is missing:
-#  1. Load/create a reference raster of 1 km
-#  2. Rasterize shp object using the reference raster
-#  3. Resampling the raster of interest to 1 km
-#  4. Masking the raster of interest using the rasterized shp
+mmle_crp <- terra::resample(x = mmle_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 mfle_crp <- terra::crop(x = mfle, terra::ext(shp))
+mfle_crp <- terra::resample(x = mfle_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 mdff_crp <- terra::crop(x = mdff, terra::ext(shp))
+mdff_crp <- terra::resample(x = mdff_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 
 # Crop Coefficient of variation
 vmle_crp <- terra::crop(x = vmle, terra::ext(shp))
+vmle_crp <- terra::resample(x = vmle_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 vfle_crp <- terra::crop(x = vfle, terra::ext(shp))
+vfle_crp <- terra::resample(x = vfle_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 # vdff_crp <- terra::crop(x = vdff, terra::ext(shp))
 
 # Crop Trend
@@ -81,6 +90,7 @@ tmle_crp <- terra::app(x = mle_crp, fun = function(x){
   }
   return(y)
 })
+tmle_crp <- terra::resample(x = tmle_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 fle_crp <- terra::crop(x = fle, terra::ext(shp))
 tfle_crp <- terra::app(x = fle_crp, fun = function(x){
   x <- as.numeric(na.omit(x))
@@ -91,6 +101,7 @@ tfle_crp <- terra::app(x = fle_crp, fun = function(x){
   }
   return(y)
 })
+tfle_crp <- terra::resample(x = tfle_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 dff_crp <- terra::crop(x = dff, terra::ext(shp))
 tdff_crp <- terra::app(x = dff_crp, fun = function(x){
   x <- as.numeric(na.omit(x))
@@ -101,3 +112,4 @@ tdff_crp <- terra::app(x = dff_crp, fun = function(x){
   }
   return(y)
 })
+tdff_crp <- terra::resample(x = tdff_crp, y = ref) %>% terra::mask(x = ., mask = shpr)

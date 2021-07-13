@@ -5,6 +5,30 @@ suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
 source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/base__lowest_gadm.R') # Get lowest administrative level per country
 
+# ------------------------------------ #
+# Process by country
+# ------------------------------------ #
+
+isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
+iso <- 'SDN'
+
+if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
+  dir.create(path = dirname(paste0(root,'/data/',iso,'/_shps/',iso,'.shp')), recursive = TRUE)
+  shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+  adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
+  shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
+  shp <- as(shp, 'SpatVector')
+} else {
+  shp <- raster::shapefile(x = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+  adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
+  shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
+  shp <- as(shp, 'SpatVector')
+}
+
+# shp of reference preparation
+ref  <- terra::rast(extent = terra::ext(shp), crs = terra::crs(shp), resolution = c(0.008333334, 0.008333334))
+shpr <- terra::rasterize(x = shp, y = ref, field = 'key')
+
 # -------------------------------------------------------- #
 # Child growth failure. Stunting prevalence: mean of percent
 # -------------------------------------------------------- #
@@ -26,34 +50,13 @@ mstntg <- median(stntg)
 
 vstntg <- terra::stdev(stntg)/mean(stntg)
 
-# ------------------------------------ #
-# Process by country
-# ------------------------------------ #
-
-isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
-iso <- 'SDN'
-
-if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
-  dir.create(path = dirname(paste0(root,'/data/',iso,'/_shps/',iso,'.shp')), recursive = TRUE)
-  shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
-  shp <- as(shp, 'SpatVector')
-} else {
-  shp <- terra::vect(x = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
-}
-
-ref <- terra::rast(extent = terra::ext(shp), crs = terra::crs(shp), resolution = c(0.008983153,0.008983153))
-shpr <- terra::rasterize(x = shp, y = ref, field = grep(pattern = '^NAME_[0-9]', x = names(shp), value = T) %>% .[length(.)])
-
 # Crop Median
 mstntg_crp <- terra::crop(x = mstntg, terra::ext(shp))
-# What is missing:
-#  1. Load/create a reference raster of 1 km
-#  2. Rasterize shp object using the reference raster
-#  3. Resampling the raster of interest to 1 km
-#  4. Masking the raster of interest using the rasterized shp
+mstntg_crp <- terra::resample(x = mstntg_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 
 # Crop Coefficient of variation
 vstntg_crp <- terra::crop(x = vstntg, terra::ext(shp))
+vstntg_crp <- terra::resample(x = vstntg_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 
 # Crop Trend
 stntg_crp <- terra::crop(x = stntg, terra::ext(shp))
@@ -66,6 +69,7 @@ tstntg_crp <- terra::app(x = stntg_crp, fun = function(x){
   }
   return(y)
 })
+tstntg_crp <- terra::resample(x = tstntg_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 
 # -------------------------------------------------------- #
 # Child growth failure. Underweight prevalence: mean of percent
@@ -88,31 +92,13 @@ muwght <- median(uwght)
 
 vuwght <- terra::stdev(uwght)/mean(uwght)
 
-# ------------------------------------ #
-# Process by country
-# ------------------------------------ #
-
-isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
-iso <- 'SDN'
-
-if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
-  dir.create(path = dirname(paste0(root,'/data/',iso,'/_shps/',iso,'.shp')), recursive = TRUE)
-  shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
-  shp <- as(shp, 'SpatVector')
-} else {
-  shp <- terra::vect(x = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
-}
-
 # Crop Median
 muwght_crp <- terra::crop(x = muwght, terra::ext(shp))
-# What is missing:
-#  1. Load/create a reference raster of 1 km
-#  2. Rasterize shp object using the reference raster
-#  3. Resampling the raster of interest to 1 km
-#  4. Masking the raster of interest using the rasterized shp
+muwght_crp <- terra::resample(x = muwght_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 
 # Crop Coefficient of variation
 vuwght_crp <- terra::crop(x = vuwght, terra::ext(shp))
+vuwght_crp <- terra::resample(x = vuwght_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 
 # Crop Trend
 uwght_crp <- terra::crop(x = uwght, terra::ext(shp))
@@ -125,6 +111,7 @@ tuwght_crp <- terra::app(x = uwght_crp, fun = function(x){
   }
   return(y)
 })
+tuwght_crp <- terra::resample(x = tuwght_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 
 # -------------------------------------------------------- #
 # Child growth failure. Wasting prevalence: mean of percent
@@ -147,31 +134,13 @@ mwstng <- median(wstng)
 
 vwstng <- terra::stdev(wstng)/mean(wstng)
 
-# ------------------------------------ #
-# Process by country
-# ------------------------------------ #
-
-isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
-iso <- 'SDN'
-
-if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
-  dir.create(path = dirname(paste0(root,'/data/',iso,'/_shps/',iso,'.shp')), recursive = TRUE)
-  shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
-  shp <- as(shp, 'SpatVector')
-} else {
-  shp <- terra::vect(x = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
-}
-
 # Crop Median
 mwstng_crp <- terra::crop(x = mwstng, terra::ext(shp))
-# What is missing:
-#  1. Load/create a reference raster of 1 km
-#  2. Rasterize shp object using the reference raster
-#  3. Resampling the raster of interest to 1 km
-#  4. Masking the raster of interest using the rasterized shp
+mwstng_crp <- terra::resample(x = mwstng_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 
 # Crop Coefficient of variation
 vwstng_crp <- terra::crop(x = vwstng, terra::ext(shp))
+vwstng_crp <- terra::resample(x = vwstng_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
 
 # Crop Trend
 wstng_crp <- terra::crop(x = wstng, terra::ext(shp))
@@ -184,3 +153,4 @@ twstng_crp <- terra::app(x = wstng_crp, fun = function(x){
   }
   return(y)
 })
+twstng_crp <- terra::resample(x = twstng_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
