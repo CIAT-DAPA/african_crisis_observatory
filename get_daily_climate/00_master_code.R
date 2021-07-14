@@ -25,6 +25,6 @@ geodata <- data.frame(iso = c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA'),
     # Step 2: CPC temperature downscaling
     cpc_downscaling(iso = geodata$iso[i], country = geodata$country[i])
     # Step 3: produce table
-    get_table_wrap(iso = geodata$iso[i], country = geodata$country[i])
+    get_table_wrap(iso = geodata$iso[i], country = geodata$country[i], ncores = 5)
     return('Done\n')
   })
