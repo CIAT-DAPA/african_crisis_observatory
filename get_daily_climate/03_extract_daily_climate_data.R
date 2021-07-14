@@ -107,13 +107,13 @@ get_table_wrap <- function(iso = 'SDN', country = 'Sudan'){
     
   }
   
-  cores <- 10
+  cores <- 5
   plan(cluster, workers = cores)
   options(future.globals.maxSize = 891289600)
   tbl <- tibble::tibble(Date = seq(ymd('1981-01-01'),ymd('2020-12-31'),by='day') %>%
                           stringr::str_replace_all('-', '.')) %>%
     dplyr::mutate(Climate = furrr::future_map(.x = Date, .f = do_raster_to_table, path_prec = path_prec, path_temp = path_temp, path_fst = NULL))
-  gc()
+  future:::ClusterRegistry("stop")
   gc(reset = T)
   
   tbl2 <- tbl %>%
