@@ -7,7 +7,7 @@ suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(terra,plyr,tidyverse,countrycode,raster,ncdf4,sf,future,furrr,lubridate,glue,cowsay,fst))
 source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/base__lowest_gadm.R') # Main functions
 
-get_table_wrap <- function(iso = 'SDN', country = 'Sudan'){
+get_table_wrap <- function(iso = 'SDN', country = 'Sudan', ncores = 5){
   # Root path
   out_dir <- paste0('//dapadfs.cgiarad.org/workspace_cluster_9/Sustainable_Food_System/',tolower(country))
   dir.create(path = out_dir, F, T)
@@ -107,7 +107,7 @@ get_table_wrap <- function(iso = 'SDN', country = 'Sudan'){
     
   }
   
-  cores <- 5
+  cores <- ncores
   plan(cluster, workers = cores)
   options(future.globals.maxSize = 891289600)
   tbl <- tibble::tibble(Date = seq(ymd('1981-01-01'),ymd('2020-12-31'),by='day') %>%
