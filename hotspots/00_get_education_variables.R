@@ -108,7 +108,7 @@ get_edu_vars <- function(iso = 'SDN'){
   mle_crp <- terra::crop(x = mle, terra::ext(shp))
   tmle_crp <- terra::app(x = mle_crp, fun = function(x){
     x <- as.numeric(na.omit(x))
-    if(length(x) > 0){
+    if(length(x) > 1){
       y <- trend::sens.slope(x)$estimates
     } else {
       y <- NA
@@ -123,7 +123,7 @@ get_edu_vars <- function(iso = 'SDN'){
   fle_crp <- terra::crop(x = fle, terra::ext(shp))
   tfle_crp <- terra::app(x = fle_crp, fun = function(x){
     x <- as.numeric(na.omit(x))
-    if(length(x) > 0){
+    if(length(x) > 1){
       y <- trend::sens.slope(x)$estimates
     } else {
       y <- NA
@@ -138,7 +138,7 @@ get_edu_vars <- function(iso = 'SDN'){
   dff_crp <- terra::crop(x = dff, terra::ext(shp))
   tdff_crp <- terra::app(x = dff_crp, fun = function(x){
     x <- as.numeric(na.omit(x))
-    if(length(x) > 0){
+    if(length(x) > 1){
       y <- trend::sens.slope(x)$estimates
     } else {
       y <- NA

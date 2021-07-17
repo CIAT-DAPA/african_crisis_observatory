@@ -105,7 +105,7 @@ get_chld_grwht_fail <- function(iso = 'SDN'){
   stntg_crp <- terra::crop(x = stntg, terra::ext(shp))
   tstntg_crp <- terra::app(x = stntg_crp, fun = function(x){
     x <- as.numeric(na.omit(x))
-    if(length(x) > 0){
+    if(length(x) > 1){
       y <- trend::sens.slope(x)$estimates
     } else {
       y <- NA
@@ -120,7 +120,7 @@ get_chld_grwht_fail <- function(iso = 'SDN'){
   uwght_crp <- terra::crop(x = uwght, terra::ext(shp))
   tuwght_crp <- terra::app(x = uwght_crp, fun = function(x){
     x <- as.numeric(na.omit(x))
-    if(length(x) > 0){
+    if(length(x) > 1){
       y <- trend::sens.slope(x)$estimates
     } else {
       y <- NA
@@ -135,7 +135,7 @@ get_chld_grwht_fail <- function(iso = 'SDN'){
   wstng_crp <- terra::crop(x = wstng, terra::ext(shp))
   twstng_crp <- terra::app(x = wstng_crp, fun = function(x){
     x <- as.numeric(na.omit(x))
-    if(length(x) > 0){
+    if(length(x) > 1){
       y <- trend::sens.slope(x)$estimates
     } else {
       y <- NA

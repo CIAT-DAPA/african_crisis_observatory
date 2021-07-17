@@ -85,7 +85,7 @@ get_sanit_vars <- function(iso = 'SDN'){
   pp_wtr_crp <- terra::crop(x = pp_wtr, terra::ext(shp))
   tpp_wtr_crp <- terra::app(x = pp_wtr_crp, fun = function(x){
     x <- as.numeric(na.omit(x))
-    if(length(x) > 0){
+    if(length(x) > 1){
       y <- trend::sens.slope(x)$estimates
     } else {
       y <- NA
@@ -100,7 +100,7 @@ get_sanit_vars <- function(iso = 'SDN'){
   st_flt_crp <- terra::crop(x = st_flt, terra::ext(shp))
   tst_flt_crp <- terra::app(x = st_flt_crp, fun = function(x){
     x <- as.numeric(na.omit(x))
-    if(length(x) > 0){
+    if(length(x) > 1){
       y <- trend::sens.slope(x)$estimates
     } else {
       y <- NA
