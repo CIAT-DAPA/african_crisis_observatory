@@ -8,13 +8,14 @@ suppressMessages(pacman::p_load(tidyverse,raster,sf,RSAGA,parallel,doSNOW))
 
 cpc_downscaling <- function(iso = 'SDN', country = 'Sudan'){
   # Load country shapefile
-  shp <- raster::getData(name = 'GADM', country = iso, level = 0, download = T)
+  country <<- country
+  shp <<- raster::getData(name = 'GADM', country = iso, level = 0, download = T)
   
   grep2 <- Vectorize(grep, vectorize.args = 'pattern')
-  climate <- list.files(path = paste0(root,'/cpc_data/50km/stack'), full.names = T) %>%
+  climate <<- list.files(path = paste0(root,'/cpc_data/50km/stack'), full.names = T) %>%
     grep2(pattern = 1981:2020, x = ., value = T) %>%
     as.vector()
-  clnames <- basename(climate)
+  clnames <<- basename(climate)
   
   trmv  <- list.files(path = paste0(root,'/cpc_data/50km/individuals'), all.files = T, full.names = T)
   trmv %>% purrr::map(file.remove)
@@ -42,7 +43,7 @@ cpc_downscaling <- function(iso = 'SDN', country = 'Sudan'){
     registerDoSNOW(cl)
     return(cl)
   }
-  env <- rsaga.env(path = 'C:/sagaGIS')
+  env <<- rsaga.env(path = 'C:/sagaGIS')
   
   cl  <- createCluster(10, export = list("climate","clnames","shp","root","env","country"), lib = list("tidyverse","raster","sf","RSAGA"))
   1:length(climate) %>% parallel::parLapply(cl, ., function(l){
