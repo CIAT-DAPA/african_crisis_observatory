@@ -17,7 +17,7 @@ chirpsTable <- function(){
   return(dd)
 }
 
-rain_chirps <- function(region = "global", startdate, enddate, res, path, asRaster = FALSE,...) {
+rain_chirps <- function(region = 'global', interval = 'daily', startdate, enddate, res, path, asRaster = FALSE,...) {
   # check directory
   stopifnot(dir.exists(path))
   
@@ -77,8 +77,8 @@ getGZfile <- function(fname, u, folder){
   return(tfile)
 }
 
-setwd('/cluster01/Workspace/ACO/1.Data/chirps')
-rain_chirps(region = "global", startdate = '1981-01-01', enddate = '2020-12-31', res = 0.05, path = ".")
+setwd('/cluster01/Workspace/ACO/1.Data')
+rain_chirps(region = 'global', interval = 'daily', startdate = '1981-01-01', enddate = '2020-12-31', res = 0.05, path = getwd())
 
 # library(RCurl)
 # library(xml2)
