@@ -13,7 +13,7 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 
 # Root directory
 dpth <- '//dapadfs.cgiarad.org/workspace_cluster_9/Sustainable_Food_System/Grazia'
-root <- '//catalogue/Workspace14/WFP_ClimateRiskPr/Harold/Grazia/cpc_data'
+root <- '//catalogue/Workspace14/WFP_ClimateRiskPr/Harold/Grazia'
 
 # Selected countries
 geodata <- data.frame(iso = c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA'),
