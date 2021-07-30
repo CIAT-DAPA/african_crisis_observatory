@@ -12,7 +12,7 @@ cpc_downscaling <- function(iso = 'SDN', country = 'Sudan'){
   shp <<- raster::getData(name = 'GADM', country = iso, level = 0, download = T)
   
   grep2 <- Vectorize(grep, vectorize.args = 'pattern')
-  climate <<- list.files(path = paste0(root,'/cpc_data/50km/stack'), full.names = T) %>%
+  climate <<- list.files(path = paste0(dpth,'/cpc_data/50km/stack'), full.names = T) %>%
     grep2(pattern = 1981:2020, x = ., value = T) %>%
     as.vector()
   clnames <<- basename(climate)
@@ -45,7 +45,7 @@ cpc_downscaling <- function(iso = 'SDN', country = 'Sudan'){
   }
   env <<- rsaga.env(path = 'C:/sagaGIS')
   
-  cl  <- createCluster(10, export = list("climate","clnames","shp","root","env","country"), lib = list("tidyverse","raster","sf","RSAGA"))
+  cl  <- createCluster(10, export = list("climate","clnames","shp","dpth","root","env","country"), lib = list("tidyverse","raster","sf","RSAGA"))
   1:length(climate) %>% parallel::parLapply(cl, ., function(l){
     
     # Load raster stack

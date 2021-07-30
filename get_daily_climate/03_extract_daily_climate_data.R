@@ -9,7 +9,7 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 
 get_table_wrap <- function(iso = 'SDN', country = 'Sudan', ncores = 5){
   # Root path
-  out_dir <- paste0('//dapadfs.cgiarad.org/workspace_cluster_9/Sustainable_Food_System/',tolower(country))
+  out_dir <- paste0('//catalogue/Workspace14/WFP_ClimateRiskPr/Harold/Grazia/',tolower(country))
   dir.create(path = out_dir, F, T)
   
   # Download shapefile 
@@ -20,7 +20,7 @@ get_table_wrap <- function(iso = 'SDN', country = 'Sudan', ncores = 5){
   shp@data$key <- tolower(as.character(shp@data$key))
   
   path_prec <- '//catalogue/BaseLineDataCluster01/observed/gridded_products/chirps/daily'
-  path_temp <- paste0('//dapadfs.cgiarad.org/workspace_cluster_9/Sustainable_Food_System/Grazia/cpc_data/5km/',tolower(country))
+  path_temp <- paste0(root,'/cpc_data/5km/',tolower(country))
   
   # date <- "1989.01.01"
   # This function is reading spatial layer by layer.

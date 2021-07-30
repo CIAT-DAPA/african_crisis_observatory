@@ -12,7 +12,8 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/get_daily_climate/03_extract_daily_climate_data.R') # Final table with summarized information at the lowest administrative level
 
 # Root directory
-root <- '//dapadfs.cgiarad.org/workspace_cluster_9/Sustainable_Food_System/Grazia'
+dpth <- '//dapadfs.cgiarad.org/workspace_cluster_9/Sustainable_Food_System/Grazia'
+root <- '//catalogue/Workspace14/WFP_ClimateRiskPr/Harold/Grazia/cpc_data'
 
 # Selected countries
 geodata <- data.frame(iso = c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA'),
