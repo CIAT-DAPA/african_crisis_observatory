@@ -19,7 +19,8 @@ get_table_wrap <- function(iso = 'SDN', country = 'Sudan', ncores = 5){
   shp@data <- tidyr::unite(data = shp@data, 'key', names(shp)[1]:names(shp)[length(names(shp))], sep = '-', remove = F) %>% base::as.data.frame()
   shp@data$key <- tolower(as.character(shp@data$key))
   
-  path_prec <- '//catalogue/BaseLineDataCluster01/observed/gridded_products/chirps/daily'
+  # path_prec <- '//catalogue/BaseLineDataCluster01/observed/gridded_products/chirps/daily'
+  path_prec <- '//192.168.20.97/data_cluster17/GLOBAL/Climate/'
   path_temp <- paste0(root,'/cpc_data/5km/',tolower(country))
   
   # date <- "1989.01.01"
@@ -81,8 +82,8 @@ get_table_wrap <- function(iso = 'SDN', country = 'Sudan', ncores = 5){
       
       if(c('tmax','tmin') %in% names(points)){
         points <- points %>%
-          dplyr::select('Date','prec','tmax','tmin',tidyselect::all_of(adm)) %>%
-          dplyr::group_by_at(vars(one_of(adm))) %>%
+          dplyr::select(Date,prec,tmax,tmin,tidyselect::all_of(adm)) %>%
+          dplyr::group_by_at(vars(one_of(c(adm,'Date')))) %>%
           dplyr::summarise(tprec = sum(prec, na.rm = T),
                            aprec = mean(prec, na.rm = T),
                            mprec = median(prec, na.rm = T),
@@ -90,8 +91,8 @@ get_table_wrap <- function(iso = 'SDN', country = 'Sudan', ncores = 5){
                            tmin  = mean(tmin, na.rm = T))
       } else {
         points <- points %>%
-          dplyr::select('Date','prec',tidyselect::all_of(adm)) %>%
-          dplyr::group_by(vars(one_of(adm))) %>%
+          dplyr::select(Date,prec,tidyselect::all_of(adm)) %>%
+          dplyr::group_by_at(vars(one_of(c(adm,'Date')))) %>%
           dplyr::summarise(tprec = sum(prec, na.rm = T),
                            aprec = mean(prec, na.rm = T),
                            mprec = median(prec, na.rm = T))
