@@ -11,7 +11,7 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 get_5km_srtm <- function(iso = 'KEN', country = 'Kenya'){
   
   # CHIRPS data (ref raster 5 km)
-  chr_tmp <- raster::raster('//catalogue/BaseLineDataCluster01/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
+  chr_tmp <- raster::raster('//192.168.20.97/data_cluster17/observed/gridded_products/chirps/daily/chirps-v2.0.1981.01.01.tif')
   chr_tmp[which(chr_tmp[] == -9999)] <- NA
   chr_tmp[which(chr_tmp[] < 0)] <- 0
   
