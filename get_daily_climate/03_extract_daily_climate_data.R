@@ -20,7 +20,7 @@ get_table_wrap <- function(iso = 'SDN', country = 'Sudan', ncores = 5){
   shp@data$key <- tolower(as.character(shp@data$key))
   
   # path_prec <- '//catalogue/BaseLineDataCluster01/observed/gridded_products/chirps/daily'
-  path_prec <- '//192.168.20.97/data_cluster17/GLOBAL/Climate/'
+  path_prec <- '//192.168.20.97/data_cluster17/observed/gridded_products/chirps/daily'
   path_temp <- paste0(root,'/cpc_data/5km/',tolower(country))
   
   # date <- "1989.01.01"
