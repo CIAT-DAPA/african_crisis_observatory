@@ -43,7 +43,7 @@ cpc_downscaling <- function(iso = 'SDN', country = 'Sudan'){
     registerDoSNOW(cl)
     return(cl)
   }
-  env <<- rsaga.env(path = 'C:/sagaGIS')
+  env <<- rsaga.env(path = 'C:/saga-7.9.0_x64') # sagaGIS
   
   cl  <- createCluster(10, export = list("climate","clnames","shp","dpth","root","env","country"), lib = list("tidyverse","raster","sf","RSAGA"))
   1:length(climate) %>% parallel::parLapply(cl, ., function(l){
