@@ -12,7 +12,7 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
 cnty <- c('Sudan','Zimbabwe','Senegal','Mali','Nigeria','Kenya','Uganda')
 
-get_conflict_vars <- function(iso = 'KEN', country = 'Kenya'){
+get_conflict_vars <- function(iso = 'ZWE', country = 'Zimbabwe'){
   
   # Create conflict file for the specific country
   out <- paste0(root,'/data/',iso,'/conflict/',iso,'_conflict.csv')
@@ -79,37 +79,16 @@ get_conflict_vars <- function(iso = 'KEN', country = 'Kenya'){
   cnf_summ <- cbind(base::as.data.frame(terra::xyFromCell(object = ref, cell = cnf_summ$cellID)), cnf_summ)
   cnf_summ <- cnf_summ %>% tidyr::drop_na()
   
-  # Add pseudo non-conflict reported coordinates
-  # 1 . Create density raster using all conflict points
-  roi     <- spatstat.geom::as.owin(sf::st_bbox(sf::st_as_sf(shp))) # region of interest
-  cnf_crd <- sp::SpatialPointsDataFrame(coords = cnf_summ[,c('x','y')], proj4string = raster::crs(shp), data = cnf_summ)
-  pts     <- sp::coordinates(cnf_crd)
-  p       <- spatstat.geom::ppp(pts[,1], pts[,2], window = roi); rm(roi)
-  ds      <- spatstat.core::density.ppp(p); rm(pts,p)
-  d       <- raster::raster(ds); rm(ds)
-  d       <- as(d, 'SpatRaster')
-  terra::crs(d) <- terra::crs(sfr)
-  d       <- terra::resample(x = d, y = ref) %>% terra::mask(mask = sfr)
-  terra::values(d) <- terra::values(d)/max(terra::values(d), na.rm = T)
-  d <- 1-d # Give more importance to pixels without conflict presence
+  # Compute distance raster
+  rds <- ref
+  rds[cnf_summ$cellID] <- 1
+  rds <- terra::distance(rds) 
+  rds <- rds %>% terra::mask(sfr)
+  plot(rds/100000)
   
-  # Create auxiliary data.frame
-  aux.df <- d %>% terra::as.data.frame(xy = T, na.rm = T)
-  aux.df$cellID <- terra::cellFromXY(d, xy = as.matrix(aux.df[,c('x','y')]))
-  
-  # Create a sample of 1000 pixels
-  set.seed(1235); smp <- sample(x = aux.df$cellID, size = 1000, replace = F, prob = aux.df[,3])
-  # Remove possible overlaps between conflict and pseudo non-conflict pixels
-  smp <- base::setdiff(smp, cnf_summ$cellID)
-  # Create pseudo-coords with no conflict
-  psd <- aux.df[aux.df$cellID %in% smp,c('x','y','cellID')] %>%
-    dplyr::mutate(EVENTS           = 0,
-                  TYPE_RICHNESS    = 0,
-                  SUBTYPE_RICHNESS = 0,
-                  ACTOR1_RICHNESS  = 0,
-                  ACTOR2_RICHNESS  = 0,
-                  FATALITIES       = 0)
-  cnf_summ <- dplyr::bind_rows(cnf_summ, psd); rm(psd, aux.df, d, smp)
+  ################################################################################
+  ################################################################################
+  ################################################################################
   
   # Interpolation with Random Forest Spatial Interpolation (RFSI)
   # https://github.com/AleksandarSekulic/RFSI
@@ -172,10 +151,35 @@ get_conflict_vars <- function(iso = 'KEN', country = 'Kenya'){
                                  acc.metric = 'RMSE',
                                  importance = 'impurity')
     
+    metrics <- base::data.frame(rfsi_fit$tuned.parameters)
+    rownames(metrics) <- 1:nrow(metrics)
+    metrics$R.squared <- rfsi_fit$final.model$r.squared
+    metrics$Variable  <- vr
+    metrics$iso       <- iso
+    metrics <- metrics %>% dplyr::select(iso,Variable,dplyr::everything(.))
+    metrics$k <- k
+    
+    ###########
+    # rfsi_cvf <- meteo::cv.rfsi(formula    = fml,
+    #                            data       = sdt,
+    #                            zero.tol   = 0,
+    #                            use.idw    = FALSE,
+    #                            s.crs      = terra::crs(ref),
+    #                            t.crs      = terra::crs(ref),
+    #                            tgrid      = tgrid,
+    #                            tgrid.n    = length(tgrid),
+    #                            tune.type  = "LLO",
+    #                            seed       = 1235,
+    #                            k          = 5,
+    #                            acc.metric = 'RMSE',
+    #                            cpus       = detectCores()-1,
+    #                            progress   = TRUE)
+    ###########
+    
     # Predict pixels
     rax <- ref
     terra::values(rax) <- 1:(terra::ncell(rax))
-    rax <- rax %>% terra::mask(sfr)
+    rax <- rax %>% terra::mask(roiCtr)
     crd_rast <- rax %>% terra::as.data.frame(xy = T) %>% .[,1:2]
     crd_rast$cellID <- terra::cellFromXY(object = rax, xy = as.matrix(crd_rast)); rm(rax)
     crd_rast <- crd_rast[crd_rast$cellID %in% base::setdiff(crd_rast$cellID, df$cellID[df$EVENTS > 0]),]
@@ -221,17 +225,111 @@ get_conflict_vars <- function(iso = 'KEN', country = 'Kenya'){
     tbl <- dplyr::bind_rows(tbl1, tbl2); rm(tbl1, tbl2)
     
     rfsi.rst <- raster::rasterFromXYZ(xyz = tbl[,c('x','y','Layer')], res = raster::res(raster::raster(ref)), crs = raster::crs(raster::raster(ref)))
-    # rfsi.rst < rfsi.rst %>% raster::mask(x = ., mask = rs)
-    raster::writeRaster(x = rfsi.rst, filename = paste0(root,'/data/',iso,'/conflict/',vr,'_rfsi.tif'), overwrite = TRUE)
-    return(rfsi.rst)
+    # raster::writeRaster(x = rfsi.rst, filename = paste0(root,'/data/',iso,'/conflict/',vr,'_rfsi.tif'), overwrite = TRUE)
+    return(list(metrics = metrics, raster = rfsi.rst))
     
   }
-  rfsi.interpolation(df = cnf_summ, vr = 'EVENTS',           ref = ref)
-  rfsi.interpolation(df = cnf_summ, vr = 'TYPE_RICHNESS',    ref = ref)
-  rfsi.interpolation(df = cnf_summ, vr = 'SUBTYPE_RICHNESS', ref = ref)
-  rfsi.interpolation(df = cnf_summ, vr = 'ACTOR1_RICHNESS',  ref = ref)
-  rfsi.interpolation(df = cnf_summ, vr = 'ACTOR2_RICHNESS',  ref = ref)
-  rfsi.interpolation(df = cnf_summ, vr = 'FATALITIES',       ref = ref)
+  
+  ################################################################################
+  ################################################################################
+  ################################################################################
+  
+  ## Define conflict influence area
+  
+  # 1. Calculate distance matrix among conflict reported points
+  crd_terra <- terra::vect(as.matrix(cnf_summ[,c('x','y')]), crs = terra::crs(sft))
+  crd <- sf::st_as_sf(x = cnf_summ, coords = c('x','y'), crs = sf::st_crs(4326))
+  dst <- terra::distance(x = crd_terra)
+  
+  # 2. Perform hierarchical clustering with Ward metric to test a range of k-values
+  # Hierarchical clustering
+  hcl <- hclust(d = dst, method = 'ward.D2')
+  k_vals <- 1:20
+  for(k in k_vals){
+    # Cut the cluster tree
+    grp <- stats::cutree(tree = hcl, k = k)
+    # Group together the different convex hulls
+    cvxL <- 1:k %>%
+      purrr::map(.f = function(i){
+        cvx <- sf::st_convex_hull(sf::st_union(crd[which(grp == i),]))
+        cvx <- as(cvx, 'Spatial')
+        return(cvx)
+      })
+    cvxL <- cvxL %>% raster::bind()
+    if(class(cvxL) == 'list'){cvxL <- cvxL[[1]]}
+    # Buffer the convex hulls with an extra range of 20 km
+    cvxL <- raster::buffer(cvxL, width = 0.2)
+    # Intersect the buffered convex hulls with the country shapefile
+    roiC <- raster::intersect(cvxL, rgeos::gUnaryUnion(shp)); rm(cvxL, grp)
+    roiC <- rgeos::gUnaryUnion(roiC)
+    roiCtr <- terra::rasterize(x = terra::vect(roiC), y = ref)
+    
+    ## Add pseudo non-conflict reported coordinates
+    # 1 . Create density raster using all conflict points
+    roi     <- spatstat.geom::as.owin(sf::st_bbox(sf::st_as_sf(roiC))) # region of interest
+    cnf_crd <- sp::SpatialPointsDataFrame(coords = cnf_summ[,c('x','y')], proj4string = raster::crs(shp), data = cnf_summ)
+    pts     <- sp::coordinates(cnf_crd)
+    p       <- spatstat.geom::ppp(pts[,1], pts[,2], window = roi); rm(roi)
+    ds      <- spatstat.core::density.ppp(p); rm(pts,p)
+    d       <- raster::raster(ds) %>% raster::mask(mask = roiC); rm(ds)
+    d       <- as(d, 'SpatRaster')
+    terra::crs(d) <- terra::crs(sfr)
+    d       <- terra::resample(x = d, y = ref) %>% terra::mask(mask = sfr)
+    terra::values(d) <- terra::values(d)/max(terra::values(d), na.rm = T)
+    d <- 1-d # Give more importance to pixels without conflict presence
+    
+    
+    bff <- raster::buffer(cnf_crd, width = 10000)
+    nca <- raster::erase(x = roiC, y = bff) # "No-conflict area"
+    nca <- raster::rasterize(x = nca, y = raster::raster(roiCtr)) %>% terra::rast()
+    
+    ## TO DO
+    # 1. Calculate the difference between roiC and bff
+    
+    # 2. Rasterize the resulting shapefile
+    # 3. Obtain a sample of 1000 pixels
+    # 4. Test the metrics comparing: k = 1 and k = 15. It should give different metrics
+    
+    # Create auxiliary data.frame
+    aux.df <- nca %>% terra::as.data.frame(xy = T, na.rm = T) # d
+    aux.df$cellID <- terra::cellFromXY(nca, xy = as.matrix(aux.df[,c('x','y')])) # d
+    
+    # Create a sample of 1000 pixels
+    set.seed(1235); smp <- sample(x = aux.df$cellID, size = 1000, replace = F) # prob = aux.df[,3]
+    # Remove possible overlaps between conflict and pseudo non-conflict pixels
+    smp <- base::setdiff(smp, cnf_summ$cellID)
+    # Create pseudo-coords with no conflict
+    psd <- aux.df[aux.df$cellID %in% smp,c('x','y','cellID')] %>%
+      dplyr::mutate(EVENTS           = 0,
+                    TYPE_RICHNESS    = 0,
+                    SUBTYPE_RICHNESS = 0,
+                    ACTOR1_RICHNESS  = 0,
+                    ACTOR2_RICHNESS  = 0,
+                    FATALITIES       = 0)
+    cnf_summ <- dplyr::bind_rows(cnf_summ, psd); rm(psd, aux.df, d, smp)
+    
+    # Perform interpolations here
+    interpolations <- c('EVENTS','TYPE_RICHNESS','SUBTYPE_RICHNESS',
+      'ACTOR1_RICHNESS','ACTOR2_RICHNESS','FATALITIES') %>%
+      purrr::map(.f = function(var){
+        mtr <- rfsi.interpolation(df = cnf_summ, vr = var, ref = ref)
+        return(mtr)
+      })
+    
+    # write.csv(x = ., file = paste0(root,'/data/',iso,'/conflict/rfsi_metrics.csv'), row.names = F)
+    
+  }
+  # Save the best performance conflict region
+  # raster::shapefile(tst2, paste0('D:/',iso,'_conflict_areas.shp'))
+  
+  metrics$k <- k
+  
+  ################################################################################
+  ################################################################################
+  ################################################################################
+  
+  
+  
   
   return(cat('Done\n'))
   
@@ -239,3 +337,11 @@ get_conflict_vars <- function(iso = 'KEN', country = 'Kenya'){
 purrr::map2(.x = isos, .y = cnty, .f = function(iso, country){
   get_conflict_vars(iso = iso, country = country)
 })
+
+tst <- raster::raster('D:/OneDrive - CGIAR/African_Crisis_Observatory/data/ZWE/conflict/EVENTS_rfsi.tif')
+shp1 <- raster::shapefile('D:/ZWE_conflict_areas.shp')
+
+tst %>%
+  raster::crop(., raster::extent(shp1)) %>%
+  raster::mask(mask = shp1) %>%
+  writeRaster(filename = 'D:/tst.tif')
