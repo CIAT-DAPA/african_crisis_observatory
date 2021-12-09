@@ -9,7 +9,7 @@ root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
 iso <- 'ZWE'
 shp <- raster::shapefile(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
 mxL <- grep(pattern = '^NAME_', x = names(shp@data), value = T) %>% .[length(.)] %>% readr::parse_number(.)
-r <- raster::stack(list.files(path = "C:/Users/haachicanoy/Downloads/SPI_ImageCollection", pattern = '.tif$', full.names = T))
+r <- raster::stack(list.files(path = "C:/Users/haachicanoy/Downloads/climate_water_deficit", pattern = '.nc$', full.names = T)) # SPI_ImageCollection
 # r <- raster::stack(paste0("C:/Users/haachicanoy/Downloads/def_zwe",1:3,".nc"))
 names(r) <- seq(from = as.Date('1990-01-01'), to = as.Date('2020-12-01'), by = 'month')
 # r[] <- r[] * 0.1 # Just for climate water deficit

@@ -9,10 +9,11 @@ suppressMessages(pacman::p_load(tidyverse, raster, terra, exactextractr, vroom))
 
 root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
 
-iso <- 'ZWE'
+iso <- 'KEN'
 shp <- raster::shapefile(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
 mxL <- grep(pattern = '^NAME_', x = names(shp@data), value = T) %>% .[length(.)] %>% readr::parse_number(.)
 vrs <- list.files(path = paste0(root,'/data/',iso), pattern = '*.tif$', recursive = T, full.names = T)
+vrs <- vrs[-grep(pattern = '_results', x = vrs)]
 
 znl <- vrs %>%
   purrr::map(.f = function(vr){
