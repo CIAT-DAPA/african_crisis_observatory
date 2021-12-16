@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1633534178137.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "650480405",
+    "id" : "903AAD8",
+    "lastKnownWriteTime" : 1631905048,
+    "last_content_update" : 1637253048947,
+    "path" : "D:/CGIAR/Achicanoy Estrella, Harold Armando (Alliance Bioversity-CIAT) - African_Crisis_Observatory/code/hotspots/01_get_conflict_variables.R",
+    "project_path" : null,
+    "properties" : {
+        "cursorPosition" : "317,7",
+        "scrollLine" : "0"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 8,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

@@ -1,0 +1,25 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1633615010761.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "3382153154",
+    "id" : "965217B2",
+    "lastKnownWriteTime" : 1639147146,
+    "last_content_update" : 1639147597448,
+    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/scripts/spat_patterns_clustering.R",
+    "project_path" : "spat_patterns_clustering.R",
+    "properties" : {
+        "cursorPosition" : "174,75",
+        "scrollLine" : "162"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 9,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

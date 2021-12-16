@@ -1,0 +1,54 @@
+require(pacman)
+pacman::p_load(tidyverse, foreign, writexl)
+
+data <- foreign::read.spss("C:/users/acmendez/Downloads/datos de trabajo.sav", to.data.frame=TRUE)
+
+
+
+summary(p_vals)
+
+df <- data %>% 
+  as_tibble %>% 
+  filter(Hospitalizado == 1,
+         Sintomas_890 != "No registra") %>% 
+  dplyr::select(Hospitalizadoymuerto, SEXO, Edad, falla_resp, dif_res, Diabetes, Hipertension) %>% 
+  dplyr::mutate(across(-Edad, str_trim),
+                across(-Edad, as.factor))
+
+
+coefs <- lapply(1:1000, function(i){
+  
+  sm <- df %>% 
+    dplyr::slice(c(which(df$Hospitalizadoymuerto == 0  ) %>% sample(., 250) , which(df$Hospitalizadoymuerto == 1))) %>% 
+    glm(Hospitalizadoymuerto ~ SEXO  +  Edad + falla_resp  +  dif_res + Diabetes + Hipertension , data = ., family = binomial(link ="logit")) %>% 
+    summary()
+  
+  cf <- sm$coefficients %>% 
+    as_tibble(., rownames = "coefficient") %>% 
+    dplyr::mutate(Estimate = exp(Estimate))
+  
+    
+  return(cf)
+  
+}) %>% 
+  bind_rows()
+
+
+    to_save <- coefs %>% 
+      dplyr::group_by(coefficient) %>% 
+      dplyr::summarise(promedio = mean(Estimate),
+                       mediana = median(Estimate),
+                       varianza = var(Estimate),
+                       quartil_25 = quantile(Estimate)[2],
+                       quartil_75 = quantile(Estimate)[4],
+                       min_p_val = min(`Pr(>|z|)`),
+                       max_p_val = max(`Pr(>|z|)`) )
+ 
+
+writexl::write_xlsx(to_save, "C:/Users/acmendez/Downloads/coeficientes_logisticos.xlsx")
+
+
+df %>% 
+  dplyr::slice(c(which(df$Hospitalizadoymuerto == 0  ) %>% sample(., 75) , which(df$Hospitalizadoymuerto == 1))) %>% 
+  dplyr::select(Hospitalizadoymuerto, Edad.Nueva) %>% table
+

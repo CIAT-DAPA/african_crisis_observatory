@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1633530417678.000,
+    "dirty" : true,
+    "encoding" : "UTF-8",
+    "folds" : "29|61|74|0|\n76|118|220|0|\n",
+    "hash" : "4276710402",
+    "id" : "F3DF88E0",
+    "lastKnownWriteTime" : 1637249022,
+    "last_content_update" : 1638156969620,
+    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/scripts/conflict_interpolation_acm.R",
+    "project_path" : "conflict_interpolation_acm.R",
+    "properties" : {
+        "cursorPosition" : "17,11",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 10,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

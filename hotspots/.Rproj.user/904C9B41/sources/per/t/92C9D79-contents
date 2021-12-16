@@ -1,0 +1,63 @@
+require(pacman)
+pacman::p_load(tidyverse, readxl, stringr, stringi, lubridate)
+
+#cargar bases de datos
+
+
+#wfps <- readxl::read_excel("C:/Users/acmendez/Downloads/WFPS_POT27.xlsx", col_types = "text")
+wfps <- read.csv("C:/Users/acmendez/Downloads/WFPS_POT27.csv", encoding = "latin-1", check.names = F) 
+
+original_names <- names(wfps)
+
+#Paso 1, estandarizar los nombres de las columnas
+
+names(wfps) <- names(wfps) %>%  
+  stringr::str_trim(.) %>% 
+  gsub(" ", "_",  .) %>% 
+  gsub("%", "",    .) %>% 
+  tolower(.)
+
+
+## paso dos: validar los tipos de datos
+
+wfps %>% 
+  glimpse()
+
+#que debemos mirar, que las variables numericas sean reconocidas como dbl o int. Si una variable que deberia ser numerica
+#aparece como chr es que algo malo pasa y debemos revisarla, podemos usar el comando table cuando los valores son muy pocos
+
+
+table(wfps$bloque)
+
+## aqui encontramos que el peso_fresco deberia ser numerico pero R lo lee como si fuera de texto chr
+
+table(wfps$`peso_fresco_(grs)`)
+
+#cuando se ejecuta este comando hay que estar pendientes si aparecen advertencias o errores
+as.numeric(wfps$`peso_fresco_(grs)`)
+
+
+## ahora pasamos a revisar las fechas
+
+wfps_clean <- wfps %>% 
+  dplyr::mutate(fecha_nueva = paste0(fecha, "-", año)) %>% 
+  dplyr::mutate(fecha_nueva = as.Date(fecha_nueva, format = "%d-%b-%Y")  )
+
+## revisamos los tratamientos
+table(wfps_clean$tratamiento)
+#identificamos que hay problemas con las letras mayusculas y minusculas
+
+wfps_clean <- wfps_clean %>% 
+  dplyr::mutate(tratamiento = stringr::str_trim(tratamiento) ,
+                tratamiento = toupper(tratamiento) ) 
+
+#revisamos la profundidad en cm
+
+table(wfps_clean$`prof_(cm)`)
+
+wfps_clean <- wfps_clean %>% 
+  dplyr::mutate(`prof_(cm)`  = ifelse(`prof_(cm)` %in% c("20-Oct", "20-oct"), "10-20", `prof_(cm)`)  )
+
+
+
+

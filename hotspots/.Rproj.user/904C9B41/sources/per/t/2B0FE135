@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1636388569347.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "11|59|58|0|\n60|50|96|0|\n",
+    "hash" : "2886083011",
+    "id" : "2B0FE135",
+    "lastKnownWriteTime" : 1639147149,
+    "last_content_update" : 1639151838560,
+    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/scripts/get_summary_tables_final_maps.R",
+    "project_path" : "get_summary_tables_final_maps.R",
+    "properties" : {
+        "cursorPosition" : "487,58",
+        "scrollLine" : "0",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 12,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}
