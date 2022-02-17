@@ -9,7 +9,7 @@
     "id" : "C3506E0",
     "lastKnownWriteTime" : 1630960066,
     "last_content_update" : 1630960066,
-    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/scripts/raster_indicators.R",
+    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/code/hotspots/raster_indicators.R",
     "project_path" : "raster_indicators.R",
     "properties" : {
         "cursorPosition" : "99,22",
@@ -19,7 +19,7 @@
     "read_only" : false,
     "read_only_alternatives" : [
     ],
-    "relative_order" : 3,
+    "relative_order" : 4,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

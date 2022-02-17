@@ -39,12 +39,15 @@ coefs <- lapply(1:1000, function(i){
       dplyr::summarise(promedio = mean(Estimate),
                        mediana = median(Estimate),
                        varianza = var(Estimate),
-                       quartil_25 = quantile(Estimate)[2],
-                       quartil_75 = quantile(Estimate)[4],
+                       quartil_25 = quantile(Estimate, probs= 0.025),
+                       quartil_75 = quantile(Estimate, probs = 0.975),
                        min_p_val = min(`Pr(>|z|)`),
-                       max_p_val = max(`Pr(>|z|)`) )
- 
-
+                       max_p_val = max(`Pr(>|z|)`),
+                       p_val_mayor_005 = prop.table(table(`Pr(>|z|)` > 0.05))[1],
+                       p_val_mayor_01 = prop.table(table(`Pr(>|z|)` > 0.1))[1] ) 
+    
+  
+    
 writexl::write_xlsx(to_save, "C:/Users/acmendez/Downloads/coeficientes_logisticos.xlsx")
 
 

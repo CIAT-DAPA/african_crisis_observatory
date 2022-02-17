@@ -63,6 +63,7 @@ get_cluster_labels <- function(df){
   return(conf_cluts_vals)
 }
 
+
 make_cluster_plots <- function(df){
 
  g <- df %>% 
@@ -77,6 +78,45 @@ make_cluster_plots <- function(df){
    scale_y_log10()
  
 return(g)
+}
+
+get_cluster_statistics <- function(df){
+  
+  df <- df %>% 
+    dplyr::select(-ov) %>% 
+    dplyr::mutate(knl = ifelse(is.na(knl), 0, knl))
+  
+  clust_median <- df %>%
+    dplyr::group_by(clust) %>% 
+    dplyr::summarise(across(where(is.numeric), median)) %>% 
+    dplyr::ungroup()
+  
+  
+  g_median <- df %>% 
+    dplyr::summarise(across(where(is.numeric), median)) %>% 
+    dplyr::mutate(clust = "Global") %>% 
+    dplyr::select(clust, everything())
+   
+  rel_change <- lapply(
+  c("EVENTS", "TYPE_RICHNESS" ,"SUBTYPE_RICHNESS", "ACTOR1_RICHNESS", "ACTOR2_RICHNESS" ,"FATALITIES" ,   "knl"),
+  function(i){
+    
+    v <- g_median %>% dplyr::pull(i)
+    
+    ret <- ((clust_median[i] -  v)/v )*100
+    return(ret)
+  }
+  ) %>% 
+    dplyr::bind_cols() %>% 
+    dplyr::rename_with(., ~paste0(.x, "_rel_change"))
+  
+  ret <- clust_median %>% 
+    dplyr::rename_with(., ~paste0(.x, "_median"))%>% 
+    dplyr::bind_cols(rel_change) %>% 
+    dplyr::add_row(g_median %>% 
+                     dplyr::rename_with(., ~paste0(.x, "_median" ))) 
+
+  return(ret)    
 }
 
 root <- 'C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory'
@@ -109,7 +149,7 @@ coordinates(conflict_raw) <- ~x+y
 crs(conflict_raw) <- crs(world_mask)
 conflict_sf <- sf::st_as_sf(conflict_raw)
 
-grd <- st_make_grid(st_bbox(extent(shp)), cellsize = 0.2, square =  T) %>% 
+grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.3, square =  T) %>% 
   st_as_sf(.) %>%
   dplyr::mutate(id = 1:nrow(.))
 
@@ -127,36 +167,54 @@ to_cluster <- conflict_sf %>%
   dplyr::mutate(ov = unlist(st_intersects(conflict_sf, grd)),
                 pop_dens =raster::extract(pop_dens, st_as_sf(.) %>% st_cast("POINT")%>% st_coordinates()),
                 EVENTS = ifelse(pop_dens == 0 , 1, EVENTS/pop_dens),
+                FATALITIES = ifelse(pop_dens == 0 , 1, FATALITIES/pop_dens),
                 knl = raster::extract(knl, st_as_sf(.) %>% st_cast("POINT")%>% st_coordinates())) %>%
   dplyr::group_by(ov) %>% 
-  dplyr::summarise(EVENTS = sum(EVENTS, na.rm = T),
+  dplyr::summarise(EVENTS = median(EVENTS, na.rm = T),
                    TYPE_RICHNESS = max(TYPE_RICHNESS, na.rm = T),
                    SUBTYPE_RICHNESS = max(SUBTYPE_RICHNESS, na.rm = T),
                    ACTOR1_RICHNESS = max(ACTOR1_RICHNESS, na.rm = T),
                    ACTOR2_RICHNESS = max(ACTOR2_RICHNESS, na.rm = T),
-                   FATALITIES = sum(FATALITIES, na.rm = T),
-                   knl = median(knl, na.rm = T)) %>% 
+                   FATALITIES = median(FATALITIES, na.rm = T)
+                   ,knl = median(knl, na.rm = T)
+                   ) %>% 
   dplyr::ungroup()
 
 
+
+
 #                knl = raster::extract(knl, st_as_sf(to_cluster) %>% st_cast("POINT")%>% st_coordinates())
+
 x <- to_cluster %>% 
-  dplyr::mutate(knl = ifelse(is.na(knl), mean(knl, na.rm = T), knl)) %>% 
+  dplyr::mutate(knl = ifelse(is.na(knl), 0, knl)) %>% 
   dplyr::select(-ov) %>% 
   st_drop_geometry() %>%  
-  FactoMineR::PCA(., scale.unit = T, ncp =2 )
+  FactoMineR::PCA(., scale.unit = T, ncp =2, graph = F )
 
-x <- rbind(x$ind$coord)%>% 
+cords <- rbind(x$ind$coord) %>% 
+  as_tibble() %>% 
+  dplyr::mutate(dst = sqrt(( Dim.1 - 0)^2 + (Dim.2 - 0 )^2   ),
+                rng = dst > quantile(dst)[3] + IQR(dst)*1.5) 
+
+thr <- cords %>% dplyr::filter(rng) %>% pull(dst) %>% quantile %>% .[4]
+
+wh <- cords %>% 
+  dplyr::mutate(wh = ifelse(dst > thr, 7, 1)) %>% 
+  dplyr::pull(wh)
+
+
+x_wh <- to_cluster %>% 
+  dplyr::mutate(knl = ifelse(is.na(knl), 0, knl)) %>% 
+  dplyr::select(-ov) %>% 
+  st_drop_geometry() %>%  
+  FactoMineR::PCA(., scale.unit = T, ncp =2, graph = F , row.w = wh)
+
+
+x_wh <- rbind(x_wh$ind$coord)%>% 
   dist(., method = "euclidean")
 
-
-dst<- dist(x, method = "euclidean")
-hc <- hclust(dst, method = "complete") %>% 
-  stats::cutree(tree = ., k = 3)
-
-km <- stats::kmeans(x, 3)
-
-
+km <- stats::kmeans(x_wh, 3)
+table(km$cluster)
 
 to_cluster$clust_km <-  left_join( tibble(clust = as.character(km$cluster)), to_cluster %>% 
                                       st_drop_geometry() %>% 
@@ -173,7 +231,27 @@ to_plot <- grd %>%
   dplyr::filter(!is.na(clust_km))
 
 
-sf::st_write(to_plot, paste0(root, "/data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust.shp"), delete_dsn = T)
+to_save <- conflict_sf %>% 
+  dplyr::mutate(ov = unlist(st_intersects(conflict_sf, grd)),
+                knl = raster::extract(knl, st_as_sf(.) %>% st_cast("POINT")%>% st_coordinates())) %>%
+  dplyr::group_by(ov) %>% 
+  dplyr::summarise(EVENTS = sum(EVENTS, na.rm = T),
+                   TYPE_RICHNESS = max(TYPE_RICHNESS, na.rm = T),
+                   SUBTYPE_RICHNESS = max(SUBTYPE_RICHNESS, na.rm = T),
+                   ACTOR1_RICHNESS = max(ACTOR1_RICHNESS, na.rm = T),
+                   ACTOR2_RICHNESS = max(ACTOR2_RICHNESS, na.rm = T),
+                   FATALITIES = sum(FATALITIES, na.rm = T)
+                   ,knl = median(knl, na.rm = T)
+  ) %>% 
+  dplyr::ungroup() %>% 
+  st_drop_geometry() %>% 
+  dplyr::bind_cols(clust = to_cluster$clust_km) %>% 
+  dplyr::right_join(., grd, by = c("ov" = "id")) %>% 
+  dplyr::filter(!is.na(clust))
+  
+
+
+sf::st_write(to_save, paste0(root, "/data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust.shp"), delete_dsn = T)
 #st_intersects(grd, shp) %>% unlist %>% lenght
 
 
@@ -186,37 +264,19 @@ mainmap3<- tmap::tm_shape(shp)+
 
 x11();mainmap3
 
-x11();make_cluster_plots(df = to_cluster %>% dplyr::select(EVENTS:FATALITIES, clust = clust_km)%>% st_drop_geometry())
+
+to_boxplot <- to_save %>% 
+  dplyr::select(-x)
+
+g <- make_cluster_plots(df = to_boxplot)
+x11();g
+
+ggsave(g, filename= paste0(root,"/data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust_boxplots.png"),
+       dpi=300, 
+       height=8,
+       width=15,
+       units="in")
 
 
-  tm_fill(col = "clust", palette = c("#d7191c", "#e5a03e", "#ffffbf"), alpha = 0.7, title = expression("Conflict clusters"))+
-  tm_borders(col ="black") + 
-  tm_compass(type = "8star", position = c("right", "top")) +
-  tm_scale_bar(breaks = c(0, 100, 200), text.size = 1, position = c(scale_bar_pos, scale_bar_top))+
-  tm_shape(conf_occ)+
-  tm_symbols(col = "#31b225", border.col = "black", size = "FATALITIES", scale = 3, title.size = "Number of fatalities")+
-  tm_layout(legend.outside=T, 
-            legend.text.size = 1.3,
-            legend.title.size=1.3,
-            legend.frame=F, 
-            #legend.position=c(0.985, 0.985),
-            legend.just = c("left", "top"), 
-            #legend.width=-0.25,
-            #outer.margins = c(0,0,0,0),
-            #inner.margins = c(0,0,0,0)
-            legend.height= -0.3 )
-
-
-
-tmap_save(mainmap,
-          filename= paste0(root, "_results/cluster_results/conflict/geographic_distr_conflict.png"),
-          dpi=300, 
-          #insets_tm=insetmap, 
-          #insets_vp=vp,
-          height=8,
-          width=15,
-          units="in")
-
-
-
-
+get_cluster_statistics(df = to_boxplot) %>% 
+  write.csv(., paste0(root, "/data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust_rel_change.csv"), row.names = F)

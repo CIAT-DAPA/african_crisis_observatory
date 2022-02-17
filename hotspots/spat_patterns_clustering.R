@@ -10,6 +10,7 @@ suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr)
 
 
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
+  
   r <- raster(rast_path)
   #r <- raster(file_paths$path[13] )
   #if(as.character(res(r)[1]) != as.character(res(world_mask)[1])){
@@ -58,6 +59,124 @@ reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimensi
   }
   
   return(ret)
+}
+
+get_conflic_data <- function(root, iso, country = 'Senegal'){
+  
+  out <- paste0(root,'/data/',iso,'/conflict/',iso,'_conflict.csv')
+  dir.create(path = dirname(out), F, T)
+  if(!file.exists(out)){
+    # Filter African conflict to the specific country
+    cnf <- readxl::read_excel(paste0(root,'/data/_global/conflict/Africa_1997-2021_Apr02.xlsx'), sheet = 1)
+    cnf <- cnf %>% dplyr::filter(COUNTRY == country)
+    readr::write_csv(cnf, out)
+    conflict <- cnf; rm(cnf, out)
+  } else {
+    # Load country conflict
+    conflict <- readr::read_csv(out); rm(out)
+  }; rm(out)
+  
+  # Load the country lowest administrative level shapefile
+  if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
+    dir.create(path = dirname(paste0(root,'/data/',iso,'/_shps/',iso,'.shp')), recursive = TRUE)
+    shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+    adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
+    shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
+  } else {
+    shp <- raster::shapefile(x = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+    adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
+    shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
+  }
+  sft <- shp # Shapefile in terra format
+  
+  # Extract administrative names using reported conflict coordinates by ACLED
+  conflict  <- cbind(conflict,raster::extract(x = shp, y = conflict[,c('LONGITUDE','LATITUDE')]))
+  
+  # Get conflict summarization variables per coordinates
+  cnf_summ <- conflict %>%
+    dplyr::group_by(LONGITUDE, LATITUDE) %>%
+    dplyr::summarise(EVENTS           = dplyr::n(),
+                     TYPE_RICHNESS    = EVENT_TYPE %>% unique() %>% length(),
+                     SUBTYPE_RICHNESS = SUB_EVENT_TYPE %>% unique() %>% length(),
+                     ACTOR1_RICHNESS  = ACTOR1 %>% unique() %>% length(),
+                     ACTOR2_RICHNESS  = ACTOR2 %>% unique() %>% length(),
+                     FATALITIES       = sum(FATALITIES)) %>%
+    dplyr::ungroup() %>% 
+    dplyr::select(x= LONGITUDE, y = LATITUDE, everything(.))
+  
+  
+  return(list(cnf_summ, sft))
+}
+
+
+get_cluster_labels <- function(df){
+  
+  conf_cluts_vals <- df %>% 
+    dplyr::select(EVENTS:FATALITIES, starts_with("clust")) %>% 
+    group_by(clust) %>% 
+    dplyr::summarise(m_events = mean(EVENTS)) %>% 
+    arrange(desc(m_events)) %>% 
+    dplyr::mutate(label = c("High conflict", "Moderate conflict", "Limited conflict"),
+                  short_label = c("High", "Moderate", "Limited")) %>% 
+    dplyr::mutate(across(everything(.), as.character),
+                  label = factor(label, levels = c("High conflict","Moderate conflict",  "Limited conflict")))
+  
+  return(conf_cluts_vals)
+}
+
+make_cluster_plots <- function(df){
+  
+  g <- df %>% 
+    dplyr::select(EVENTS:FATALITIES, starts_with("clust")) %>% 
+    tidyr::pivot_longer(-clust, names_to = "var", values_to = "vals") %>% 
+    ggplot(aes(y= vals, x = clust))+
+    geom_violin(trim=FALSE, fill="gray")+
+    geom_boxplot(width=0.1, fill="white")+
+    facet_wrap(~var, scales = "free")+
+    xlab("")+
+    theme_bw(base_size = 10)+ 
+    scale_y_log10()
+  
+  return(g)
+}
+
+get_cluster_statistics <- function(df){
+  
+  df <- df %>% 
+    dplyr::select(-ov) %>% 
+    dplyr::mutate(knl = ifelse(is.na(knl), 0, knl))
+  
+  clust_median <- df %>%
+    dplyr::group_by(clust) %>% 
+    dplyr::summarise(across(where(is.numeric), median)) %>% 
+    dplyr::ungroup()
+  
+  
+  g_median <- df %>% 
+    dplyr::summarise(across(where(is.numeric), median)) %>% 
+    dplyr::mutate(clust = "Global") %>% 
+    dplyr::select(clust, everything())
+  
+  rel_change <- lapply(
+    c("EVENTS", "TYPE_RICHNESS" ,"SUBTYPE_RICHNESS", "ACTOR1_RICHNESS", "ACTOR2_RICHNESS" ,"FATALITIES" ,   "knl"),
+    function(i){
+      
+      v <- g_median %>% dplyr::pull(i)
+      
+      ret <- ((clust_median[i] -  v)/v )*100
+      return(ret)
+    }
+  ) %>% 
+    dplyr::bind_cols() %>% 
+    dplyr::rename_with(., ~paste0(.x, "_rel_change"))
+  
+  ret <- clust_median %>% 
+    dplyr::rename_with(., ~paste0(.x, "_median"))%>% 
+    dplyr::bind_cols(rel_change) %>% 
+    dplyr::add_row(g_median %>% 
+                     dplyr::rename_with(., ~paste0(.x, "_median" ))) 
+  
+  return(ret)    
 }
 
 
@@ -135,16 +254,21 @@ clust_descriptives <- function(clust_sum){
   return(ret)
 }
 
-root <- 'D:/CGIAR/Achicanoy Estrella, Harold Armando (Alliance Bioversity-CIAT) - African_Crisis_Observatory/'
-country_iso2 <- "SDN"
-country <- 'Sudan'
+root <- 'C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/'
+country_iso2 <- iso <- "KEN"
+country <- 'Kenya'
 
 baseDir <- paste0(root, "data/",country_iso2)
 
+source(paste0(root, "code/hotspots/00_link_IPinfo_climate_clusters.R"))
 
-df <- readxl::read_excel(paste0(root,'/Country_pathways.xlsx'), sheet = 2)
-df <- df %>% dplyr::filter(Country == country & Dimension == 'Climate')
-clm <- df$Variable
+clm <- select_clim_vars(root = substr(root, start = 1, stop = nchar(root)-1 ), 
+                        iso  = iso, 
+                        cntr = country) %>% 
+  dplyr::pull(Code) %>% 
+  unique()
+
+
 fls <- list.files(path = paste0(root,'/data/',country_iso2), pattern = 'tif$', full.names = T, recursive = T)
 grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
 fls <- fls[unlist(grep2(pattern = clm, x = fls))]; rm(clm)
@@ -163,24 +287,32 @@ check_files <- lapply(file_paths$path, file.exists) %>% unlist()
 world_mask <- raster(paste0(root, "/data/_global/masks/mask_world_1km.tif"))
 
 
+pop_dens <- raster::raster(paste0(root,"/data/",iso, "/population_density/medn_popd.tif"))
+
+
+knl <- raster::raster(paste0(root, "/data/", iso, "/conflict/conflict_kernel_density.tif"))
+crs(knl) <- crs(world_mask)
+
+shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>% 
+  sf::st_as_sf() %>% 
+  dplyr::mutate(id = 1:nrow(.))
+
+grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>% 
+  st_as_sf(.) %>%
+  dplyr::mutate(id = 1:nrow(.))
+
+
+
 stopifnot("File not found in paths. " = all(check_files))
 
 ### load and reclassify all rasters
 
-for(dimension in unique(file_paths$type)){
+dimension <- "climate"
   
   cat(">>> starting process for: ", dimension, "\n")
   
   
   dest_dir <- paste0(baseDir, "/_results/cluster_results/", dimension, "/")
-  
-  shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>% 
-    sf::st_as_sf() %>% 
-    dplyr::mutate(id = 1:nrow(.))
-  
-  grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>% 
-    st_as_sf(.) %>%
-    dplyr::mutate(id = 1:nrow(.))
   
   
   if(!dir.exists(dest_dir)){dir.create(dest_dir, recursive = T)}
@@ -243,41 +375,41 @@ for(dimension in unique(file_paths$type)){
     sf::st_drop_geometry() %>% 
     dplyr::mutate(cluster_type = "regular")
   
-  # =========================================================== #
-  # Irregular clusterin patters
-  # =========================================================== #
-  
-  cat(">>> Calculating irregular clusters /n")
-  
-  irr_clust_lsp <- lsp_signature(eco_data, type = "incove",
-                                 window = shp["id"], normalization = "pdf") 
-  
-  irr_clust_dist <- lsp_to_dist(irr_clust_lsp, dist_fun = "jensen-shannon")
-  irr_clust_dist_hc <-  hclust(irr_clust_dist, method = "ward.D2")
-  
-  if(dimension == "conflict"){
-    c_optim_num_irr <- 3
-  }else{
-    optcl_irr <- maptree::kgs(cluster = irr_clust_dist_hc, diss = irr_clust_dist, maxclust = 40)
-    
-    c_optim_num_irr <- as.numeric(names(optcl_irr[which(optcl_irr == min(optcl_irr))]))
-  }
-  
-  
-  cat(">>> Optim number of irregular cluster is:", c_optim_num_irr ,"/n")
-  
-  clusters_irr <- cutree(irr_clust_dist_hc, k = c_optim_num_irr)
-  
-  eco_grid_sf_irr <- motif::lsp_add_clusters(irr_clust_lsp, clusters_irr, window = shp["id"])
-  
-  metrics_clust_irr <- motif::lsp_add_quality(eco_grid_sf_irr, irr_clust_dist, type = "cluster") %>%
-    dplyr::group_by(clust) %>%
-    dplyr::summarise(inhomogeneity = mean(inhomogeneity),
-                     distinction = mean(distinction),
-                     quality = mean(quality)) %>% 
-    sf::st_drop_geometry() %>% 
-    dplyr::mutate(cluster_type = "irregular")
-  
+  # # =========================================================== #
+  # # Irregular clusterin patters
+  # # =========================================================== #
+  # 
+  # cat(">>> Calculating irregular clusters /n")
+  # 
+  # irr_clust_lsp <- lsp_signature(eco_data, type = "incove",
+  #                                window = shp["id"], normalization = "pdf") 
+  # 
+  # irr_clust_dist <- lsp_to_dist(irr_clust_lsp, dist_fun = "jensen-shannon")
+  # irr_clust_dist_hc <-  hclust(irr_clust_dist, method = "ward.D2")
+  # 
+  # if(dimension == "conflict"){
+  #   c_optim_num_irr <- 3
+  # }else{
+  #   optcl_irr <- maptree::kgs(cluster = irr_clust_dist_hc, diss = irr_clust_dist, maxclust = 40)
+  #   
+  #   c_optim_num_irr <- as.numeric(names(optcl_irr[which(optcl_irr == min(optcl_irr))]))
+  # }
+  # 
+  # 
+  # cat(">>> Optim number of irregular cluster is:", c_optim_num_irr ,"/n")
+  # 
+  # clusters_irr <- cutree(irr_clust_dist_hc, k = c_optim_num_irr)
+  # 
+  # eco_grid_sf_irr <- motif::lsp_add_clusters(irr_clust_lsp, clusters_irr, window = shp["id"])
+  # 
+  # metrics_clust_irr <- motif::lsp_add_quality(eco_grid_sf_irr, irr_clust_dist, type = "cluster") %>%
+  #   dplyr::group_by(clust) %>%
+  #   dplyr::summarise(inhomogeneity = mean(inhomogeneity),
+  #                    distinction = mean(distinction),
+  #                    quality = mean(quality)) %>% 
+  #   sf::st_drop_geometry() %>% 
+  #   dplyr::mutate(cluster_type = "irregular")
+  # 
   ###================================================##
   ###============== SAVER RESULTS ===================##
   ###================================================##
@@ -292,25 +424,25 @@ for(dimension in unique(file_paths$type)){
   clust_mtrs$reg_rel_change <- clust_descriptives(clust_sum = clust_mtrs$reg_clust_values)
   
   
-  clust_mtrs$irr_clust_values <- get_sum_cl_mtrs(rast_paths = file_paths %>% filter(type == dimension) %>% pull(path), eco_grid_sf = eco_grid_sf_irr, world_mask = world_mask, shp_ext = extent(shp))
+  # clust_mtrs$irr_clust_values <- get_sum_cl_mtrs(rast_paths = file_paths %>% filter(type == dimension) %>% pull(path), eco_grid_sf = eco_grid_sf_irr, world_mask = world_mask, shp_ext = extent(shp))
   
-  clust_mtrs$irr_rel_change <- clust_descriptives(clust_sum = clust_mtrs$irr_clust_values)
+  # clust_mtrs$irr_rel_change <- clust_descriptives(clust_sum = clust_mtrs$irr_clust_values)
   
  
   
   writexl::write_xlsx(clust_mtrs[c("irr_rel_change", "reg_rel_change")], paste0(dest_dir, dimension, "_cluster_summary_metrics.xlsx"))
   write_csv(clust_mtrs$reg_clust_values, paste0(dest_dir, dimension, "_reg_cluster_values_extracted.csv"))
-  write_csv(clust_mtrs$irr_clust_values, paste0(dest_dir, dimension, "_irr_cluster_values_extracted.csv"))
+  #write_csv(clust_mtrs$irr_clust_values, paste0(dest_dir, dimension, "_irr_cluster_values_extracted.csv"))
   
   
   
-  cat(">>>saving clusters motif metrics to dest_dir \n")
-  clust_mtrs_cl <- bind_rows(metrics_clust,  metrics_clust_irr)
-  write_csv(clust_mtrs_cl, paste0(dest_dir, dimension, "_cluster_eval.csv"))
-  
+  # cat(">>>saving clusters motif metrics to dest_dir \n")
+  # clust_mtrs_cl <- bind_rows(metrics_clust,  metrics_clust_irr)
+  # write_csv(clust_mtrs_cl, paste0(dest_dir, dimension, "_cluster_eval.csv"))
+  # 
   cat(">>>writing clusters grid to dest_dir \n")
   sf::st_write(eco_grid_sf, paste0(dest_dir, dimension,"_regular_clust.shp"), delete_dsn = T)
-  sf::st_write(eco_grid_sf_irr, paste0(dest_dir, dimension,"_irregular_clust.shp"), delete_dsn = T)
+  #sf::st_write(eco_grid_sf_irr, paste0(dest_dir, dimension,"_irregular_clust.shp"), delete_dsn = T)
   
   
   cat(">>>Making boxplots \n")
@@ -351,103 +483,161 @@ for(dimension in unique(file_paths$type)){
   ggsave(plot = g2, filename = paste0(dest_dir, dimension,'_irregular_boxplots.png'), dpi = 400, width = 15, height = 8, units = "in")
   
   
-}#END FOR
 
+#######################################################
+###### NEW CONFLICT CLUSTERING #######################
+#####################################################
 
-
-#####PUNTO 1
-#se define la funcion para la camintata aleatoria con sus respectivos parametros
-caminata_aleatoria <- function(n_pasos, # numero de pasos para la caminata aleatoria
-                               probabilidad, # vector de dos valores c(arriba, abajo, izquierda, derecha) con las probabilidades para el eje x y eje y
-                               origen, # puntos de origen caminta aleatoria z^2
-                               graficar = TRUE  #si se debe generar o no la grafica TRUE o FALSE
-                               ){
+  pop_dens <- raster::raster(paste0(root,"/data/",iso, "/population_density/medn_popd.tif"))
   
-  #set.seed(1234) # se puede establecer una semilla para que los resultados den identicos en cada iteración
-  
-  #se crea una matrix con los posibles estados de la caminata aleatoria
-  estados <-  c(sample(c(-1,1), n_pasos/2, replace = T, prob = c(probabilidad[1],probabilidad[2]) ), 
-             sample(c(-1,1), n_pasos/2, replace = T, prob = c(probabilidad[3],  probabilidad[4])))
-  
-  #se crea una matrix vaica para almacenar los resultados de la caminata aleatoria
-  caminata <- matrix(0, ncol = 2, nrow = n_pasos)
+  shp <- raster::shapefile(paste0(root,"/data/", iso, "/_shps/",iso,".shp" )) %>% 
+    sf::st_as_sf() %>% 
+    dplyr::mutate(id = 1:nrow(.))
   
   
-  #se adicionan las direcciones de la caminata dados los posibles estados 
-  indx <- cbind(seq(n_pasos), sample(c(1, 2), n_pasos, TRUE))
-  caminata[indx] <- estados
-  # se calcula la camianta aleatoria como la suma acumulada de los valores de la matrix de estados 
+  world_mask <- raster::raster(paste0(root,"/data/_global/masks/mask_world_1km.tif")) %>% 
+    raster::crop(., extent(shp))
   
-  caminata[,1] <- cumsum(caminata[, 1])
-  caminata[, 2] <- cumsum(caminata[, 2])
-  #se adiciona el punto de origen a la caminata
-  caminata <- rbind(origen, caminata)
+  knl <- raster::raster(paste0(root, "/data/", iso, "/conflict/conflict_kernel_density.tif"))
+  crs(knl) <- crs(world_mask)
   
- 
-  #se convierte la matrix a un dataframe
-  caminata <- as.data.frame(caminata)
   
-  #se define la tabla a retornar por la  function
-  retornar <- data.frame(puntos_evolucion_eje_x  = caminata[,1],
-             puntos_evolucion_eje_y = caminata[,2],
-             sorteo_aleatorio_eje = c(0, estados) )
-  #mediante un if se controla cuando plotear la grafica de la caminata
-  if(graficar){
-    caminata[ ,3]<- "blue"
-    caminata[1,3] <- "red"
-    caminata[nrow(caminata), 3] <- 'red'
-    
-    
-    plot(caminata[,c(1,2)], xlab = "eje x", ylab = "eje y", main = "caminata aleatoria", col = caminata$V3, type = "b")
-    lines(caminata[,c(1,2)])
-  }
+  conflict_raw <-  get_conflic_data(root = root,
+                                    iso = iso) %>% 
+    purrr::pluck(1)
   
-  return(retornar)
   
-}
-
-#se esejecuta la funcion con los parametros establecidos y se almacenan los reaultados en un objeto
-tabla_resultado <- caminata_aleatoria(n_pasos = 50,
-                   probabilidad = c(0.2,0.3, 0.2, 0.3),
-                   origen =c(0,0))
-
-
-
-###PUNTO 2
-
-
-#funcion para aproximar la probabilidad de regresar la origen
-simulacion<- function(n_sim, # numero de simulaciones
-                      n_pasos,# numero de pasos para la simulacion,
-                      probabilidad, # vector de dos valores c(p, 1-p) con las probabilidades
-                      origen # puntos de origen caminta aleatoria z^2
-                      ){
-  #se define una vector vacio para alacenar las caminatas aleatorias atraves de las iteraciones
-  resultados <- c()
-  #se crea un for loop para iterar hasta el numero de similaciones n_sim
-  for(i in 1:n_sim){
-    #se ejecuta la funcion de la caminata aleatoria y se almacenan sus resultados
-    tabla <- caminata_aleatoria(n_pasos = n_pasos,
-                       probabilidad =probabilidad,
-                       origen =origen,
-                       graficar = F)
-    #se identifica cuando la caminata regreso al punto de origen
-    #nota: la primera fila no se tendra en cuenta pues esta representa el punto de origen
-    #se usa la funcion apply para evaluar en cada fila si el punto de la caminata es igual al punto de origen
-    #en cuyo caso el resultado sera TRUE, lo que indicaria que la caminata retorno al punto de origen
-    regreso_origen <- apply(tabla[,c(1,2)] == origen, 1, all)
-    #se almacena en el vector resultado un valor de TRUE si la caminata almenos una ves regreso al punto de origen
-
-  resultados[i] <- any(regreso_origen[-1])
-  }
   
-  return(cat(paste0("La probabilidad de regreso a la posicion de origen es: ", sum(resultados)/n_sim )))
   
-}
-
-#se esejecuta la funcion con los parametros establecidos
-simulacion(n_sim= 1000, # numero de simulaciones
-           n_pasos= 100,# numero de pasos para la simulacion,
-           probabilidad = c(0.3,0.2,0.3,0.2), # vector de dos valores c(p, 1-p) con las probabilidades
-           origen= c(0.0))
-
+  coordinates(conflict_raw) <- ~x+y
+  crs(conflict_raw) <- crs(world_mask)
+  conflict_sf <- sf::st_as_sf(conflict_raw)
+  
+  st_crs(grd) <- st_crs(conflict_sf)
+  
+  grd <- grd %>% 
+    dplyr::mutate(ov = sapply(st_intersects(grd, shp) , function(i){if(length(i)>0){return(1)}else{return(NA)}})) %>% 
+    dplyr::filter(!is.na(ov)) %>% 
+    dplyr::select(-ov) %>% 
+    dplyr::mutate(id = 1:nrow(.))
+  
+  
+  
+  to_cluster <- conflict_sf %>% 
+    dplyr::mutate(ov = unlist(st_intersects(conflict_sf, grd)),
+                  pop_dens =raster::extract(pop_dens, st_as_sf(.) %>% st_cast("POINT")%>% st_coordinates()),
+                  EVENTS = ifelse(pop_dens == 0 , 1, EVENTS/pop_dens),
+                  FATALITIES = ifelse(pop_dens == 0 , 1, FATALITIES/pop_dens),
+                  knl = raster::extract(knl, st_as_sf(.) %>% st_cast("POINT")%>% st_coordinates())) %>%
+    dplyr::group_by(ov) %>% 
+    dplyr::summarise(EVENTS = median(EVENTS, na.rm = T),
+                     TYPE_RICHNESS = max(TYPE_RICHNESS, na.rm = T),
+                     SUBTYPE_RICHNESS = max(SUBTYPE_RICHNESS, na.rm = T),
+                     ACTOR1_RICHNESS = max(ACTOR1_RICHNESS, na.rm = T),
+                     ACTOR2_RICHNESS = max(ACTOR2_RICHNESS, na.rm = T),
+                     FATALITIES = median(FATALITIES, na.rm = T)
+                     ,knl = median(knl, na.rm = T)
+    ) %>% 
+    dplyr::ungroup()
+  
+  
+  
+  
+  #                knl = raster::extract(knl, st_as_sf(to_cluster) %>% st_cast("POINT")%>% st_coordinates())
+  
+  x <- to_cluster %>% 
+    dplyr::mutate(knl = ifelse(is.na(knl), 0, knl)) %>% 
+    dplyr::select(-ov) %>% 
+    st_drop_geometry() %>%  
+    FactoMineR::PCA(., scale.unit = T, ncp =2, graph = F )
+  
+  cords <- rbind(x$ind$coord) %>% 
+    as_tibble() %>% 
+    dplyr::mutate(dst = sqrt(( Dim.1 - 0)^2 + (Dim.2 - 0 )^2   ),
+                  rng = dst > quantile(dst)[3] + IQR(dst)*1.5) 
+  
+  thr <- cords %>% dplyr::filter(rng) %>% pull(dst) %>% quantile %>% .[4]
+  
+  wh <- cords %>% 
+    dplyr::mutate(wh = ifelse(dst > thr, 7, 1)) %>% 
+    dplyr::pull(wh)
+  
+  
+  x_wh <- to_cluster %>% 
+    dplyr::mutate(knl = ifelse(is.na(knl), 0, knl)) %>% 
+    dplyr::select(-ov) %>% 
+    st_drop_geometry() %>%  
+    FactoMineR::PCA(., scale.unit = T, ncp =2, graph = F , row.w = wh)
+  
+  
+  x_wh <- rbind(x_wh$ind$coord)%>% 
+    dist(., method = "euclidean")
+  
+  km <- stats::kmeans(x_wh, 3)
+  table(km$cluster)
+  
+  to_cluster$clust_km <-  left_join( tibble(clust = as.character(km$cluster)), to_cluster %>% 
+                                       st_drop_geometry() %>% 
+                                       dplyr::select(EVENTS:FATALITIES) %>% 
+                                       bind_cols(clust = km$cluster) %>% 
+                                       get_cluster_labels() %>% 
+                                       dplyr::select(clust, label) , by = c("clust"))%>% 
+    pull(label)
+  
+  
+  
+  to_plot <- grd %>% 
+    left_join(., to_cluster %>% st_drop_geometry(), by = c("id" = "ov")) %>% 
+    dplyr::filter(!is.na(clust_km))
+  
+  
+  to_save <- conflict_sf %>% 
+    dplyr::mutate(ov = unlist(st_intersects(conflict_sf, grd)),
+                  knl = raster::extract(knl, st_as_sf(.) %>% st_cast("POINT")%>% st_coordinates())) %>%
+    dplyr::group_by(ov) %>% 
+    dplyr::summarise(EVENTS = sum(EVENTS, na.rm = T),
+                     TYPE_RICHNESS = max(TYPE_RICHNESS, na.rm = T),
+                     SUBTYPE_RICHNESS = max(SUBTYPE_RICHNESS, na.rm = T),
+                     ACTOR1_RICHNESS = max(ACTOR1_RICHNESS, na.rm = T),
+                     ACTOR2_RICHNESS = max(ACTOR2_RICHNESS, na.rm = T),
+                     FATALITIES = sum(FATALITIES, na.rm = T)
+                     ,knl = median(knl, na.rm = T)
+    ) %>% 
+    dplyr::ungroup() %>% 
+    st_drop_geometry() %>% 
+    dplyr::bind_cols(clust = to_cluster$clust_km) %>% 
+    dplyr::right_join(., grd, by = c("ov" = "id")) %>% 
+    dplyr::filter(!is.na(clust))
+  
+  
+  
+  sf::st_write(to_save, paste0(root, "/data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust.shp"), delete_dsn = T)
+  #st_intersects(grd, shp) %>% unlist %>% lenght
+  
+  
+  mainmap3<- tmap::tm_shape(shp)+
+    tm_borders(col = "black")+
+    tm_shape(to_plot)+
+    tm_fill(col = "clust_km", palette = c("#d7191c", "#e5a03e", "#ffffbf"), alpha = 0.7, title = expression("Conflict clusters"))+
+    tm_borders(col ="black") 
+  
+  
+  x11();mainmap3
+  
+  
+  to_boxplot <- to_save %>% 
+    dplyr::select(-x)
+  
+  g <- make_cluster_plots(df = to_boxplot)
+  x11();g
+  
+  ggsave(g, filename= paste0(root,"/data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust_boxplots.png"),
+         dpi=300, 
+         height=8,
+         width=15,
+         units="in")
+  
+  
+  get_cluster_statistics(df = to_boxplot) %>% 
+    write.csv(., paste0(root, "/data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust_rel_change.csv"), row.names = F)
+  

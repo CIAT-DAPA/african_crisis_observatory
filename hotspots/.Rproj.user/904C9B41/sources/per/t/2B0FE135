@@ -5,21 +5,21 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "11|59|58|0|\n60|50|96|0|\n",
-    "hash" : "2886083011",
+    "hash" : "1545319457",
     "id" : "2B0FE135",
-    "lastKnownWriteTime" : 1639147149,
-    "last_content_update" : 1639151838560,
-    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/scripts/get_summary_tables_final_maps.R",
+    "lastKnownWriteTime" : 1642620114,
+    "last_content_update" : 1642620114934,
+    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/code/hotspots/get_summary_tables_final_maps.R",
     "project_path" : "get_summary_tables_final_maps.R",
     "properties" : {
-        "cursorPosition" : "487,58",
-        "scrollLine" : "0",
+        "cursorPosition" : "224,20",
+        "scrollLine" : "207",
         "tempName" : "Untitled1"
     },
     "read_only" : false,
     "read_only_alternatives" : [
     ],
-    "relative_order" : 12,
+    "relative_order" : 14,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

@@ -9,7 +9,7 @@
     "id" : "7CB23DAF",
     "lastKnownWriteTime" : 1631821535,
     "last_content_update" : 1631821535398,
-    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/scripts/era5_chirps_daily_extraction.R",
+    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/code/hotspots/era5_chirps_daily_extraction.R",
     "project_path" : "era5_chirps_daily_extraction.R",
     "properties" : {
         "cursorPosition" : "156,13",
@@ -19,7 +19,7 @@
     "read_only" : false,
     "read_only_alternatives" : [
     ],
-    "relative_order" : 4,
+    "relative_order" : 5,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

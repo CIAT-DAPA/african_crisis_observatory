@@ -5,7 +5,7 @@
 
 require(pacman)
 pacman::p_load(tidyverse, readxl, writexl, raster,terra, sp, sf, stringr, stringi, lattice, rasterVis, maptools,
-              latticeExtra, RColorBrewer, tmap, geojson, geojsonio)
+              latticeExtra, RColorBrewer, tmap, geojson, geojsonio, MetBrewer)
 
 
 
@@ -97,12 +97,12 @@ fix_label <- function( rast_labs, labs = av_labs){
 }
 
 
-baseDir <- "D:/CGIAR/Achicanoy Estrella, Harold Armando (Alliance Bioversity-CIAT) - African_Crisis_Observatory/data/"
+baseDir <- "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/data/"
 
 w_mask <- raster::raster(paste0(baseDir, "_global/masks/mask_world_1km.tif"))
 
 
-iso <- "SDN"
+iso <- "KEN"
 
 
 root <- paste0(baseDir, iso, "/")
@@ -132,26 +132,31 @@ clim_clust <- raster::shapefile(paste0(root, "_results/cluster_results/climate/c
 crs(conf_clust) <- crs(c_mask)
 crs(clim_clust) <- crs(c_mask)
 
+conf_clust@data <- conf_clust@data %>% 
+  dplyr::rename("label" = clst_km) %>% 
+  dplyr::mutate(short_label = stringr::str_extract(string = label, pattern = "[A-Za-z]+"),
+                label = factor(label, levels = c("High conflict", "Moderate conflict", "Limited conflict"))) 
 
+# conf_clust_mts<- readxl::read_excel(paste0(root, "_results/cluster_results/conflict/conflict_cluster_summary_metrics.xlsx"), 
+#                                     sheet = "reg_rel_change")
 
-conf_clust_mts<- readxl::read_excel(paste0(root, "_results/cluster_results/conflict/conflict_cluster_summary_metrics.xlsx"), 
-                                    sheet = "reg_rel_change")
-
-conf_cluts_labs <- conf_clust_mts %>% 
-  dplyr::slice(grep("kernel", Variables)) %>% 
-  dplyr::select(paste0("clust_", 1:3)) %>% 
-  tidyr::pivot_longer(cols = everything(.), names_to = "clust", values_to = "vals") %>% 
-  arrange(desc(vals)) %>% 
-  dplyr::mutate(label = c("High conflict", "Moderate conflict", "Limited conflict"),
-                short_label = c("High", "Moderate", "Limited"),
-                clust_num = stringr::str_extract(clust, "[0-9]")) %>% 
-  dplyr::mutate(across(everything(.), as.character),
-                label = factor(label, levels = c("High conflict","Moderate conflict",  "Limited conflict")))
-
-
-conf_clust@data <- conf_clust@data %>%
-  dplyr::mutate(clust = as.character(clust)) %>% 
-  dplyr::left_join(., conf_cluts_labs %>% dplyr::select(label, short_label, clust_num), by = c("clust" = "clust_num"))
+# conf_cluts_labs <- conf_clust_mts %>% 
+#   dplyr::slice(grep("kernel", Variables)) %>% 
+#   dplyr::select(paste0("clust_", 1:3)) %>% 
+#   tidyr::pivot_longer(cols = everything(.), names_to = "clust", values_to = "vals") %>% 
+#   arrange(desc(vals)) %>% 
+#   dplyr::mutate(label = c("High conflict", "Moderate conflict", "Limited conflict"),
+#                 short_label = c("High", "Moderate", "Limited"),
+#                 clust_num = stringr::str_extract(clust, "[0-9]")) %>% 
+#   dplyr::mutate(across(everything(.), as.character),
+#                 label = factor(label, levels = c("High conflict","Moderate conflict",  "Limited conflict")))
+# 
+# 
+# 
+# 
+# conf_clust@data <- conf_clust@data %>%
+#   dplyr::mutate(clust = as.character(clust)) %>% 
+#   dplyr::left_join(., conf_cluts_labs %>% dplyr::select(label, short_label, clust_num), by = c("clust" = "clust_num"))
 
 
 
@@ -209,7 +214,7 @@ mainmap <- tmap::tm_shape(shp_c)+
             legend.height= -0.3 )
 
 
-
+x11();mainmap
 tmap_save(mainmap,
           filename= paste0(root, "_results/cluster_results/conflict/geographic_distr_conflict.png"),
           dpi=300, 
@@ -225,7 +230,7 @@ tmap_save(mainmap,
 events_bp <- conf_data %>% 
   dplyr::select(LONGITUDE, LATITUDE, EVENT_TYPE, FATALITIES) %>% 
   dplyr::mutate(sp::over( sp::SpatialPoints(.[, c("LONGITUDE", "LATITUDE")], proj4string = crs(w_mask)), conf_clust, returnList = F)) %>% 
-  dplyr::filter(!is.na(label)) %>% 
+  dplyr::filter(!is.na(short_label)) %>% 
   dplyr::group_by(EVENT_TYPE, short_label) %>% 
   dplyr::tally() %>% 
   # dplyr::summarise(FATALITIES = sum(FATALITIES)) %>% 
@@ -244,7 +249,7 @@ write_csv(events_bp %>%
 
 
 g1 <- events_bp %>% 
-  dplyr::mutate(short_label  = factor(short_label , levels = c("High",  "Moderate", "Limited") )) %>%
+  dplyr::mutate(short_label  = factor(short_label , levels = c("High conflict",  "Moderate conflict", "Limited conflict") )) %>%
   ggplot( aes(x = short_label, y = n, fill = EVENT_TYPE))+
   geom_bar( stat = "identity")+
   scale_fill_brewer(palette = "Set3")+
@@ -271,7 +276,7 @@ ggsave(g1,
 fata_bp <- conf_data %>% 
   dplyr::select(LONGITUDE, LATITUDE, EVENT_TYPE, FATALITIES) %>% 
   dplyr::mutate(sp::over( sp::SpatialPoints(.[, c("LONGITUDE", "LATITUDE")], proj4string = crs(w_mask)), conf_clust, returnList = F)) %>% 
-  dplyr::filter(!is.na(label)) %>% 
+  dplyr::filter(!is.na(short_label)) %>% 
   dplyr::group_by(EVENT_TYPE, short_label) %>% 
   dplyr::summarise(counts = sum(FATALITIES)) %>% 
   # dplyr::summarise(FATALITIES = sum(FATALITIES)) %>% 
@@ -360,7 +365,7 @@ inter_map <- tmap::tm_shape(shp_c)+
             #outer.margins = c(0,0,0,0),
             #inner.margins = c(0,0,0,0)
             legend.height= -0.2 )
-
+x11();inter_map
 
 tmap_save(inter_map,
           filename= paste0(root, "_results/cluster_results/conflict_climate_intersection.png"),

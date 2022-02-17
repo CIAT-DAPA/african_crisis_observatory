@@ -2,10 +2,10 @@ options(warn = -1, scipen = 999)
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 
-root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
+root <- "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory"
 
-iso <- 'NGA'
-country <- 'Nigeria'
+iso <- 'KEN'
+country <- 'Kenya'
 
 # Load and identify impact pathways
 summ <- readxl::read_excel(path = paste0(root,'/Country_pathways.xlsx'), sheet = 2) %>%
@@ -15,16 +15,17 @@ vars <- as.character(summ$Variable)
 summ <- summ[which(!is.na(vars)),]; rm(vars)
 
 # Global mask 1 km resolution
-msk  <- raster::raster('D:/OneDrive - CGIAR/African_Crisis_Observatory/data/_global/masks/mask_world_1km.tif')
+msk  <- raster(paste0(root, "/data/", iso, "/mask/", iso, "_mask.tif")) 
+  #raster::raster('D:/OneDrive - CGIAR/African_Crisis_Observatory/data/_global/masks/mask_world_1km.tif')
 
-pth  <- paste0('D:/OneDrive - CGIAR/African_Crisis_Observatory/data/',iso)
+pth  <- paste0(root, "/data/",iso)
 
 # Country shapefile
 shp  <- raster::shapefile(paste0(pth,'/_shps/',iso,'.shp'))
 
 # Raster template
-tmp  <- msk %>% raster::crop(x = ., y = raster::extent(shp)) %>% raster::mask(mask = shp)
-
+tmp  <- msk # %>% raster::crop(x = ., y = raster::extent(shp)) %>% raster::mask(mask = shp)
+tmp[!is.na(tmp)] <- 1
 # Iterate by impact pathway
 smm_df <- ip_id %>%
   purrr::map(.f = function(ip){
@@ -40,7 +41,8 @@ smm_df <- ip_id %>%
           purrr::map(.f = function(var){
             
             r <- raster::raster(list.files(path = pth, pattern = paste0(var,'.tif$'), full.names = T, recursive = T))
-            r <- r %>% raster::crop(x = ., y = raster::extent(tmp)) %>% raster::resample(x = ., y = tmp)
+            r <- r %>% raster::crop(x = ., y = raster::extent(tmp)) %>% raster::resample(x = ., y = tmp) %>% 
+              raster::mask(., mask = tmp)
             
             thr <- tb$Threshold[tb$Variable == var]
             prc <- tb$Percentile[tb$Variable == var]
@@ -89,4 +91,5 @@ smm_df <- ip_id %>%
     return(cts)
   }) %>%
   dplyr::bind_rows()
+
 write.csv(x = smm_df, file = paste0(root,'/data/',iso,'/_results/hotspots/',iso,'_hotspots_values.csv'), row.names = F)

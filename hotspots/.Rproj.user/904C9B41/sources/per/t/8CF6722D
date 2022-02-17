@@ -4,16 +4,16 @@
     "created" : 1639147609574.000,
     "dirty" : false,
     "encoding" : "UTF-8",
-    "folds" : "3|61|48|0|\n50|35|63|0|\n65|35|79|0|\n",
-    "hash" : "1786401326",
+    "folds" : "3|61|48|0|\n50|35|63|0|\n66|35|80|0|\n82|39|119|0|\n",
+    "hash" : "2620475795",
     "id" : "8CF6722D",
-    "lastKnownWriteTime" : 1639579670,
-    "last_content_update" : 1639579670769,
-    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/scripts/new_conflict_clustering.R",
+    "lastKnownWriteTime" : 1644506801,
+    "last_content_update" : 1644506801238,
+    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/code/hotspots/new_conflict_clustering.R",
     "project_path" : "new_conflict_clustering.R",
     "properties" : {
-        "cursorPosition" : "176,0",
-        "scrollLine" : "156"
+        "cursorPosition" : "282,0",
+        "scrollLine" : "262"
     },
     "read_only" : false,
     "read_only_alternatives" : [

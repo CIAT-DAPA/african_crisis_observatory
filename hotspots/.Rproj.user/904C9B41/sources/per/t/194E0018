@@ -9,7 +9,7 @@
     "id" : "194E0018",
     "lastKnownWriteTime" : 1631540297,
     "last_content_update" : 1634238245852,
-    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/scripts/get_soil_data.R",
+    "path" : "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/code/hotspots/get_soil_data.R",
     "project_path" : "get_soil_data.R",
     "properties" : {
         "cursorPosition" : "16,0",
@@ -19,7 +19,7 @@
     "read_only" : false,
     "read_only_alternatives" : [
     ],
-    "relative_order" : 6,
+    "relative_order" : 7,
     "source_on_save" : false,
     "source_window" : "",
     "type" : "r_source"

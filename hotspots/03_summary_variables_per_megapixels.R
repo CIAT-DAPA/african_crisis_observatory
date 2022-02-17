@@ -3,7 +3,10 @@
 # By: H. Achicanoy
 # Alliance Bioversity-CIAT, 2021
 
-options(warn = -1, scipen = 999)
+# R options
+g <- gc(reset = T); rm(list = ls()) # Emptying the garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, terra, exactextractr, vroom))
 
@@ -14,12 +17,16 @@ iso <- 'KEN'
 shp <- raster::shapefile(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
 # Conflict clusters
 clt <- raster::shapefile(paste0(root,'/data/',iso,'/_results/cluster_results/conflict/conflict_regular_clust.shp'))
+if(sum(is.na(clt@data$clust)) > 0){
+  clt <- clt[!is.na(clt@data$clust),]
+}
 # Raster template
 tmp <- raster::raster(paste0(root,'/data/_global/masks/mask_world_1km.tif'))
 tmp <- tmp %>% raster::crop(raster::extent(shp)) %>% raster::mask(shp)
 
 vrs <- list.files(path = paste0(root,'/data/',iso), pattern = '*.tif$', recursive = T, full.names = T)
 vrs <- vrs[-grep(pattern = '_results', x = vrs)]
+vrs <- vrs[-grep(pattern = '_mask', x = vrs)]
 
 rst <- vrs %>% purrr::map(.f = function(vr){
   r <- raster::raster(x = vr)
