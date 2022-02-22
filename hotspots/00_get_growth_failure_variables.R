@@ -1,4 +1,30 @@
-options(warn = -1, scipen = 999)
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain child growth failure variables at 1 km resolution
+# Original data source: https://cloud.ihme.washington.edu/s/Q7eg2wgdmaSFbHt?path=%2F
+# Steps:
+# 1. Download manually the education rasters:
+#    IHME_GLOBAL_CGF_2000_2019_STUNTING_PREV_PERCENT_A1_S1_MEAN
+#    IHME_GLOBAL_CGF_2000_2019_UNDERWEIGHT_PREV_PERCENT_A1_S1_MEAN
+#    IHME_GLOBAL_CGF_2000_2019_WASTING_PREV_PERCENT_A1_S1_MEAN
+# 2. Execute this script to obtain:
+#    Stunting prevalence (under 5 years) (multi-annual median)
+#    Stunting prevalence (under 5 years) (multi-annual coefficient of variation)
+#    Stunting prevalence (under 5 years) (multi-annual trend: Sen's slope)
+#    Wasting prevalence (under 5 years) (multi-annual median)
+#    Wasting prevalence (under 5 years) (multi-annual coefficient of variation)
+#    Wasting prevalence (under 5 years) (multi-annual trend: Sen's slope)
+#    Underweight prevalence (under 5 years) (multi-annual median)
+#    Underweight prevalence (under 5 years) (multi-annual coefficient of variation)
+#    Underweight prevalence (under 5 years) (multi-annual trend: Sen's slope)
+# Author: Harold Achicanoy
+# Alliance Bioversity International - CIAT, 2022
+# ----------------------------------------------------------------------------------- #
+
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 

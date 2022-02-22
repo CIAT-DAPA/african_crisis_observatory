@@ -1,4 +1,20 @@
-options(warn = -1, scipen = 999)
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain flooding frequency raster at 1 km resolution: 
+# Original data source: https://preview.grid.unep.ch/index.php?preview=data&events=floods&lang=eng
+# Steps:
+# 1. Download manually the flooding raster:
+#    fl_frequency.tif
+# 2. Execute this script to obtain:
+#    Average number of flooding events per 100 years raster cropped by country
+# Author: Harold Achicanoy
+# Alliance Bioversity International - CIAT, 2022
+# ----------------------------------------------------------------------------------- #
+
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, terra))
 

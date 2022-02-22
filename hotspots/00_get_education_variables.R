@@ -1,4 +1,29 @@
-options(warn = -1, scipen = 999)
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain education variables at 1 km resolution
+# Original data source: https://cloud.ihme.washington.edu/index.php/s/CTnfWYaZxc7ZENc?path=%2FData%20%5BGeoTIFF%5D
+# Steps:
+# 1. Download manually the education rasters:
+#    IHME_LMIC_EDU_2000_2017_MEAN_15_49_FEMALE_MEAN_Y2019M12D24.TIF
+#    IHME_LMIC_EDU_2000_2017_MEAN_15_49_MALE_MEAN_Y2019M12D24.TIF
+# 2. Execute this script to obtain:
+#    Years of education male (multi-annual median)
+#    Years of education male (multi-annual coefficient of variation)
+#    Years of education male (multi-annual trend: Sen's slope)
+#    Years of education female (multi-annual median)
+#    Years of education female (multi-annual coefficient of variation)
+#    Years of education female (multi-annual trend: Sen's slope)
+#    Difference of years of education (male - female) (multi-annual median)
+#    Difference of years of education (male - female) (multi-annual coefficient of variation)
+#    Difference of years of education (male - female) (multi-annual trend: Sen's slope)
+# Author: Harold Achicanoy
+# Alliance Bioversity International - CIAT, 2022
+# ----------------------------------------------------------------------------------- #
+
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 

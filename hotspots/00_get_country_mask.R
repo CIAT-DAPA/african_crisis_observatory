@@ -1,3 +1,21 @@
+# --------------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain country mask raster at 1 km resolution: croplands + livestock + human settlements
+# Original data source: https://developers.google.com/earth-engine/datasets/catalog/ESA_WorldCover_v100?hl=en
+# Filters: 30 (Grassland), 40 (Cropland), 50 (Built-up)
+# Steps:
+# 1. Filter and download the country cropped raster at 10 m resolution using https://code.earthengine.google.com/b3710312e7fe6bbd615bfb90bac9160d
+# 2. Merge the mosaic downloaded pieces using any GIS software (e.g. QGIS) to produce a
+# single raster file at 10 m resolution
+# 3. Use this script to count the number of pixels within a 1 km pixel where some of the
+# filters defined are accomplished
+# 4. The output corresponds to a single raster file at 1 km resolution where values higher
+#    than 0 corresponds of areas of interest
+#    [ISO3]_mask.tif
+# Author: Harold Achicanoy
+# Alliance Bioversity International - CIAT, 2022
+# --------------------------------------------------------------------------------------- #
+
 # R options
 g <- gc(reset = T); rm(list = ls()) # Emptying the garbage collector
 .rs.restartR()                      # Restart R session

@@ -1,4 +1,20 @@
-options(warn = -1, scipen = 999)
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain irrigation raster at 1 km resolution: 
+# Original data source: 
+# Steps:
+# 1. Download manually the irrigation raster:
+#    irrigation.tif
+# 2. Execute this script to obtain:
+#    Irrigation raster cropped by country
+# Author: Harold Achicanoy
+# Alliance Bioversity International - CIAT, 2022
+# ----------------------------------------------------------------------------------- #
+
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, terra, vegan, FactoMineR))
 

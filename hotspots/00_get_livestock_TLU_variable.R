@@ -1,4 +1,27 @@
-options(warn = -1, scipen = 999)
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain livestock TLU variable at 1 km resolution
+# Original data source: http://www.fao.org/livestock-systems/global-distributions/en/
+# Steps:
+# 1. Download manually the livestock distribution rasters:
+#    5_Bf_2010_Da.tif (buffaloes)
+#    5_Ct_2010_Da.tif (cattle)
+#    5_Ch_2010_Da.tif (chickens)
+#    5_Dk_2010_Da.tif (ducks)
+#    5_Gt_2010_Da.tif (goats)
+#    5_Ho_2010_Da.tif (horses)
+#    5_Pg_2010_Da.tif (pigs)
+#    5_Sh_2010_Da.tif (sheeps)
+# 2. Execute this script to obtain:
+#    lvst_tlu.tif (Livestock TLU units)
+# Author: Harold Achicanoy
+# Alliance Bioversity International - CIAT, 2022
+# ----------------------------------------------------------------------------------- #
+
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, raster, vegan))
 

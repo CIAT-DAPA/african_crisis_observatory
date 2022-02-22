@@ -1,4 +1,26 @@
-options(warn = -1, scipen = 999)
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain sanitation variables at 1 km resolution
+# Original data source: https://cloud.ihme.washington.edu/s/bkH2X2tFQMejMxy?path=%2F
+# Steps:
+# 1. Download manually the sanitation rasters:
+#    IHME_LMIC_WASH_2000_2017_S_PIPED_PERCENT_MEAN
+#    IHME_LMIC_WASH_2000_2017_W_PIPED_PERCENT_MEAN
+# 2. Execute this script to obtain:
+#    Piped water (percentage) (multi-annual median)
+#    Piped water (percentage) (multi-annual coefficient of variation)
+#    Piped water (percentage) (multi-annual trend: Sen's slope)
+#    Sanitation facilities (multi-annual median)
+#    Sanitation facilities (multi-annual coefficient of variation)
+#    Sanitation facilities (multi-annual trend: Sen's slope)
+# Author: Harold Achicanoy
+# Alliance Bioversity International - CIAT, 2022
+# ----------------------------------------------------------------------------------- #
+
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 

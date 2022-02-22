@@ -1,4 +1,19 @@
-options(warn = -1, scipen = 999)
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain pasture at 1 km resolution
+# Original data source: http://www.earthstat.org/cropland-pasture-area-2000/
+# Steps:
+# 1. Download manually the raster of pasture area from the data source
+# 2. Execute this script to obtain a single rasters file with the pasture area cropped
+#    by the country of interest
+# Author: Harold Achicanoy
+# Alliance Bioversity International - CIAT, 2022
+# ----------------------------------------------------------------------------------- #
+
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, terra, vegan, FactoMineR))
 

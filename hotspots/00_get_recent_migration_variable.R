@@ -1,4 +1,22 @@
-options(warn = -1, scipen = 999)
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain recent migration variable at 1 km resolution
+# Original data source: https://sedac.ciesin.columbia.edu/data/set/popdynamics-global-est-net-migration-grids-1970-2000
+# Steps:
+# 1. Download manually the education rasters:
+#    30arcsec-net-migration-1970-1980.tif
+#    30arcsec-net-migration-1980-1990.tif
+#    30arcsec-net-migration-1990-2000.tif
+# 2. Execute this script to obtain:
+#    Recent migration variable
+# Author: Harold Achicanoy
+# Alliance Bioversity International - CIAT, 2022
+# ----------------------------------------------------------------------------------- #
+
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, terra, vegan, FactoMineR))
 
