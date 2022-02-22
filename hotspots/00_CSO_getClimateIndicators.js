@@ -1,12 +1,14 @@
-// African Crisis Observatory: Obtain climate derived indicators
+// Climate Security Observatory: Obtain climate derived indicators
 // Alliance Bioversity-CIAT
 // H. Achicanoy, 2021
+// https://code.earthengine.google.com/1e7c8e56741f3fa1774fbae535ce6a62
 
 // Load datasets
 var countries = ee.FeatureCollection('USDOS/LSIB/2017'); // Countries
 var chirps = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY'); // Precipitation
 var cwtdef = ee.ImageCollection("IDAHO_EPSCOR/TERRACLIMATE").filter(ee.Filter.date('1981-01-01','2020-12-01')).select('def'); // Climate water deficit
 var tmax   = ee.ImageCollection("IDAHO_EPSCOR/TERRACLIMATE").filter(ee.Filter.date('1981-01-01','2020-12-01')).select('tmmx'); // Maximum temperature
+var aet    = ee.ImageCollection("IDAHO_EPSCOR/TERRACLIMATE").filter(ee.Filter.date('1981-01-01','2020-12-01')).select('aet'); // Actual evapotranspiration
 
 // Countries list
 var cList = ['Kenya','Senegal','Uganda','Nigeria','Sudan','Mali','Zimbabwe']; // Countries list
@@ -78,6 +80,26 @@ var mTmaxClipped = mTmax.clip(country);
 // var palette = ['red', 'white', 'blue'];
 // Map.addLayer(mTmaxClipped, {palette: palette, min: 200, max: 400, bands: ['tmmx_median']}, 'Tmax median');
 
+/////////////////////////
+// Actual evapotranspiration
+/////////////////////////
+
+// Function to calculate actual evapotranspiration for 1 year
+var yearlyAET = function(year) {
+  var startDate = ee.Date.fromYMD(year, 1, 1);
+  var endDate   = startDate.advance(1, 'year');
+  var filtered  = aet.filter(ee.Filter.date(startDate, endDate));
+  var median    = filtered.reduce(ee.Reducer.median()).set({year: year, 'system:time_start':startDate});
+  return median;
+};
+
+var years = ee.List.sequence(1981, 2020);
+var yAET = ee.ImageCollection(years.map(yearlyAET));
+var mAET = yAET.median();
+var mAETClipped = mAET.clip(country);
+// var palette = ['red', 'white', 'blue'];
+// Map.addLayer(mCWDfClipped, {palette: palette, min: 0, max: 2000, bands: ['def_median']}, 'Def median');
+
 //////////////////////////////////////////////
 // Coefficient of variation
 //////////////////////////////////////////////
@@ -114,6 +136,17 @@ var vTmax = sTmax.divide(aTmax);
 var vTmaxClipped = vTmax.clip(country);
 // var palette = ['red', 'white', 'blue'];
 // Map.addLayer(vTmaxClipped, {palette: palette, min: -1, max: 0.5, bands: ['tmmx_median_stdDev']}, 'CV');
+
+/////////////////////////
+// Actual evapotranspiration
+/////////////////////////
+
+var aAET = yAET.mean();
+var sAET = yAET.reduce(ee.Reducer.stdDev());
+var vAET = sAET.divide(aAET);
+var vAETClipped = vAET.clip(country);
+// var palette = ['red', 'white', 'blue'];
+// Map.addLayer(vCWDfClipped, {palette: palette, min: -1, max: 1, bands: ['def_median_stdDev']}, 'CV');
 
 //////////////////////////////////////////////
 // Trend
@@ -155,11 +188,21 @@ var tTmaxClipped = tTmax.clip(country).select('slope');
 // var palette = ['red', 'white', 'blue'];
 // Map.addLayer(tTmaxClipped, {palette: palette, min: -2, max: 2, bands: ['slope']}, 'Slope');
 
+/////////////////////////
+// Actual evapotranspiration
+/////////////////////////
+
+var yAETTS = ee.ImageCollection(years.map(yearlyAET)).map(createTimeBand);
+var tAET = yAETTS.reduce(ee.Reducer.sensSlope());
+var tAETClipped = tAET.clip(country).select('slope');
+// var palette = ['red', 'white', 'blue'];
+// Map.addLayer(tCWDfClipped, {palette: palette, min: -30, max: 30, bands: ['slope']}, 'Slope');
+
 //////////////////////////////////////////////
 // Download processed files
 //////////////////////////////////////////////
 
-// Median: mRainClipped, mCWDfClipped, mTmaxClipped
+// Median: mRainClipped, mCWDfClipped, mTmaxClipped, mAETClipped
 // Image to GDrive
 Export.image.toDrive({
   image: mRainClipped.float(),
@@ -191,8 +234,18 @@ Export.image.toDrive({
   maxPixels: 1e13,
   fileFormat: 'GeoTIFF'
 });
+Export.image.toDrive({
+  image: mAETClipped.float(),
+  description: 'Median_AET',
+  folder: 'GEE data',
+  fileNamePrefix: 'medn_aet',
+  region: country.geometry().bounds().getInfo(),
+  scale: 1000,
+  maxPixels: 1e13,
+  fileFormat: 'GeoTIFF'
+});
 
-// CV: vRainClipped, vCWDfClipped, vTmaxClipped
+// CV: vRainClipped, vCWDfClipped, vTmaxClipped, vAETClipped
 // Image to GDrive
 Export.image.toDrive({
   image: vRainClipped.float(),
@@ -224,8 +277,18 @@ Export.image.toDrive({
   maxPixels: 1e13,
   fileFormat: 'GeoTIFF'
 });
+Export.image.toDrive({
+  image: vAETClipped.float(),
+  description: 'CV_AET',
+  folder: 'GEE data',
+  fileNamePrefix: 'cvar_aet',
+  region: country.geometry().bounds().getInfo(),
+  scale: 1000,
+  maxPixels: 1e13,
+  fileFormat: 'GeoTIFF'
+});
 
-// Trend: tRainClipped, tCWDfClipped, tTmaxClipped
+// Trend: tRainClipped, tCWDfClipped, tTmaxClipped, tAETClipped
 // Image to GDrive
 Export.image.toDrive({
   image: tRainClipped.float(),
@@ -252,6 +315,16 @@ Export.image.toDrive({
   description: 'Trend_Tmax',
   folder: 'GEE data',
   fileNamePrefix: 'trnd_tmax',
+  region: country.geometry().bounds().getInfo(),
+  scale: 1000,
+  maxPixels: 1e13,
+  fileFormat: 'GeoTIFF'
+});
+Export.image.toDrive({
+  image: tAETClipped.float(),
+  description: 'Trend_AET',
+  folder: 'GEE data',
+  fileNamePrefix: 'trnd_aet',
   region: country.geometry().bounds().getInfo(),
   scale: 1000,
   maxPixels: 1e13,

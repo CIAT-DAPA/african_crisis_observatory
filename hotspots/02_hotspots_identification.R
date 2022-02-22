@@ -1,3 +1,5 @@
+# Impact pathways -> raster reclass
+
 options(warn = -1, scipen = 999)
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))

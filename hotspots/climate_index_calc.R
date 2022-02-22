@@ -1,3 +1,5 @@
+# 00
+
 require(pacman)
 pacman::p_load(tidyverse, raster, terra,sf, stars, fst, stringi, stringr, lubridate, furrr, purrr, future, ncdf4, trend)
 

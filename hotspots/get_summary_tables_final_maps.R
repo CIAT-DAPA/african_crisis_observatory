@@ -1,3 +1,5 @@
+# 02
+
 ##### SCRIPT PARA GENERAR TABLAS Y MAPAS
 ####  autor: Andres Camilo Mendez
 #### Nov 2021

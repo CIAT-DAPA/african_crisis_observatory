@@ -256,11 +256,18 @@ clust_descriptives <- function(clust_sum){
 
 root <- 'C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/'
 country_iso2 <- iso <- "KEN"
-country <- 'Kenya'
 
 baseDir <- paste0(root, "data/",country_iso2)
 
+shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>% 
+  sf::st_as_sf() %>% 
+  dplyr::mutate(id = 1:nrow(.))
+
+country <- unique(shp$NAME_0)
+
 source(paste0(root, "code/hotspots/00_link_IPinfo_climate_clusters.R"))
+
+
 
 clm <- select_clim_vars(root = substr(root, start = 1, stop = nchar(root)-1 ), 
                         iso  = iso, 
@@ -293,9 +300,6 @@ pop_dens <- raster::raster(paste0(root,"/data/",iso, "/population_density/medn_p
 knl <- raster::raster(paste0(root, "/data/", iso, "/conflict/conflict_kernel_density.tif"))
 crs(knl) <- crs(world_mask)
 
-shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>% 
-  sf::st_as_sf() %>% 
-  dplyr::mutate(id = 1:nrow(.))
 
 grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>% 
   st_as_sf(.) %>%
@@ -421,6 +425,20 @@ dimension <- "climate"
     drop_na()
   
   
+  lapply(unique(clust_mtrs$reg_clust_values$clust), function(i){
+    
+    clust_mtrs$reg_clust_values %>%
+      dplyr::filter(clust == i) %>% 
+      dplyr::select(-clust) %>% 
+      psych::describe(., na.rm = T) %>% 
+      dplyr::select(-vars, -n) %>% 
+      dplyr::mutate(clust = i) %>% 
+      as_tibble(., rownames = "variable")
+  }) %>% 
+    dplyr::bind_rows() %>% 
+    write_csv(., paste0(dest_dir, dimension, "_reg_cluster_statistics.csv"))
+  
+  
   clust_mtrs$reg_rel_change <- clust_descriptives(clust_sum = clust_mtrs$reg_clust_values)
   
   
@@ -430,7 +448,8 @@ dimension <- "climate"
   
  
   
-  writexl::write_xlsx(clust_mtrs[c("irr_rel_change", "reg_rel_change")], paste0(dest_dir, dimension, "_cluster_summary_metrics.xlsx"))
+  #writexl::write_xlsx(clust_mtrs[c("irr_rel_change", "reg_rel_change")], paste0(dest_dir, dimension, "_cluster_summary_metrics.xlsx"))
+  write_csv(clust_mtrs$reg_rel_change, paste0(dest_dir, dimension, "_cluster_relative_change.csv"))
   write_csv(clust_mtrs$reg_clust_values, paste0(dest_dir, dimension, "_reg_cluster_values_extracted.csv"))
   #write_csv(clust_mtrs$irr_clust_values, paste0(dest_dir, dimension, "_irr_cluster_values_extracted.csv"))
   
@@ -623,6 +642,16 @@ dimension <- "climate"
   
   
   x11();mainmap3
+  
+  tmap_save(mainmap3,
+            filename= paste0(root, "/data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust_map.png"),
+            dpi=300, 
+            #insets_tm=insetmap, 
+            #insets_vp=vp,
+            height=8,
+            width=15,
+            units="in")
+  
   
   
   to_boxplot <- to_save %>% 

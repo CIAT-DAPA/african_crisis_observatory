@@ -1,4 +1,4 @@
-# Spatial patterns clustering
+# Spatial patterns clustering: 01 conflict and climate clusters
 # African Crisis Observatory
 # Alliance Bioversity-CIAT, 2021
 
