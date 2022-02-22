@@ -1,9 +1,21 @@
-# 00
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain soil indicators for indices computation
+# Original data source: SoilGrids250m
+# Steps:
+# 1. Download manually the SoilGrids250m dataset
+# 2. Execute this script to obtain:
+#    Table with water point of saturation indicators
+# Author: Andres Mendez, Harold Achicanoy
+# Alliance Bioversity International - CIAT, 2022
+# ----------------------------------------------------------------------------------- #
 
-require(pacman)
-pacman::p_load(tidyverse, raster, terra,sf, stars, fst, stringi, stringr, lubridate, furrr, purrr, future, ncdf4)
-
-
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
+suppressMessages(library(pacman))
+suppressMessages(pacman::p_load(tidyverse, raster, terra,sf, stars, fst, stringi, stringr, lubridate, furrr, purrr, future, ncdf4))
 
 ISO3 <- "MLI"
 shp_src <- raster::shapefile("//catalogue/workspace_cluster_14/WFP_ClimateRiskPr/1.Data/shps/all_country/all_countries.shp")

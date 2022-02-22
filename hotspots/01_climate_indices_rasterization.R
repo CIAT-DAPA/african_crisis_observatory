@@ -1,9 +1,20 @@
-# 00
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain summarization metrics (median, CV, and trend) for agro-climatic indices
+# Steps:
+# 1. Execute this script to obtain:
+#    Median, CV, and trend metrics for each index (from time series information) [raster format]
+# Author: Andres Mendez
+# Alliance Bioversity International - CIAT, 2022
+# This script was executed in a linux server with vast computation resources
+# ----------------------------------------------------------------------------------- #
 
-pacman::p_load(raster, tidyverse, sf, lubridate, stringr)
-
-
-
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
+suppressMessages(library(pacman))
+suppressMessages(pacman::p_load(raster, tidyverse, sf, lubridate, stringr))
 
 shp <- raster::shapefile(paste0("/cluster01/Workspace/ONECGIAR/Data/Africa_shp/African_continet.shp"))
 
@@ -19,7 +30,6 @@ layer_ref[!is.na(layer_ref[])] <- 1
 clim_data2 <- readRDS("/home/acmendez/climate_idex_halfway.rds")
 clim_data2 <- clim_data2 %>%
   dplyr::select(-Climate)
-
 
 median_idx <- clim_data2 %>%
   dplyr::mutate(idx = purrr::map(.x =  climatic_index , function(.x){
@@ -37,7 +47,6 @@ median_idx <- clim_data2 %>%
   })) %>% 
   tidyr::unnest_wider(., idx) %>%
   dplyr::select(-climatic_index)
-
 
 for(i in 4:ncol(median_idx)){
   
@@ -61,8 +70,6 @@ for(i in 4:ncol(median_idx)){
   
 }
 
-
-
 coef_var_idx <- clim_data2 %>%
   dplyr::mutate(idx = purrr::map(.x =  climatic_index , function(.x){
     tbl <- .x
@@ -83,8 +90,6 @@ coef_var_idx <- clim_data2 %>%
   tidyr::unnest_wider(., idx) %>%
   dplyr::select(-climatic_index) 
 print(coef_var_idx)
-
-
 
 for(i in 4:ncol(coef_var_idx)){
   
@@ -108,8 +113,6 @@ for(i in 4:ncol(coef_var_idx)){
   
 }
 
-
-
 trend_idx <- clim_data2 %>%
   dplyr::mutate(idx = purrr::map(.x =  climatic_index , function(.x){
     tbl <- .x
@@ -126,7 +129,6 @@ trend_idx <- clim_data2 %>%
           y <- NA
         }
         
-        
         return(y)
       })
       
@@ -140,7 +142,6 @@ trend_idx <- clim_data2 %>%
   dplyr::select(-climatic_index)  
 
 print(trend_idx)
-
 
 for(i in 4:ncol(trend_idx)){
   
@@ -164,8 +165,6 @@ for(i in 4:ncol(trend_idx)){
   
 }
 
-
-
 spi <- tidyft::parse_fst("/home/acmendez/climatic_index/ZWE_spis.fst") %>%
   as_tibble()
 
@@ -177,10 +176,3 @@ res <- spi %>%
   dplyr::left_join(., median_idx %>% dplyr::select(id, x, y), by = c("id"))
 
 rst <- rasterFromXYZ(res %>% dplyr::select(id, x, y, SPI))
-
-
-
-
-
-
-

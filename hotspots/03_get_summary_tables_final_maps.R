@@ -1,15 +1,17 @@
-# 02
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain maps, graphs and final tables
+# Author: Andres Mendez
+# Alliance Bioversity International - CIAT, 2022
+# ----------------------------------------------------------------------------------- #
 
-##### SCRIPT PARA GENERAR TABLAS Y MAPAS
-####  autor: Andres Camilo Mendez
-#### Nov 2021
-
-
-require(pacman)
-pacman::p_load(tidyverse, readxl, writexl, raster,terra, sp, sf, stringr, stringi, lattice, rasterVis, maptools,
-              latticeExtra, RColorBrewer, tmap, geojson, geojsonio, MetBrewer)
-
-
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
+suppressMessages(library(pacman))
+suppressMessages(pacman::p_load(tidyverse, readxl, writexl, raster,terra, sp, sf, stringr, stringi, lattice, rasterVis, maptools,
+                                latticeExtra, RColorBrewer, tmap, geojson, geojsonio, MetBrewer))
 
 create_labels <- function(text, type = c("short", "long")){
   
@@ -93,19 +95,14 @@ fix_label <- function( rast_labs, labs = av_labs){
     return(ret)
   }, simplify = T)
   
-  
   return(vec)
   
 }
 
-
 baseDir <- "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/data/"
-
 w_mask <- raster::raster(paste0(baseDir, "_global/masks/mask_world_1km.tif"))
 
-
 iso <- "KEN"
-
 
 root <- paste0(baseDir, iso, "/")
 
@@ -115,18 +112,15 @@ if(!dir.exists(to_share_dir)){dir.create(to_share_dir)}
 scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right")
 scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom")
 
-
 ##################################################################
-######### generar intersección de cluster conflicto y clima #####
-################################################################
-
+######### Generate climate and conflict intersection #############
+##################################################################
 
 shp_c  <- raster::shapefile(paste0(root, "_shps/", iso, ".shp"))
 
 c_mask <- w_mask %>% 
   raster::crop(., extent(shp_c)) %>% 
   raster::mask(., shp_c)
-
 
 conf_clust <- raster::shapefile(paste0(root, "_results/cluster_results/conflict/conflict_regular_clust.shp"))
 clim_clust <- raster::shapefile(paste0(root, "_results/cluster_results/climate/climate_regular_clust.shp"))
@@ -160,8 +154,6 @@ conf_clust@data <- conf_clust@data %>%
 #   dplyr::mutate(clust = as.character(clust)) %>% 
 #   dplyr::left_join(., conf_cluts_labs %>% dplyr::select(label, short_label, clust_num), by = c("clust" = "clust_num"))
 
-
-
 clim_clust_labs <- readxl::read_excel(paste0(baseDir, "temp_climate_clusters_labels.xlsx")) %>% 
   dplyr::filter(Country == iso) %>% 
   dplyr::mutate(across(everything(.), as.character))
@@ -174,11 +166,9 @@ conf_clust@data$clim_cluster <- as.character(sp::over(conf_clust, clim_clust, re
 
 conf_clust@data$intersect_conf_clim <- paste0(conf_clust@data$label, "-", conf_clust@data$clim_cluster)
 
-
-
 ###################################################################
-##### generar graficos para variables conflicto ##################
-#################################################################
+################## Generate conflict graphs #######################
+###################################################################
 
 conf_data <- read_csv(paste0(root, "conflict/", iso, "_conflict.csv"))
 
@@ -188,7 +178,6 @@ conf_occ <- conf_data %>%
   dplyr::group_by(LONGITUDE, LATITUDE) %>% 
   dplyr::summarise(FATALITIES = sum(FATALITIES)) %>% 
   dplyr::ungroup()
-
 
 coordinates(conf_occ) <- ~LONGITUDE+LATITUDE
 crs(conf_occ) <- crs(w_mask)
@@ -215,7 +204,6 @@ mainmap <- tmap::tm_shape(shp_c)+
             #inner.margins = c(0,0,0,0)
             legend.height= -0.3 )
 
-
 x11();mainmap
 tmap_save(mainmap,
           filename= paste0(root, "_results/cluster_results/conflict/geographic_distr_conflict.png"),
@@ -226,9 +214,10 @@ tmap_save(mainmap,
           width=15,
           units="in")
 
-#############################################
-#### barplots number of EVENTS TYPE ########
-###########################################
+##############################################
+#### Barplot of number of EVENTS TYPE ########
+##############################################
+
 events_bp <- conf_data %>% 
   dplyr::select(LONGITUDE, LATITUDE, EVENT_TYPE, FATALITIES) %>% 
   dplyr::mutate(sp::over( sp::SpatialPoints(.[, c("LONGITUDE", "LATITUDE")], proj4string = crs(w_mask)), conf_clust, returnList = F)) %>% 
@@ -246,9 +235,6 @@ write_csv(events_bp %>%
 write_csv(events_bp %>% 
             dplyr::group_by(EVENT_TYPE) %>% 
             dplyr::summarise(short_label, n, freq = prop.table(n)), paste0(to_share_dir, "/EVENTS_TYPE_conflict_barplot_df.csv"))
-
-
-
 
 g1 <- events_bp %>% 
   dplyr::mutate(short_label  = factor(short_label , levels = c("High conflict",  "Moderate conflict", "Limited conflict") )) %>%
@@ -270,10 +256,9 @@ ggsave(g1,
        width=8,
        units="in")
 
-
-#############################################
-#### barplots number of FATALITITES ########
-###########################################
+##############################################
+#### Barplot of number of FATALITITES ########
+##############################################
 
 fata_bp <- conf_data %>% 
   dplyr::select(LONGITUDE, LATITUDE, EVENT_TYPE, FATALITIES) %>% 
@@ -285,18 +270,14 @@ fata_bp <- conf_data %>%
   dplyr::ungroup() %>% 
   na.omit()
 
-
 write_csv(fata_bp %>% 
             dplyr::group_by(EVENT_TYPE) %>% 
             dplyr::summarise(short_label, counts, freq = prop.table(counts))
           , paste0(root, "_results/cluster_results/conflict/FATALITIES_barplot_df.csv"))
 
-
 write_csv(fata_bp %>% 
             dplyr::group_by(EVENT_TYPE) %>% 
             dplyr::summarise(short_label, counts, freq = prop.table(counts)), paste0(to_share_dir, "/FATALITIES_conflict_barplot_df.csv"))
-
-
 
 g2 <- fata_bp %>% 
   dplyr::mutate(short_label  = factor(short_label , levels = c("High",  "Moderate", "Limited") )) %>% 
@@ -318,11 +299,9 @@ ggsave(g2,
        width=8,
        units="in")
 
-
-
 ######################################################################################
-######### crear mapas de la intersección de clima y conflicto #######################
-####################################################################################
+################## Create intersection of climate-conflict map #######################
+######################################################################################
 
 conf_clust@data <- conf_clust@data %>% 
   dplyr::mutate(inter_short_label = case_when(
@@ -347,7 +326,6 @@ row.names(clusts_to_share@data) <- sapply(slot(clusts_to_share, "polygons"), fun
 
 geojsonio::geojson_json(clusts_to_share) %>% 
   geojsonio::geojson_write(county_json_clipped, file = paste0(to_share_dir, "/", iso, "_conflict_climate_clusters.geojson") )
-
 
 #x11()
 inter_map <- tmap::tm_shape(shp_c)+
@@ -379,8 +357,8 @@ tmap_save(inter_map,
           units="in")
 
 #################################################
-##### Mapa de hotspots IP1 #####################
-###############################################
+###### Hotspots map for IP1 #####################
+#################################################
 
 get_ip_names <- list.files(paste0(root, "_results/hotspots/")) %>% 
   str_extract(.,"ip[0-9]") %>% 
@@ -399,7 +377,6 @@ for(i in get_ip_names){
     x <- utils::combn(ip_codes$category, m = i ) %>% 
       t(.) %>% 
       tibble::as_tibble(.)
-    
     
     return(x)
   }) %>% 
@@ -436,7 +413,6 @@ for(i in get_ip_names){
     left_join(., long_labels_tbl) %>% 
     left_join(., ip_codes %>% dplyr::select(category, raster_value), by = c("rast_values" = "raster_value"))
   
-  
   ht_rast <- raster::raster(paste0(root,"_results/hotspots/",iso, '_all_cat_hotspots_', ip_x, ".tif" )) %>% 
     raster::crop(., extent(conf_clust)) %>% 
     raster::mask(., conf_clust)
@@ -453,16 +429,13 @@ for(i in get_ip_names){
     arrange(chars) %>% 
     dplyr::select(ID, final_label, seq)
   
-  
   rast_labs %>% 
     dplyr::select(value_ID = ID, label = final_label) %>% 
     write_csv(., paste0(to_share_dir, "/", ip_x, "_hotspots_labels.csv"))
   
-  
   ht_rast_f <- raster::subs(ht_rast, rast_labs[, c("ID", "seq")])
   ht_rast_f <- as.factor(ht_rast_f)
   levels(ht_rast_f) <- data.frame(id = levels(ht_rast_f)[[1]], x =   rast_labs$final_label   )
-  
   
   hots_map <- tmap::tm_shape(shp_c)+
     tm_borders(col = "gray50")+
@@ -490,10 +463,9 @@ for(i in get_ip_names){
             width=16,
             units="in")
   
-  
-  #########################################################
-  ###### intercepto entre hotspots y conflicto-clima #####
-  #######################################################
+  ###############################################################
+  ###### Intersection between hotspots and climate-conflict #####
+  ###############################################################
   
   #conf_clust_f <- conf_clust[conf_clust@data$inter_short_label == "High/Moderate conflict-Harsh climate",]
   
@@ -526,9 +498,4 @@ for(i in get_ip_names){
             width=16,
             units="in")
   
-  
-  
-  
   }#end for
-
-

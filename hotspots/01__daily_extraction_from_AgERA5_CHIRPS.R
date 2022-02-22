@@ -1,7 +1,24 @@
-# 00
+# ------------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Extract and organize daily climate data from CHIRPS and AgERA5 for indices computation
+# Original data source:
+# https://developers.google.com/earth-engine/datasets/catalog/UCSB-CHG_CHIRPS_DAILY
+# https://cds.climate.copernicus.eu/cdsapp#!/dataset/sis-agrometeorological-indicators?tab=overview
+# Steps:
+# 1. Download manually the daily climate rasters from both data sources
+# 2. Execute this script to obtain:
+#    Annual tables with daily climate data (required for indices computation)
+# Author: Andres Mendez
+# Alliance Bioversity International - CIAT, 2022
+# This script was executed in a linux server with vast computation resources
+# ------------------------------------------------------------------------------------- #
 
-require(pacman)
-pacman::p_load(tidyverse, raster, terra,sf, stars, fst, stringi, stringr, lubridate, furrr, purrr, future, ncdf4)
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
+suppressMessages(library(pacman))
+suppressMessages(pacman::p_load(tidyverse, raster, terra,sf, stars, fst, stringi, stringr, lubridate, furrr, purrr, future, ncdf4))
 
 base_dir <- switch(Sys.info()[1],
                    "Linux" = "/cluster01/Workspace/ONECGIAR/Data/")
@@ -26,7 +43,6 @@ layer_ref_ids <- raster::as.data.frame(layer_ref, xy = T) %>%
   dplyr::mutate(id = raster::cellFromXY(layer_ref, .[, 1:2])) %>%
   drop_na()
 
-
 era5_file_names <- data.frame(dir_name =c("2m_relative_humidity", "solar_radiation_flux", "2m_temperature", "2m_temperature", "2m_temperature", "10m_wind_speed"  ) ,
                               harold_name = c('rh', 'srad','tmax', 'tmean', 'tmin', 'wind'),
                               pattern = c("2m", "Flux", "Max", "Mean", "Min", "Mean"))
@@ -48,7 +64,6 @@ era5_file_info <- apply(era5_file_names, 1, function(i){
     stringr::str_replace_all(., "_", "") %>% 
     as.Date(., format = "%Y%m%d")
   cat(i, "\n")
-  
   
   ret <- tibble(file_path = r_pths, 
                 file_name = r_names, 
@@ -92,13 +107,8 @@ chirps_file_info <- lapply(chirps_dirs, function(i){
   dplyr::bind_rows() %>%
   dplyr::mutate(file_type = "prec")
 
-
-
 era5_chirps_file_info <- bind_rows(era5_file_info,
                                    chirps_file_info)
-
-
-
 
 chirp_dates <- chirps_file_info %>% 
   dplyr::filter(file_year == 2016) %>%
@@ -125,7 +135,6 @@ data_extracted_era5 <- era5_chirps_file_info %>%
                                                                                                          layer_r <- raster::resample(layer_r, layer_ref)   
                                                                                                        }
                                                                                                        
-                                                                                                       
                                                                                                        r_df <- raster::as.data.frame(layer_r, xy = T) 
                                                                                                        r_df$id <- raster::cellFromXY(layer_r, r_df[, 1:2])
                                                                                                        
@@ -137,7 +146,6 @@ data_extracted_era5 <- era5_chirps_file_info %>%
                                                                                                        
                                                                                                        names(r_df) <- c("x", "y", "id",  as.character(.z))
                                                                                                        
-                                                                                                       
                                                                                                        return(r_df)
                                                                                                        
                                                                                                      }) ) %>%
@@ -147,7 +155,6 @@ data_extracted_era5 <- era5_chirps_file_info %>%
 era5_chirps_file_info %>% 
   filter(file_year == 1982, file_type == "prec") %>%
   head()
-
 
 #valid_years <- era5_chirps_file_info %>% 
 #filter(file_year >= "1981") %>%
@@ -161,11 +168,10 @@ system.time({
   for(k in valid_years){
     cat("getting rastv values for year: ", k, "\n")
     
-    ### anotación: para algunos años chirps tiene 364 días lo que afecta el procesamiento puesto que era5 tiene los dias completos
+    ### Note: for some years CHIRPS dataset just have 364 days. This affects the processing due to AgERA5 data set has all days
     chirp_dates <- chirps_file_info %>% 
       dplyr::filter(file_year == k) %>%
       pull(file_date) %>% unique()
-    
     
     data_extracted_era5 <- era5_chirps_file_info %>% 
       dplyr::filter(file_year == k) %>%
@@ -188,7 +194,6 @@ system.time({
                                                                                                              layer_r <- raster::resample(layer_r, layer_ref)   
                                                                                                            }
                                                                                                            
-                                                                                                           
                                                                                                            r_df <- raster::as.data.frame(layer_r, xy = T) 
                                                                                                            r_df$id <- raster::cellFromXY(layer_r, r_df[, 1:2])
                                                                                                            
@@ -199,7 +204,6 @@ system.time({
                                                                                                              dplyr::na_if(-9999)
                                                                                                            
                                                                                                            names(r_df) <- c("x", "y", "id",  as.character(.z))
-                                                                                                           
                                                                                                            
                                                                                                            return(r_df)
                                                                                                            
@@ -218,7 +222,7 @@ system.time({
       
       return(ret)  
       
-    }) 
+    })
     
     nrow_check <- sapply(final_tbl, nrow)
     stopifnot("Differents row numbers. " = all(x))
@@ -231,8 +235,5 @@ system.time({
     
   }#end for
   
-  
 })#end system.time
 future::plan(future::sequential)
-
-

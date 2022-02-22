@@ -1,7 +1,20 @@
-# 00
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain yearly agro-climatic indices
+# Steps:
+# 1. Execute this script to obtain:
+#    Time series agro-climatic indices over historical period (table format)
+# Author: Andres Mendez, Harold Achicanoy
+# Alliance Bioversity International - CIAT, 2022
+# This script was executed in a linux server with vast computation resources
+# ----------------------------------------------------------------------------------- #
 
-require(pacman)
-pacman::p_load(tidyverse, raster, terra,sf, stars, fst, stringi, stringr, lubridate, furrr, purrr, future, ncdf4, trend)
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
+suppressMessages(library(pacman))
+suppressMessages(pacman::p_load(tidyverse, raster, terra,sf, stars, fst, stringi, stringr, lubridate, furrr, purrr, future, ncdf4, trend))
 
 source('https://raw.githubusercontent.com/CIAT-DAPA/WFP-profiles/main/_main_functions.R')         # Main functions
 source('https://raw.githubusercontent.com/CIAT-DAPA/WFP-profiles/main/_get_soil_data.R')          # Get soil data
@@ -17,23 +30,18 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/WFP-profiles/main/summary.R'
 source('https://raw.githubusercontent.com/CIAT-DAPA/WFP-profiles/main/migration/_get_climate4regions_districts.R') # Filter climate for districts of interest
 
 get_5_dry_spell <- function(prec){
-  
   n_days <- rle(prec)$lengths[rle(prec)$values]
   ret <-  sum(round(n_days[n_days >= 5]/5), na.rm = T)
   return(ret)
 }
 
-
- 
 home_dir <- "/home/acmendez/"
 
 data_dir <-  "/cluster01/Workspace/ONECGIAR/Data/"
 ## Defining country parameters
 # Country
-iso3     <- 'ZWE'     # 'TZA'
-season_type = "type_1"
-
-
+iso3        <- 'ZWE' # 'TZA'
+season_type <- "type_1"
 
 list.files(paste0(home_dir, "era5_extracted/"), full.names = T ) %>% 
   lapply(., function(i){
@@ -47,20 +55,16 @@ soilfl  <- paste0(home_dir, "soil_fst/input_soil_", iso3, ".fst")
 outfile <- paste0(home_dir, "climatic_index/", iso3, "_indices.fst")
 spi_out <- paste0(home_dir, "climatic_index/", iso3, "_spis.fst")
 
-
 climate = infile
 soil    = soilfl
 ncores  = 15
 outfile = outfile
-
-
 
 Soil <- soil %>%
   tidyft::parse_fst(path = .) %>%
   tidyft::select_fst(id,x,y,scp,ssat) %>%
   base::as.data.frame()
 head(Soil)
-
 
 if(nrow(Soil[is.na(Soil$scp),]) > 0){
   NAs <- Soil[is.na(Soil$scp),]
@@ -75,7 +79,6 @@ clim_data <- climate %>%
   tidyft::parse_fst(path = .) %>%
   base::as.data.frame()
 
-
 clim_data$year <- NULL
 clim_data <- clim_data %>%
   dplyr::select(id,x,y,date,prec,tmax,tmean,tmin,srad,rh) %>%
@@ -84,11 +87,8 @@ clim_data <- clim_data %>%
   dplyr::rename(id = 'id1') %>%
   dplyr::select(id, dplyr::everything(.))
 
-
 px <- intersect(clim_data$id, Soil$id)
 clim_data <- clim_data[clim_data$id %in% px,]
-
-
 
 spi <- clim_data %>% tidyr::unnest() %>%
   dplyr::select(-id1) %>%
@@ -103,7 +103,6 @@ spi <- clim_data %>% tidyr::unnest() %>%
   dplyr::mutate(SPI = as.numeric(SPI))
 fst::write_fst(x = spi, path = spi_out)
 rm(spi)
-
 
 future::plan(future::multicore, workers = 15)
 
@@ -224,21 +223,10 @@ clim_data2 <- clim_data %>%
       
     }
     
-    
-    
   }) 
   
-  ) 
+  )
 
 future::plan(future::sequential)
 
-
 saveRDS(clim_data2, "/home/acmendez/climate_idex_halfway.rds")
-
-
-
-
-
-
-
-
