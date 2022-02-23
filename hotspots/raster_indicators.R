@@ -142,9 +142,7 @@ return(to_process %>%
 
 future::plan(future::sequential)
 
-
 ## calcular la suma de los 120 dias mas lluviosos y caluclarles el la frecuencia de dias consecutivos secos
-
 
 future::plan(future::multicore, workers = 15)
 furrr::future_map(.x = unique(data_extracted$file_year), function(.x){
@@ -198,10 +196,6 @@ furrr::future_map(.x = unique(data_extracted$file_year), function(.x){
 
 future::plan(future::sequential)
 
-
-
-
-
 ### extraer indicadores para CHIRPS
 r_df <- raster::as.data.frame(vals = layer_r, xy = T)
 r_df$cellid <- raster::cellFromXY(layer_r, r_df[, 1:2])
@@ -212,9 +206,6 @@ r_df <- r_df %>%
   dplyr::na_if(-9999)
 
 names(r_df) <- c("cellid","x", "y", paste0(file_year,"_", file_yday))
-
-
-
 
 #### calcular otros indicadores de para era5
 
@@ -242,13 +233,11 @@ furrr::future_map(.x = unique(era5_file_info$file_year), .f= function(.x){
     dplyr::pull(file_path) %>% 
     raster::Stack() %>% 
     raster::crop(., extent(shp_c))
-    
   
   r_raw <- raster::raster(x)
   
   
   })
-
 
 ####################################################
 ########### EXTRAER DATOS DE ERA5   ###############
@@ -271,7 +260,6 @@ era5_path <- paste0(base_dir, "climate/era5/sis-agromet/nc/")
 layer_ref <- raster('/cluster01/Workspace/ONECGIAR/Data/chirps/global_daily/tifs/p05/1982//chirps-v2.0.1982.01.01.tif') %>% 
   raster::crop(., extent(shp_c))
 
-
 era5_file_names <- data.frame(dir_name =c("2m_relative_humidity", "solar_radiation_flux", "2m_temperature", "2m_temperature", "2m_temperature", "10m_wind_speed"  ) ,
                               harold_name = c('rh', 'srad','tmax', 'tmean', 'tmin', 'wind'),
                               pattern = c("2m", "Flux", "Max", "Mean", "Min", "Mean"))
@@ -289,7 +277,6 @@ era5_file_info <- apply(era5_file_names, 1, function(i){
   r_date <- stringr::str_extract(r_names, '_[0-9]+') %>% 
     stringr::str_replace_all(., "_", "") %>% 
     as.Date(., format = "%Y%m%d")
-  
   
   ret <- tibble(file_path = r_pths, 
                 file_name = r_names, 
@@ -313,8 +300,6 @@ system.time({
   
   for(k in valid_years){
     cat("getting rastv values for year: ", k, "\n")
-    
-    
     
     data_extracted_era5 <- era5_file_info %>% 
       filter(file_year == k) %>%
@@ -377,7 +362,6 @@ system.time({
     fst::write_fst(x = final_tbl, path = paste0( "/home/acmendez/era5_extracted/", "climate_", k, "_mod.fst"))
     
   }#end for
-  
   
 })#end system.time
 future::plan(future::sequential)

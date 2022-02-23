@@ -1,6 +1,20 @@
-# Impact pathways -> raster reclass
+# ----------------------------------------------------------------------------------- #
+# Climate Security Observatory
+# Obtain all socio-economic hotspots filtered by mask area and climate-conflict clusters intersection
+# Steps:
+# 1. Read impact pathways table to identify the most vulnerable socio-economic
+#    conditions per country/region
+# 2 Sum them all applying the corresponding threshold (10% or 90% of the distribution)
+# 2. Execute this script to obtain:
+#    Raster file with hotspots
+# Author: Harold Achicanoy, Andres Mendez
+# Alliance Bioversity International - CIAT, 2022
+# ----------------------------------------------------------------------------------- #
 
-options(warn = -1, scipen = 999)
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+.rs.restartR()                      # Restart R session
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 
