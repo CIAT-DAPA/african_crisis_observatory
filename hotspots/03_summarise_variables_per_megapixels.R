@@ -68,5 +68,5 @@ corrplot::corrplot(corr = pca$var$cos2[,1:20] %>%
 #   ggplot2::theme_bw() +
 #   ggplot2::facet_wrap(~CONFLICT_CLUSTER)
 
-vroom::vroom_write(x = dfm, file = paste0('D:/',iso,'_stats.csv'), delim = ',')
-dfm <- vroom::vroom(paste0('D:/',iso,'_stats.csv'), delim = ',')
+vroom::vroom_write(x = dfm, file = paste0(root,'/data_extracted/',iso,'_stats.csv'), delim = ',')
+dfm <- vroom::vroom(paste0(root,'/data_extracted/',iso,'_stats.csv'), delim = ',')
