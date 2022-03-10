@@ -7,7 +7,7 @@ options(warn = -1, scipen = 999)
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, terra, exactextractr, vroom))
 
-root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
 iso <- 'KEN'
 shp <- raster::shapefile(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))

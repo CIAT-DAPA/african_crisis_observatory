@@ -10,7 +10,7 @@ options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notat
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, terra, exactextractr, vroom))
 
-root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
 iso <- 'KEN'
 # Country shapefile

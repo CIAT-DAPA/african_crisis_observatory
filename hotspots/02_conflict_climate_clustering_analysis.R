@@ -267,7 +267,7 @@ clust_descriptives <- function(clust_sum){
   return(ret)
 }
 
-root <- 'C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/'
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 country_iso2 <- iso <- "KEN"
 
 baseDir <- paste0(root, "data/",country_iso2)

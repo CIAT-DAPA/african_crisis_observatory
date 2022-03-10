@@ -99,7 +99,7 @@ fix_label <- function( rast_labs, labs = av_labs){
   
 }
 
-baseDir <- "C:/Users/acmendez/OneDrive - CGIAR/African_Crisis_Observatory/data/"
+baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 w_mask <- raster::raster(paste0(baseDir, "_global/masks/mask_world_1km.tif"))
 
 iso <- "KEN"
@@ -129,7 +129,7 @@ crs(conf_clust) <- crs(c_mask)
 crs(clim_clust) <- crs(c_mask)
 
 conf_clust@data <- conf_clust@data %>% 
-  dplyr::rename("label" = clst_km) %>% 
+  dplyr::rename("label" = "clust") %>% 
   dplyr::mutate(short_label = stringr::str_extract(string = label, pattern = "[A-Za-z]+"),
                 label = factor(label, levels = c("High conflict", "Moderate conflict", "Limited conflict"))) 
 

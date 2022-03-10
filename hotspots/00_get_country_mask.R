@@ -24,11 +24,11 @@ suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, raster, exactextractr))
 source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/base__lowest_gadm.R') # Get lowest administrative level per country
 
-root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 iso <- 'GTM'
 
 # Binary land cover map: human settlements + grasslands + croplands
-r <- terra::rast('D:/temp.tif')
+r <- terra::rast('D:/temp.tif') # This is a temporal result from QGIS merge processing
 
 # Aggregate results to 1 km
 diversity <- terra::aggregate(x = r, fact = 100, fun = 'sum', na.rm = T)

@@ -39,10 +39,10 @@ ICDF <- function(x, theta, gini, gdppc){
   
 }
 
-root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
-gdp  <- readr::read_csv("D:/african observatory/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_2531488/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_2531488.csv") # Change this path properly
-gini <- readr::read_csv("D:/african observatory/API_SI.POV.GINI_DS2_en_csv_v2_2445276/API_SI.POV.GINI_DS2_en_csv_v2_2445276.csv") # Change this path properly
+gdp  <- readr::read_csv(paste0(root,'/data/_global/wealth_index/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_2531488/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_2531488.csv'))
+gini <- readr::read_csv(paste0(root,'/data/_global/wealth_index/API_SI.POV.GINI_DS2_en_csv_v2_2445276/API_SI.POV.GINI_DS2_en_csv_v2_2445276.csv'))
 mask <- raster::raster(paste0(root,'/data/_global/masks/mask_world_1km.tif'))
 
 ISO3 <- "SDN"
@@ -98,8 +98,8 @@ mask       <- raster::raster(paste0(root,'/data/_global/masks/mask_world_1km.tif
 wealth_iso3 <- list.files(wealth_dir) %>% substring(., 1, 3)
 avalaible_iso3 <- world_shp@data$ISO3[(world_shp@data$ISO3 %in% wealth_iso3) & (world_shp@data$CONTINENT == "Africa")]
 
-gdp  <- read_csv("D:/african observatory/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_2531488/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_2531488.csv") # Change this path properly
-gini <- read_csv("D:/african observatory/API_SI.POV.GINI_DS2_en_csv_v2_2445276/API_SI.POV.GINI_DS2_en_csv_v2_2445276.csv") # Change this path properly
+gdp  <- read_csv(paste0(root,'/data/_global/wealth_index/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_2531488/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_2531488.csv'))
+gini <- read_csv(paste0(root,'/data/_global/wealth_index/API_SI.POV.GINI_DS2_en_csv_v2_2445276/API_SI.POV.GINI_DS2_en_csv_v2_2445276.csv'))
 
 get_gini <- function(gini, iso3){
   x <- gini%>% 

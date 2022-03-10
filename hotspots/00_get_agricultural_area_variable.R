@@ -18,7 +18,7 @@ suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, terra, vegan, FactoMineR))
 
 # Define root directory
-root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
 crp <- terra::rast(paste0(root,'/data/_global/cropland/Cropland2000_5m.tif')) # Read global cropland raster
 pas <- terra::rast(paste0(root,'/data/_global/cropland/Pasture2000_5m.tif'))  # Read global pasture area raster

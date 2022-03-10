@@ -28,7 +28,7 @@ options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notat
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 
-root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/base__lowest_gadm.R') # Get lowest administrative level per country
 
 # -------------------------------------- #

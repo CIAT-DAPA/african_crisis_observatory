@@ -18,7 +18,7 @@ options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notat
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, raster, terra))
 
-root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
 fld <- terra::rast(paste0(root,'/data/_global/flooding/fl_frequency.tif'))
 
