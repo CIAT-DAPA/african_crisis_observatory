@@ -12,7 +12,7 @@
 # suppressMessages(library(pacman))   # Loading R-packages
 # suppressMessages(pacman::p_load(tidyverse,readxl))
 
-# root <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory'
+# root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 # iso <- "KEN"
 # cntr <- 'Kenya'
 

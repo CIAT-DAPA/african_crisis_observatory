@@ -278,7 +278,7 @@ shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>%
 
 country <- unique(shp$NAME_0)
 
-source(paste0(root, "code/hotspots/00_link_IPinfo_climate_clusters.R"))
+source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/hotspots/01_link_IPinfo_climate_clusters.R') # Link IP text to identify climate variables
 
 
 
