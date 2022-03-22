@@ -24,78 +24,74 @@ iso <- 'KEN'
 country <- 'Kenya'
 
 # Load and identify impact pathways
-summ <- readxl::read_excel(path = paste0(root,'/Country_pathways.xlsx'), sheet = 2) %>%
-  dplyr::filter(Country == country & Dimension != 'Climate')
+summ <- read.csv(file = paste0(root,'/data/',iso,'/_results/hotspots/soc_eco_selected_variables.csv'))
+summ$Code <- gsub(pattern = '{iso}', replacement = iso, x = summ$Code, fixed = T)
 ip_id <- unique(summ$IP_id)
-vars <- as.character(summ$Variable)
-summ <- summ[which(!is.na(vars)),]; rm(vars)
 
 # Global mask 1 km resolution
-msk  <- raster::raster(paste0(root,'/data/_global/masks/mask_world_1km.tif'))
+msk  <- terra::rast(paste0(root,'/data/_global/masks/mask_world_1km.tif'))
 
 pth  <- paste0(root, '/data/',iso)
 
 # Country shapefile
-shp  <- raster::shapefile(paste0(pth,'/_shps/',iso,'.shp'))
+shp  <- terra::vect(paste0(pth,'/_shps/',iso,'.shp'))
 
 # Raster template
 tmp  <- msk %>% 
-  raster::crop(x = ., y = raster::extent(shp)) %>% 
-  raster::mask(mask = shp)
+  terra::crop(x = ., y = terra::ext(shp)) %>% 
+  terra::mask(mask = shp)
 
 ip_id %>%
   purrr::map(.f = function(ip){
     tb <- summ %>% dplyr::filter(IP_id == ip)
     
-    
     regions <- stringr::str_split(unique(tb$Region_value), ";") %>% 
-      unlist %>% 
+      unlist %>%
       stringr::str_trim()
     
     var_name <- unique(tb$Region_key)
     
-    shp_region <- shp[shp@data %>% pull(!!var_name) %in% regions, ] 
+    stmp <- raster::shapefile(paste0(pth,'/_shps/',iso,'.shp'))
+    shp_region <- stmp[stmp@data %>% pull(!!var_name) %in% regions, ] 
+    shp_region <- as(shp_region, 'SpatVector'); rm(stmp)
     
-    tmp  <- msk %>% 
-      raster::crop(x = ., y = raster::extent(shp_region)) 
-    
+    tmp  <- msk %>% terra::crop(x = ., y = terra::ext(shp_region)) 
     
     # Load raster variables
-    htp <- tb$Variable %>%
+    htp <- tb$Code %>%
       purrr::map(.f = function(var){
         
         # Raster template
-        r <- raster::raster(list.files(path = pth, pattern = paste0(var,'.tif$'), full.names = T, recursive = T))
-        r <- r %>% 
-          raster::crop(x = ., y = raster::extent(tmp)) %>% 
-          raster::resample(x = ., y = tmp)%>% 
-          raster::mask(mask = shp_region)
+        r <- terra::rast(list.files(path = pth, pattern = paste0(var,'.tif$'), full.names = T, recursive = T))
+        r <- r %>%
+          terra::crop(x = ., y = terra::ext(tmp)) %>%
+          terra::resample(x = ., y = tmp) %>%
+          terra::mask(mask = shp_region)
         
-        thr <- tb$Threshold[tb$Variable == var]
-        prc <- tb$Percentile[tb$Variable == var]
+        thr <- tb$Threshold[tb$Code == var]
+        prc <- tb$Percentile[tb$Code == var]
         
         if(!is.na(thr)){
-          eval(parse(text = paste0('r[!(r[] ',thr,')] <- NA')))
+          eval(parse(text = paste0('r[!(r ',thr,')] <- NA')))
         }
         
-        qtl <- raster::quantile(r, probs = prc)
+        qtl <- global(x = r, fun = quantile, probs = prc, na.rm = T) %>% as.numeric()
         
         if(prc > 0.5){
-          r[r[] < qtl] <- NA
-          r[r[] >= qtl] <- 1
+          r[r < qtl] <- NA
+          r[r >= qtl] <- 1
         } else {
-          r[r[] > qtl] <- NA
-          r[r[] <= qtl] <- 1
+          r[r > qtl] <- NA
+          r[r <= qtl] <- 1
         }
         
         return(r)
         
       })
-    rst <- htp %>% raster::stack() %>% sum(na.rm = T)
-    rst[rst[] == 0] <- NA
-    out <- paste0(root,'/data/',iso,'/_results/hotspots/',iso,'_all_hotspots_',ip,'.tif')
+    rst <- htp %>% terra::rast() %>% sum(na.rm = T)
+    rst[rst == 0] <- NA
+    out <- paste0('D:/',iso,'_all_hotspots_',ip,'.tif')
+    # out <- paste0(root,'/data/',iso,'/_results/hotspots/',iso,'_all_hotspots_',ip,'.tif')
     dir.create(path = dirname(out), showWarnings = F, recursive = T)
-    raster::writeRaster(rst, filename = out, overwrite = T)
+    terra::writeRaster(rst, filename = out, overwrite = T)
   })
-
-# SDN: check soil_carbon
