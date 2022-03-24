@@ -24,20 +24,19 @@ iso <- 'KEN'
 country <- 'Kenya'
 
 # Load and identify impact pathways
-summ <- read.csv(file = paste0(root,'/data/',iso,'/_results/hotspots/soc_eco_selected_variables.csv'))
+summ <- read.csv(file = paste0(root,'/data/',iso,'/_results/hotspots/soc_eco_all_variables.csv')) # soc_eco_all_variables.csv # soc_eco_selected_variables.csv
 summ$Code <- gsub(pattern = '{iso}', replacement = iso, x = summ$Code, fixed = T)
 ip_id <- unique(summ$IP_id)
 
 # Global mask 1 km resolution
-msk  <- terra::rast(paste0(root,'/data/_global/masks/mask_world_1km.tif'))
-
-pth  <- paste0(root, '/data/',iso)
+msk <- terra::rast(paste0(root,'/data/_global/masks/mask_world_1km.tif'))
+pth <- paste0(root, '/data/',iso)
 
 # Country shapefile
-shp  <- terra::vect(paste0(pth,'/_shps/',iso,'.shp'))
+shp <- terra::vect(paste0(pth,'/_shps/',iso,'.shp'))
 
 # Raster template
-tmp  <- msk %>% 
+tmp <- msk %>% 
   terra::crop(x = ., y = terra::ext(shp)) %>% 
   terra::mask(mask = shp)
 
@@ -55,7 +54,7 @@ ip_id %>%
     shp_region <- stmp[stmp@data %>% pull(!!var_name) %in% regions, ] 
     shp_region <- as(shp_region, 'SpatVector'); rm(stmp)
     
-    tmp  <- msk %>% terra::crop(x = ., y = terra::ext(shp_region)) 
+    tmp  <- msk %>% terra::crop(x = ., y = terra::ext(shp_region)) %>% terra::mask(mask = shp_region)
     
     # Load raster variables
     htp <- tb$Code %>%
@@ -90,8 +89,7 @@ ip_id %>%
       })
     rst <- htp %>% terra::rast() %>% sum(na.rm = T)
     rst[rst == 0] <- NA
-    out <- paste0('D:/',iso,'_all_hotspots_',ip,'.tif')
-    # out <- paste0(root,'/data/',iso,'/_results/hotspots/',iso,'_all_hotspots_',ip,'.tif')
+    out <- paste0(root,'/data/',iso,'/_results/hotspots/',iso,'_all_hotspots_',ip,'.tif') # out <- paste0('D:/',iso,'_all_hotspots_',ip,'.tif')
     dir.create(path = dirname(out), showWarnings = F, recursive = T)
     terra::writeRaster(rst, filename = out, overwrite = T)
   })

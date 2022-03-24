@@ -99,7 +99,7 @@ fix_label <- function( rast_labs, labs = av_labs){
   
 }
 
-baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
+baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/" # baseDir <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory/data/'
 w_mask <- raster::raster(paste0(baseDir, "_global/masks/mask_world_1km.tif"))
 
 iso <- "KEN"
@@ -131,7 +131,7 @@ crs(clim_clust) <- crs(c_mask)
 conf_clust@data <- conf_clust@data %>% 
   dplyr::rename("label" = "clust") %>% 
   dplyr::mutate(short_label = stringr::str_extract(string = label, pattern = "[A-Za-z]+"),
-                label = factor(label, levels = c("High conflict", "Moderate conflict", "Limited conflict"))) 
+                label = factor(label, levels = c("High conflict", "Moderate conflict", "Limited conflict")))
 
 # conf_clust_mts<- readxl::read_excel(paste0(root, "_results/cluster_results/conflict/conflict_cluster_summary_metrics.xlsx"), 
 #                                     sheet = "reg_rel_change")
@@ -158,8 +158,8 @@ clim_clust_labs <- readxl::read_excel(paste0(baseDir, "temp_climate_clusters_lab
   dplyr::filter(Country == iso) %>% 
   dplyr::mutate(across(everything(.), as.character))
 
-clim_clust@data <- clim_clust@data %>% 
-  dplyr::mutate(clust = as.character(clust)) %>% 
+clim_clust@data <- clim_clust@data %>%
+  dplyr::mutate(clust = as.character(clust)) %>%
   dplyr::left_join(., clim_clust_labs %>% dplyr::select(clust = Cluster, label = Label), by = c("clust" = "clust"))
 
 conf_clust@data$clim_cluster <- as.character(sp::over(conf_clust, clim_clust, returnList = F)$label)
@@ -228,7 +228,7 @@ events_bp <- conf_data %>%
   dplyr::ungroup() %>% 
   na.omit()
 
-write_csv(events_bp %>% 
+write_csv(events_bp %>%
             dplyr::group_by(EVENT_TYPE) %>% 
             dplyr::summarise(short_label, n, freq = prop.table(n)), paste0(root, "_results/cluster_results/conflict/EVENTS_TYPE_barplot_df.csv"))
 
@@ -237,7 +237,7 @@ write_csv(events_bp %>%
             dplyr::summarise(short_label, n, freq = prop.table(n)), paste0(to_share_dir, "/EVENTS_TYPE_conflict_barplot_df.csv"))
 
 g1 <- events_bp %>% 
-  dplyr::mutate(short_label  = factor(short_label , levels = c("High conflict",  "Moderate conflict", "Limited conflict") )) %>%
+  dplyr::mutate(short_label = factor(x = short_label, levels = c('High','Moderate','Limited'))) %>%
   ggplot( aes(x = short_label, y = n, fill = EVENT_TYPE))+
   geom_bar( stat = "identity")+
   scale_fill_brewer(palette = "Set3")+
@@ -280,7 +280,7 @@ write_csv(fata_bp %>%
             dplyr::summarise(short_label, counts, freq = prop.table(counts)), paste0(to_share_dir, "/FATALITIES_conflict_barplot_df.csv"))
 
 g2 <- fata_bp %>% 
-  dplyr::mutate(short_label  = factor(short_label , levels = c("High",  "Moderate", "Limited") )) %>% 
+  dplyr::mutate(short_label  = factor(short_label , levels = c("High", "Moderate", "Limited"))) %>% 
   ggplot( aes(x = short_label, y = counts, fill = EVENT_TYPE))+
   geom_bar( stat = "identity")+
   scale_fill_brewer(palette = "Set3")+
@@ -309,7 +309,6 @@ conf_clust@data <- conf_clust@data %>%
     grepl("Moderate", intersect_conf_clim) & grepl("Harsh", intersect_conf_clim)~ "Moderated conflict - Harsh climate",
     grepl("Limited", intersect_conf_clim) & grepl("Good", intersect_conf_clim) ~ "Limited conflict-Good climate",
     TRUE ~ "Other combinations"
-    
   ),
   inter_short_label = factor(inter_short_label, levels = c("High conflict-Harsh climate",
                                                            "Moderated conflict - Harsh climate",
@@ -380,7 +379,7 @@ for(i in get_ip_names){
     
     return(x)
   }) %>% 
-    dplyr::bind_rows() 
+    dplyr::bind_rows()
   
   vals_tbl <- apply(labs_tbl, 2, function(i){
     data.frame(V1 = i) %>% 
@@ -391,7 +390,6 @@ for(i in get_ip_names){
     as_tibble() %>% 
     dplyr::mutate(rast_values = rowSums(., na.rm = T))
   
-  
   short_labels_tbl <- apply(labs_tbl, 2, create_labels, type = "short") %>% 
     as_tibble() %>% 
     dplyr::mutate(final_short_lab = apply(., 1, function(i){
@@ -399,7 +397,7 @@ for(i in get_ip_names){
       ret <- paste0(i[!is.na(i)], collapse = "+")
       
       return(ret)
-    }) )
+    }))
   
   long_labels_tbl <- apply(labs_tbl , 2, create_labels, type = "long") %>% 
     as_tibble() %>% 
@@ -410,14 +408,14 @@ for(i in get_ip_names){
   final_label_tbl <- short_labels_tbl %>% 
     dplyr::select(final_short_lab) %>% 
     bind_cols(., vals_tbl %>% dplyr::select(rast_values)) %>% 
-    left_join(., long_labels_tbl) %>% 
+    left_join(., long_labels_tbl) %>%
     left_join(., ip_codes %>% dplyr::select(category, raster_value), by = c("rast_values" = "raster_value"))
   
   ht_rast <- raster::raster(paste0(root,"_results/hotspots/",iso, '_all_cat_hotspots_', ip_x, ".tif" )) %>% 
     raster::crop(., extent(conf_clust)) %>% 
     raster::mask(., conf_clust)
   
-  writeRaster(ht_rast, paste0(to_share_dir, "/", ip_x, "_hotspots_map.tif"), overwrite = T)
+  raster::writeRaster(ht_rast, paste0(to_share_dir, "/", ip_x, "_hotspots_map.tif"), overwrite = T)
   
   rast_labs <- tibble( ID = unique(ht_rast[]) ) %>% 
     tidyr::drop_na() %>% 
@@ -435,7 +433,7 @@ for(i in get_ip_names){
   
   ht_rast_f <- raster::subs(ht_rast, rast_labs[, c("ID", "seq")])
   ht_rast_f <- as.factor(ht_rast_f)
-  levels(ht_rast_f) <- data.frame(id = levels(ht_rast_f)[[1]], x =   rast_labs$final_label   )
+  levels(ht_rast_f) <- data.frame(id = levels(ht_rast_f)[[1]], x = rast_labs$final_label   )
   
   hots_map <- tmap::tm_shape(shp_c)+
     tm_borders(col = "gray50")+

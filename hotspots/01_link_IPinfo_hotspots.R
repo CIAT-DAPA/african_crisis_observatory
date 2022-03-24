@@ -80,7 +80,7 @@ select_eco_vars <- function(root, iso, cntr, ip){
   return(result)
   
 }
-dest_dir <- paste0(root ,"/data/",iso,"/_results/hotspots/soc_eco_selected_variables.csv")
+dest_dir <- paste0(root ,"/data/",iso,"/_results/hotspots/soc_eco_all_variables.csv")
 if(!file.exists(dest_dir)){
   ip_tbl <- readxl::read_excel(path = paste0(root,'/Africa Climate Security_Country Pathways.xlsx'), sheet = 2)
   ip_tbl <- ip_tbl %>% dplyr::filter(Country == cntr)
