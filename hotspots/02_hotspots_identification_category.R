@@ -108,8 +108,8 @@ smm_df <- ip_id %>%
     htp_ct <- list.files(path = paste0(root,'/data/',iso,'/_results/hotspots'), pattern = paste0(iso,'_',ip,'_*[a-z]*_hotspots.tif$'), full.names = T)
     hotspots <- terra::rast(htp_ct)
     # Remove natural resources category from the identification of the hotspots
-    cond <- grep(pattern = 'rsrs', x = terra::sources(hotspots))
-    if(length(cond) > 0){hotspots <- hotspots[[base::setdiff(1:terra::nlyr(hotspots),cond)]]}
+    # cond <- grep(pattern = 'rsrs', x = terra::sources(hotspots))
+    # if(length(cond) > 0){hotspots <- hotspots[[base::setdiff(1:terra::nlyr(hotspots),cond)]]}
     # Compute general hotspots
     hotspots <- hotspots %>% sum(na.rm = T)
     hotspots[hotspots == 0] <- NA

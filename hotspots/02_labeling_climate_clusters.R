@@ -293,8 +293,20 @@ rawv_medn_prec %>%
   ggplot2::ggplot(aes(x = factor(clust), y = trnd_cwdf)) +
   ggplot2::geom_boxplot()
 strat_sample %>%
-  ggplot2::ggplot(aes(x = factor(clust), y = trnd_cwdf)) +
+  ggplot2::ggplot(aes(x = reorder(clust, trnd_prec, FUN = median), y = trnd_prec)) +
   ggplot2::geom_boxplot()
+
+names(strat_sample)[-1] %>%
+  purrr::map(.f = function(vrbl){
+    eval(parse(text=paste0('lvl <- levels(reorder(strat_sample$clust, strat_sample$',vrbl,', FUN = median))')))
+    lvl <- paste(lvl, collapse = '-')
+    lvl <- data.frame(levels = lvl)
+    return(lvl)
+  }) %>%
+  dplyr::bind_rows() %>%
+  dplyr::pull('levels') %>%
+  table() %>%
+  sort(decreasing = T)
 
 agricolae::kruskal(y     = rawv_medn_prec$trnd_cwdf,
                    trt   = factor(rawv_medn_prec$clust),

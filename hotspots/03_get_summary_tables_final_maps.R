@@ -99,7 +99,7 @@ fix_label <- function( rast_labs, labs = av_labs){
   
 }
 
-baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/" # baseDir <- 'D:/OneDrive - CGIAR/African_Crisis_Observatory/data/'
+baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 w_mask <- raster::raster(paste0(baseDir, "_global/masks/mask_world_1km.tif"))
 
 iso <- "KEN"
@@ -417,23 +417,30 @@ for(i in get_ip_names){
   
   raster::writeRaster(ht_rast, paste0(to_share_dir, "/", ip_x, "_hotspots_map.tif"), overwrite = T)
   
-  rast_labs <- tibble( ID = unique(ht_rast[]) ) %>% 
-    tidyr::drop_na() %>% 
-    dplyr::left_join(., final_label_tbl, by = c("ID" = "rast_values")) %>% 
-    dplyr::mutate(final_label = fix_label(rast_labs = ., labs =  final_label_tbl %>% 
+  rast_labs <- tibble( ID = unique(ht_rast[]) ) %>%
+    tidyr::drop_na() %>%
+    dplyr::left_join(., final_label_tbl, by = c("ID" = "rast_values")) %>%
+    dplyr::mutate(final_label = fix_label(rast_labs = ., labs =  final_label_tbl %>%
                                             dplyr::filter(!is.na(category)) ),
                   chars = nchar(final_short_lab),
-                  seq = 1:nrow(.)) %>% 
-    arrange(chars) %>% 
+                  seq = 1:nrow(.)) %>%
+    arrange(chars) %>%
     dplyr::select(ID, final_label, seq)
   
-  rast_labs %>% 
+  rast_labs %>%
     dplyr::select(value_ID = ID, label = final_label) %>% 
     write_csv(., paste0(to_share_dir, "/", ip_x, "_hotspots_labels.csv"))
   
   ht_rast_f <- raster::subs(ht_rast, rast_labs[, c("ID", "seq")])
   ht_rast_f <- as.factor(ht_rast_f)
   levels(ht_rast_f) <- data.frame(id = levels(ht_rast_f)[[1]], x = rast_labs$final_label   )
+  
+  tb <- read.csv(file = paste0(baseDir,iso,'/_results/hotspots/soc_eco_all_variables.csv')) # soc_eco_all_variables.csv # soc_eco_selected_variables.csv
+  tb$Code <- gsub(pattern = '{iso}', replacement = iso, x = tb$Code, fixed = T)
+  tb <- tb %>% dplyr::filter(IP_id == ip_x)
+  rg <- stringr::str_split(unique(tb$Region_value), ";") %>% unlist() %>% stringr::str_trim()
+  var_name <- unique(tb$Region_key)
+  shp_c <- shp_c[shp_c@data %>% dplyr::pull(!!var_name) %in% rg,]; rm(tb,rg,var_name)
   
   hots_map <- tmap::tm_shape(shp_c)+
     tm_borders(col = "gray50")+
