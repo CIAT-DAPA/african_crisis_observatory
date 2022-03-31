@@ -226,48 +226,57 @@ get_sum_cl_mtrs <- function(rast_paths, eco_grid_sf,shp_ext, world_mask){
 
 clust_descriptives <- function(clust_sum){
   
-  global_mtrs <- clust_sum %>% 
-    dplyr::select(-clust) %>% 
+  results <- list()
+  
+  normal_vars <- clust_sum[, !grepl("(cv)|(cvar)|(trnd)", tolower(names(clust_sum))) ]
+  cv_vars <- clust_sum[, grepl("(cv)|(cvar)", tolower(names(clust_sum)))]
+  nms_no_cv <- names(clust_sum)[!grepl("(cv)|(cvar)", tolower(names(clust_sum)))]
+  trnd_vars <- clust_sum[, nms_no_cv[grepl("trnd",nms_no_cv)]]
+  rm(nms_no_cv)
+  
+  global_median <- normal_vars %>% 
+    dplyr::select(-starts_with("clust")) %>% 
     apply(., 2, function(i){
-      x <- i[i>0]
-      ret <- median(x, na.rm = T)
+      ret <- median(i, na.rm =T )
       return(ret)
     })
   
-  rast_mts <- clust_sum %>% 
+  
+  normal_median <- normal_vars %>% 
     dplyr::group_by(clust) %>% 
-    dplyr::summarise(across(everything() , function(i){
-      x <- i[i > 0 ]
-      ret <- median(x, na.rm = T)
+    dplyr::summarise(across(everything(), function(i){
+      ret <- median(i, na.rm = T)
       return(ret)
-    }  )) %>%
-    ungroup() %>% 
-    dplyr::select(- clust) %>% 
-    t %>% 
-    as.data.frame() %>% 
-    rownames_to_column() %>% 
+    }))%>%
+    ungroup()  
+  
+  results$median_rel_change <- cbind(clust =normal_median$clust, t((t(normal_median[,-1]) - (global_median))/global_median)*100) %>% 
     as_tibble()
   
-  names(rast_mts)<- c("Variables", paste0("clust_", 1:(ncol(rast_mts)-1) )) 
+  results$cv_rel_change <- cv_vars %>% 
+    bind_cols(., clust = clust_sum$clust) %>% 
+    dplyr::group_by(clust) %>% 
+    dplyr::summarise(across(everything(), function(i){
+      ret <- ((median(i, na.rm = T) - 0.15)/0.15)*100
+      return(ret)
+    }))%>%
+    ungroup() 
   
-  ret <-  bind_cols(
-    rast_mts,
-    apply(rast_mts, 1, function(i){
-      rast_nm <- i[1]
-      fnl_nm  <- paste0( "_rel_change")
-      glb_med <- global_mtrs[names(global_mtrs) == rast_nm]
-      vals <- round((as.numeric(i[-1]) - glb_med)/glb_med*100, 2)
-      names(vals) <- paste0(names(i)[-1],"_rel_change")
-      return(vals)
-    }) %>% t %>% 
-      as_tibble(),
-    global_metrics = global_mtrs
-  ) 
+  results$trnd_rel_change <- trnd_vars %>% 
+    bind_cols(., clust = clust_sum$clust) %>% 
+    dplyr::group_by(clust) %>% 
+    dplyr::summarise(across(everything(), function(i){
+      ret <- ((median(i, na.rm = T) - 0.1)/0.1)*100
+      return(ret)
+    }))%>%
+    ungroup() 
   
-  return(ret)
+ 
+  
+  return(results)
 }
 
-root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 country_iso2 <- iso <- "KEN"
 
 baseDir <- paste0(root, "data/",country_iso2)
@@ -462,7 +471,7 @@ clust_mtrs$reg_rel_change <- clust_descriptives(clust_sum = clust_mtrs$reg_clust
 
 
 #writexl::write_xlsx(clust_mtrs[c("irr_rel_change", "reg_rel_change")], paste0(dest_dir, dimension, "_cluster_summary_metrics.xlsx"))
-write_csv(clust_mtrs$reg_rel_change, paste0(dest_dir, dimension, "_cluster_relative_change.csv"))
+writexl::write_xlsx(clust_mtrs$reg_rel_change, paste0(dest_dir, dimension, "_cluster_relative_change.xlsx"))
 write_csv(clust_mtrs$reg_clust_values, paste0(dest_dir, dimension, "_reg_cluster_values_extracted.csv"))
 #write_csv(clust_mtrs$irr_clust_values, paste0(dest_dir, dimension, "_irr_cluster_values_extracted.csv"))
 
