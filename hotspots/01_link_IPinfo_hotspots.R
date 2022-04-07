@@ -76,6 +76,7 @@ select_eco_vars <- function(root, iso, cntr, ip){
   } else {
     result$Percentile <- as.numeric(result$Percentile)
   }
+  result$Name <- unique(ip_tbl$`Impact pathway`)
   
   return(result)
   

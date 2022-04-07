@@ -35,7 +35,12 @@ isos %>%
     names(crd)[ncol(crd)] <- 'Flood'
     crd <- crd[,c('x','y','Flood')]
     
-    rst <- terra::rast(x = crd, type = 'xyz', crs = terra::crs(shp))
+    tryCatch(expr = {rst <- terra::rast(x = crd, type = 'xyz', crs = terra::crs(shp))},
+             error = function(e){cat('Terra format failed\n')},
+             finally = {
+               rst <- raster::rasterFromXYZ(xyz = crd, crs = raster::crs(shp))
+               rst <- terra::rast(rst)
+               })
     
     out <- paste0(root,'/data/',iso,'/flooding/flood.tif')
     
