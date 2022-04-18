@@ -271,10 +271,115 @@ clust_descriptives <- function(clust_sum){
     }))%>%
     ungroup() 
   
+ ret <- purrr::reduce(results, left_join, by  = "clust")
+ ret$clust <- paste0("cluster_", ret$clust)
+ global_metrics <- c("global_metrics",global_median, rep(0.15, ncol(results$cv_rel_change)-1), rep(0.1, ncol(results$trnd_rel_change)-1))
  
-  
-  return(results)
+ ret <- rbind(ret, global_metrics) %>% 
+     tidyr::pivot_longer(., cols = -c("clust"), names_to = "variable", values_to ="value") %>% 
+   tidyr::pivot_wider(names_from = "clust", values_from = "value")
+ 
+  return(ret)
 }
+
+
+labeling_function <- function(db, n_vars){
+  
+  
+  res_pca <-  db %>% 
+    dplyr::select(-contains("flood")) %>% 
+    #dplyr::filter(clust == 1) %>% 
+    dplyr::select(-clust) %>% 
+    FactoMineR::PCA(., scale.unit = T, ncp = 3, graph = F)
+  
+  #plot(res_pca, choix = "varcor" )
+  
+  selected_vars <- res_pca$var$contrib %>% 
+    tibble::as_tibble( ., rownames = "var_name") %>%
+    dplyr::mutate(Dim.1_w = Dim.1*res_pca$eig[1,2]/100, 
+                  Dim.2_w = Dim.2*res_pca$eig[2,2]/100,
+                  idx = Dim.1_w + Dim.2_w,
+                  idx2 = idx/max(idx)) %>% 
+    dplyr::arrange(., desc(idx2))  %>% 
+    dplyr::slice(1:n_vars) %>% 
+    pull(var_name)
+  
+  
+  glb_df <- read_csv(paste0(dest_dir, dimension, "_reg_cluster_statistics.csv"))%>% 
+    dplyr::filter(variable %in% selected_vars)
+  
+  
+  lbls <- readxl::read_excel(paste0(root, "Hostpots_data_dictionary.xlsx")) %>% 
+    dplyr::filter(Component == "Climate") %>% 
+    dplyr::select(definition = Variable, Code, Units) %>% 
+    dplyr::filter(Code %in% selected_vars)
+  
+  
+  
+  cats <- list( n_2 = c("High", "Low"),
+                n_3 = c("High", "Moderate","Low"),
+                n_4 = c("High", "High-Moderate", "Moderate-Low", "Low"),
+                n_5 = c("Very High", "High", "Moderate", "Low", "Very Low"),
+                n_6 = c("Very High", "High", "High-Moderate", "Moderate-Low", "Low", "Very Low"),
+                n_7 = c("Very High", "High", "High-Moderate", "Moderate", "Moderate-Low", "Low", "Very Low"))
+  
+  fr <- dplyr::left_join(glb_df, lbls, by = c('variable' = 'Code')) %>% 
+    dplyr::mutate(id = 1:nrow(.))
+  
+  n_clust <- length(unique(fr$clust))
+  
+  for(i in unique(fr$variable)){
+    
+    tmp <- fr %>% 
+      dplyr::filter(variable == i) %>% 
+      arrange(desc(median)) %>% 
+      dplyr::mutate(prefix = unlist(cats[paste0("n_", n_clust)])) %>% 
+      dplyr::select(id, prefix)
+    
+    
+    
+    fr[ tmp$id, "prefix"] <- tmp$prefix
+  }
+  
+  
+  
+  
+  gen_text <- function(df_clust){
+    
+    clust_num <- unique(df_clust$clust)
+    
+    
+    txt_start <- paste("Climate cluster ", clust_num, "is characterized by: ")
+    
+    ret <- df_clust %>% 
+      dplyr::mutate(text = purrr::pmap(.l = list(def = definition, un = Units, pr = prefix, me = median), .f= function(def, un, pr, me){
+        
+        paste( paste0("[", pr, "]"), "values of", def, paste0("(", round(me, 2), " ", un,")" ))
+      }) %>%  unlist) %>% 
+      pull(text) %>% 
+      paste(., collapse = ", ")
+    
+    ret <- paste(txt_start, ret)
+    return(ret)
+    
+  }
+  
+  text_output <- sapply(unique(fr$clust), function(i){
+    
+    fr %>% 
+      dplyr::filter(clust == i) %>% 
+      gen_text(.)
+  }, simplify = T)
+  
+  
+  ret <- tibble(clust = unique(fr$clust), text_output )
+  
+  return(ret)
+}#end function
+
+
+
+
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 country_iso2 <- iso <- "KEN"
@@ -464,6 +569,17 @@ lapply(unique(clust_mtrs$reg_clust_values$clust), function(i){
 clust_mtrs$reg_rel_change <- clust_descriptives(clust_sum = clust_mtrs$reg_clust_values)
 
 
+if(length(unique(clust_mtrs$reg_clust_values$clust)) <= 7){
+  
+  cluster_text <- labeling_function(db = clust_mtrs$reg_clust_values, n_vars = 6)
+  write_csv(cluster_text, paste0(dest_dir, dimension, "_reg_cluster_text_description.csv"))
+  
+  
+}else{
+  cat("Number of cluster greather than 7")
+}
+
+
 # clust_mtrs$irr_clust_values <- get_sum_cl_mtrs(rast_paths = file_paths %>% filter(type == dimension) %>% pull(path), eco_grid_sf = eco_grid_sf_irr, world_mask = world_mask, shp_ext = extent(shp))
 
 # clust_mtrs$irr_rel_change <- clust_descriptives(clust_sum = clust_mtrs$irr_clust_values)
@@ -471,8 +587,9 @@ clust_mtrs$reg_rel_change <- clust_descriptives(clust_sum = clust_mtrs$reg_clust
 
 
 #writexl::write_xlsx(clust_mtrs[c("irr_rel_change", "reg_rel_change")], paste0(dest_dir, dimension, "_cluster_summary_metrics.xlsx"))
-writexl::write_xlsx(clust_mtrs$reg_rel_change, paste0(dest_dir, dimension, "_cluster_relative_change.xlsx"))
+write_csv(clust_mtrs$reg_rel_change, paste0(dest_dir, dimension, "_cluster_rel_change.csv"))
 write_csv(clust_mtrs$reg_clust_values, paste0(dest_dir, dimension, "_reg_cluster_values_extracted.csv"))
+
 #write_csv(clust_mtrs$irr_clust_values, paste0(dest_dir, dimension, "_irr_cluster_values_extracted.csv"))
 
 
@@ -501,21 +618,10 @@ g1 <- clust_mtrs$reg_clust_values %>%
   xlab("")+
   theme_bw(base_size = 10)
 
-g2 <- clust_mtrs$irr_clust_values %>% 
-  pivot_longer(., cols =  -clust, names_to = "variable", values_to = "values") %>% 
-  dplyr::mutate(clust = paste0("cluster_",clust)) %>% 
-  ggplot(aes(y= values, x = clust))+
-  geom_violin(trim=FALSE, fill="gray")+
-  geom_boxplot(width=0.1, fill="white")+
-  facet_wrap(~variable, scales = "free")+
-  xlab("")+
-  theme_bw(base_size = 10)
-
 if(dimension != "climate"){
   g1 <- g1 +
     scale_y_log10()
-  g2 <- g2 +
-    scale_y_log10()
+ 
 }
 
 
