@@ -134,7 +134,64 @@ get_cluster_labels <- function(df){
     dplyr::mutate(across(everything(.), as.character),
                   label = factor(label, levels = c("High conflict","Moderate conflict",  "Limited conflict")))
   
-  return(conf_cluts_vals)
+  
+  lbls <- readxl::read_excel(paste0(root, "Hostpots_data_dictionary.xlsx")) %>% 
+    dplyr::filter(Component == "Conflict") %>% 
+    dplyr::select(definition = Variable, Code, Units) %>% 
+    dplyr::mutate(Code = toupper(Code))
+  
+   
+   to_label <- df %>% 
+    dplyr::select(EVENTS:FATALITIES, starts_with("clust")) %>% 
+    dplyr::group_by(clust) %>% 
+    dplyr::summarise(across(EVENTS:FATALITIES, median)) %>% 
+     dplyr::select(clust, EVENTS, FATALITIES, everything(.)) %>% 
+    tidyr::pivot_longer(., cols = -clust, names_to = "variable", values_to = "median") %>% 
+    dplyr::left_join(., 
+                     lbls, by = c("variable" = "Code")) %>% 
+     dplyr::mutate(id = 1:nrow(.) )
+  
+  start_text <- paste("Conflict cluster ", i , " is characterized by: ")
+   
+   
+  cats <- c("High", "Moderate", "Limited")
+  
+  for(k in unique(to_label$variable)){
+    
+    tmp <- to_label %>% 
+      dplyr::filter(variable == k) %>% 
+      arrange(desc(median)) %>%
+      dplyr::mutate(prefix = paste0("[", cats, "]")) %>% 
+      dplyr::select(id, prefix)
+    
+    to_label[ tmp$id, "prefix"] <- tmp$prefix
+    
+  }
+  
+  
+  txt_desc <- lapply(unique(to_label$clust), function(i){
+    
+    ret <- to_label %>% 
+      dplyr::filter(clust == i) %>% 
+      dplyr::mutate(text = purrr::pmap(.l = list(def = definition, un = Units, pr = prefix, me = median), .f= function(def, un, pr, me){
+        
+        paste(pr, "values of", def, paste0("(", round(me, 2), " median ", un,")" ))
+      }) %>%  unlist) %>% 
+      pull(text) %>% 
+      paste(., collapse = ", ")
+    
+    
+    return(data.frame(clust = i, clutert_text_description = ret))
+  }) %>% 
+    bind_rows() 
+  
+  ret <- conf_cluts_vals %>% 
+    left_join(., txt_desc, by = c("clust" = "clust")) %>% 
+    dplyr::mutate(short_label = factor(short_label, levels = c("High", "Moderate", "Limited")))
+  
+  
+  
+  return(ret)
 }
 
 make_cluster_plots <- function(df){
@@ -156,7 +213,7 @@ make_cluster_plots <- function(df){
 get_cluster_statistics <- function(df){
   
   df <- df %>% 
-    dplyr::select(-ov) %>% 
+    dplyr::select(-contains("ov")) %>% 
     dplyr::mutate(knl = ifelse(is.na(knl), 0, knl))
   
   clust_median <- df %>%
@@ -723,22 +780,8 @@ x_wh <- rbind(x_wh$ind$coord)%>%
 km <- stats::kmeans(x_wh, 3)
 table(km$cluster)
 
-to_cluster$clust_km <-  left_join( tibble(clust = as.character(km$cluster)), to_cluster %>% 
-                                     st_drop_geometry() %>% 
-                                     dplyr::select(EVENTS:FATALITIES) %>% 
-                                     bind_cols(clust = km$cluster) %>% 
-                                     get_cluster_labels() %>% 
-                                     dplyr::select(clust, label) , by = c("clust"))%>% 
-  pull(label)
 
-
-
-to_plot <- grd %>% 
-  left_join(., to_cluster %>% st_drop_geometry(), by = c("id" = "ov")) %>% 
-  dplyr::filter(!is.na(clust_km))
-
-
-to_save <- conflict_sf %>% 
+original_df <- conflict_sf %>% 
   dplyr::mutate(ov = unlist(st_intersects(conflict_sf, grd)),
                 knl = raster::extract(knl, st_as_sf(.) %>% st_cast("POINT")%>% st_coordinates())) %>%
   dplyr::group_by(ov) %>% 
@@ -751,8 +794,28 @@ to_save <- conflict_sf %>%
                    ,knl = median(knl, na.rm = T)
   ) %>% 
   dplyr::ungroup() %>% 
+  dplyr::bind_cols(clust = as.character(km$cluster))
+
+
+cluster_labels <- original_df %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::select(EVENTS:FATALITIES, contains("clust")) %>% 
+  get_cluster_labels()
+
+write_csv(cluster_labels, paste0(root,"/data/", iso, "/_results/cluster_results/conflict/conflict_cluster_text_description.csv"))
+
+original_df <-  original_df %>% 
+  left_join(., cluster_labels , by = c("clust")) %>% 
+  dplyr::rename(clust_km = short_label) 
+
+
+to_plot <- grd %>% 
+  left_join(., original_df %>% st_drop_geometry(), by = c("id" = "ov")) %>% 
+  dplyr::filter(!is.na(clust_km))
+
+
+to_save <- original_df %>% 
   st_drop_geometry() %>% 
-  dplyr::bind_cols(clust = to_cluster$clust_km) %>% 
   dplyr::right_join(., grd, by = c("ov" = "id")) %>% 
   dplyr::filter(!is.na(clust))
 
