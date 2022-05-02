@@ -25,9 +25,15 @@ iso <- 'KEN'
 country <- 'Kenya'
 
 # Load and identify impact pathways
-summ <- read.csv(file = paste0(root,'/data/',iso,'/_results/hotspots/soc_eco_all_variables.csv')) # soc_eco_all_variables.csv # soc_eco_selected_variables.csv
-summ$Code <- gsub(pattern = '{iso}', replacement = iso, x = summ$Code, fixed = T)
-ip_id <- unique(summ$IP_id)
+
+ip_var_list <- read_csv(paste0(root, "/data/", iso, "/_results/hotspots/soc_eco_all_variables.csv")) %>% 
+  dplyr::mutate(Code = ifelse(grepl("\\{iso\\}", Code), gsub("\\{iso\\}", iso, Code), Code),
+                Code = tolower(Code))
+
+
+#summ <- read.csv(file = paste0(root,'/data/',iso,'/_results/hotspots/soc_eco_all_variables.csv')) # soc_eco_all_variables.csv # soc_eco_selected_variables.csv
+#$summ$Code <- gsub(pattern = '{iso}', replacement = iso, x = summ$Code, fixed = T)
+ip_id <- unique(ip_var_list$IP_id)
 
 # Global mask 1 km resolution
 msk <- terra::rast(paste0(root, "/data/", iso, "/mask/", iso, "_mask.tif")) 
@@ -35,16 +41,30 @@ pth <- paste0(root, "/data/",iso)
 
 # Country shapefile
 shp <- terra::vect(paste0(pth,'/_shps/',iso,'.shp'))
-
+stmp <- raster::shapefile(paste0(pth,'/_shps/',iso,'.shp'))
 # Raster template
-tmp  <- msk # %>% raster::crop(x = ., y = raster::extent(shp)) %>% raster::mask(mask = shp)
-tmp[!is.na(tmp)] <- 1
+
+msk[!is.na(msk)] <- 1
+
+n_vars <- 10
 
 # Iterate by impact pathway
 smm_df <- ip_id %>%
   purrr::map(.f = function(ip){
     # Filter full table by impact pathway
-    tb <- summ %>% dplyr::filter(IP_id == ip)
+    cat(">>> Impact pathways: ", ip, "\n")
+    fl <- list.files(paste0(root, "/data/",iso,  "/_results/hotspots/"), pattern = paste0("_", ip, ".xlsx"), full.names = T)
+    
+    
+    tb <- readxl::read_excel(fl) %>% 
+      dplyr::mutate(Code = tolower(Code)) %>% 
+      dplyr::left_join(., ip_var_list %>% 
+                         dplyr::filter(IP_id == ip ) %>% 
+                         dplyr::select(-Variable, - Classification), by = c("Code" = "Code")) %>% 
+      dplyr::mutate(Code = ifelse(grepl("_awe", Code), paste0(iso,"_AWE"), Code),
+                    Code = ifelse(grepl("_rwi", Code), paste0(iso, "_rwi"), Code)) %>% 
+      dplyr::slice(1:n_vars)
+    
     
     # Identify regions if it's the case
     regions <- stringr::str_split(unique(tb$Region_value), ";") %>% 
@@ -53,11 +73,13 @@ smm_df <- ip_id %>%
     
     var_name <- unique(tb$Region_key)
     
-    stmp <- raster::shapefile(paste0(pth,'/_shps/',iso,'.shp'))
-    shp_region <- stmp[stmp@data %>% pull(!!var_name) %in% regions, ] 
-    shp_region <- as(shp_region, 'SpatVector'); rm(stmp)
     
-    tmp <- tmp %>% terra::crop(x = ., y = terra::ext(shp_region)) %>% terra::mask(mask = shp_region)
+    shp_region <- stmp[stmp@data %>% pull(!!var_name) %in% regions, ] 
+    shp_region <- as(shp_region, 'SpatVector')
+    
+    tmp <- msk %>% 
+      terra::crop(x = ., y = terra::ext(shp_region)) %>% 
+      terra::mask(mask = shp_region)
     
     # Identify hotspots categories
     ct <- sort(unique(tb$Classification))
@@ -65,28 +87,48 @@ smm_df <- ip_id %>%
     cts <- 1:length(ct) %>%
       purrr::map(.f = function(i){
         # Load raster variables within the category
-        htp <- tb$Code[tb$Classification == ct[i]] %>%
-          purrr::map(.f = function(var){
+        c_codes <- tb$Code[tb$Classification == ct[i]]
+        htp <- 1:length(c_codes) %>%
+          purrr::map(.f = function(k){
             
+            var <- c_codes[k]
+            cat("procesing: ", var, "\n")
             r <- terra::rast(list.files(path = pth, pattern = paste0(var,'.tif$'), full.names = T, recursive = T))
-            r <- r %>% terra::crop(x = ., y = terra::ext(tmp)) %>% terra::resample(x = ., y = tmp) %>% 
-              terra::mask(., mask = shp_region)
             
-            thr <- tb$Threshold[tb$Code == var]
-            prc <- tb$Percentile[tb$Code == var]
+            thr <- tb$Threshold[tb$Code %in% c_codes][k]
+            prc <- tb$Percentile[tb$Code %in% c_codes][k]
             
             if(!is.na(thr)){
               eval(parse(text = paste0('r[!(r ',thr,')] <- NA')))
             }
             
-            qtl <- global(x = r, fun = quantile, probs = prc, na.rm = T) %>% as.numeric()
+            
+            mn <- median(r[], na.rm = T)
+            qtl_country <- global(x = r, fun = quantile, probs = prc, na.rm = T) %>% as.numeric()
+            
+            
+            r <- r %>%
+              terra::crop(x = ., y = terra::ext(tmp)) %>% 
+              terra::resample(x = ., y = tmp) %>% 
+              terra::mask(., mask = shp_region)
+            
+            to_check <- (min(r[], na.rm = T) == quantile(r[], probs = 0.25, na.rm = T) & prc == 0.1) |
+              (max(r[], na.rm = T) == quantile(r[], probs = 0.75, na.rm = T) & prc == 0.9)
+            
+            stopifnot("Raster values distribution very Skewed" = !to_check)
             
             if(prc > 0.5){
-              r[r < qtl] <- NA
-              r[r >= qtl] <- 1
+              
+                r[r < qtl_country] <- NA
+                r[r >= qtl_country] <- 1
+              
             } else {
-              r[r > qtl] <- NA
-              r[r <= qtl] <- 1
+              
+                r[r > qtl_country] <- NA
+                r[r <= qtl_country] <- 1
+                
+              
+              
             }
             
             return(r)
@@ -96,7 +138,10 @@ smm_df <- ip_id %>%
         rst <- htp %>% terra::rast() %>% sum(na.rm = T)
         rst[rst == 0] <- NA
         rst[!is.na(rst)] <- 10^(i-1) # Values assignation with scientific notation
-        out <- paste0(root,'/data/',iso,'/_results/hotspots/',iso,'_',ip,'_',tolower(abbreviate(ct[i])),'_hotspots.tif')
+       
+        out <- paste0(root,'/data/',iso,'/_results/hotspots/ip_maps/',iso,'_',ip,'_', tolower(abbreviate(ct[i])),'_hotspots.tif')
+    
+        
         dir.create(path = dirname(out), showWarnings = F, recursive = T)
         terra::writeRaster(rst, filename = out, overwrite = T)
         df <- data.frame(iso = iso, ip = ip, category = ct[i], raster_value = 10^(i-1))
@@ -105,7 +150,7 @@ smm_df <- ip_id %>%
       dplyr::bind_rows()
     
     # Load category's hotspots
-    htp_ct <- list.files(path = paste0(root,'/data/',iso,'/_results/hotspots'), pattern = paste0(iso,'_',ip,'_*[a-z]*_hotspots.tif$'), full.names = T)
+    htp_ct <- list.files(path = paste0(root,'/data/',iso,'/_results/hotspots/ip_maps/'), pattern = paste0(iso,'_',ip,'_*[a-z]*_hotspots.tif$'), full.names = T)
     hotspots <- terra::rast(htp_ct)
     # Remove natural resources category from the identification of the hotspots
     # cond <- grep(pattern = 'rsrs', x = terra::sources(hotspots))
@@ -113,11 +158,12 @@ smm_df <- ip_id %>%
     # Compute general hotspots
     hotspots <- hotspots %>% sum(na.rm = T)
     hotspots[hotspots == 0] <- NA
-    out <- paste0(root,'/data/',iso,'/_results/hotspots/',iso,'_all_cat_hotspots_',ip,'.tif')
+    out <- paste0(root,'/data/',iso,'/_results/hotspots/ip_maps/',iso,'_all_cat_hotspots_',ip,'.tif')
+  
     terra::writeRaster(hotspots, filename = out, overwrite = T)
     
     return(cts)
   }) %>%
   dplyr::bind_rows()
 
-write.csv(x = smm_df, file = paste0(root,'/data/',iso,'/_results/hotspots/',iso,'_hotspots_values.csv'), row.names = F)
+write.csv(x = smm_df, file = paste0(root,'/data/',iso,'/_results/hotspots/ip_maps/',iso,'_hotspots_values.csv'), row.names = F)
