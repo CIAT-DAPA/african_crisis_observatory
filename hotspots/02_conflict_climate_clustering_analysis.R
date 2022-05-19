@@ -151,7 +151,6 @@ get_cluster_labels <- function(df){
                      lbls, by = c("variable" = "Code")) %>% 
      dplyr::mutate(id = 1:nrow(.) )
   
-  start_text <- paste("Conflict cluster ", i , " is characterized by: ")
    
    
   cats <- c("High", "Moderate", "Limited")
@@ -170,15 +169,16 @@ get_cluster_labels <- function(df){
   
   
   txt_desc <- lapply(unique(to_label$clust), function(i){
-    
+   # start_text <- paste("Conflict cluster ", i , " is characterized by: ")
     ret <- to_label %>% 
       dplyr::filter(clust == i) %>% 
       dplyr::mutate(text = purrr::pmap(.l = list(def = definition, un = Units, pr = prefix, me = median), .f= function(def, un, pr, me){
         
-        paste(pr, "values of", def, paste0("(", round(me, 2), " median ", un,")" ))
+        
+        paste( pr, "values of", def, paste0("(", round(me, 2), " median ", un,")" ))
       }) %>%  unlist) %>% 
       pull(text) %>% 
-      paste(., collapse = ", ")
+      paste(., collapse = ", ") 
     
     
     return(data.frame(clust = i, clutert_text_description = ret))
@@ -828,8 +828,8 @@ sf::st_write(to_save, paste0(root, "/data/", iso, "/_results/cluster_results/con
 mainmap3<- tmap::tm_shape(shp)+
   tm_borders(col = "black")+
   tm_shape(to_plot)+
-  tm_fill(col = "clust_km", palette = c("#d7191c", "#e5a03e", "#ffffbf"), alpha = 0.7, title = expression("Conflict clusters"))+
-  tm_borders(col ="black") 
+  tm_fill(col = "clust_km", palette = c("#d7191c", "#e5a03e", "#ffffbf"), alpha = 0.7, title = expression("Conflict clusters"))#+
+  #tm_borders(col ="black") 
 
 
 x11();mainmap3
@@ -846,7 +846,7 @@ tmap_save(mainmap3,
 
 
 to_boxplot <- to_save %>% 
-  dplyr::select(-x)
+  dplyr::select(-x, -clust_km)
 
 g <- make_cluster_plots(df = to_boxplot)
 x11();g
