@@ -340,7 +340,7 @@ lapply(unique(conf_clust@data$label), function(i){
   pal_g[length(pal_g)+1] <- other_color
   
   
-  inter_map <- tmap::tm_shape(shp_c)+
+  inter_map <- tmap::tm_shape(shp)+
     tm_borders(col = "black")+
     tm_shape(tmp_df)+
     tm_fill(col = "intersect_conf_clim", palette = pal_g , alpha = 0.7, title = paste0(i, " cluster"))+
