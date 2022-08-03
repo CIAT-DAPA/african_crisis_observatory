@@ -127,9 +127,9 @@ smm_df <- ip_id %>%
                 r[r > qtl_country] <- NA
                 r[r <= qtl_country] <- 1
                 
-              
-              
             }
+            
+            raster::writeRaster(r, paste0(root,'/data/',iso,'/_results/hotspots/ip_maps/',var,"_",  ct[i], "_", ip,k, "rc", ".tif" ), overwrite = T)
             
             return(r)
             
@@ -139,7 +139,7 @@ smm_df <- ip_id %>%
         rst[rst == 0] <- NA
         rst[!is.na(rst)] <- 10^(i-1) # Values assignation with scientific notation
        
-        out <- paste0(root,'/data/',iso,'/_results/hotspots/ip_maps/',iso,'_',ip,'_', tolower(abbreviate(ct[i])),'_hotspots.tif')
+        out <- paste0(root,'/data/',iso,'/_results/hotspots/ip_maps/',iso,'_',ip,'_', tolower(ct[i]),'_hotspots.tif')
     
         
         dir.create(path = dirname(out), showWarnings = F, recursive = T)
@@ -150,7 +150,7 @@ smm_df <- ip_id %>%
       dplyr::bind_rows()
     
     # Load category's hotspots
-    htp_ct <- list.files(path = paste0(root,'/data/',iso,'/_results/hotspots/ip_maps/'), pattern = paste0(iso,'_',ip,'_*[a-z]*_hotspots.tif$'), full.names = T)
+    htp_ct <- list.files(path = paste0(root,'/data/',iso,'/_results/hotspots/ip_maps/'), pattern = paste0(iso,'_',ip,'_*[a-z ]*_hotspots.tif$'), full.names = T)
     hotspots <- terra::rast(htp_ct)
     # Remove natural resources category from the identification of the hotspots
     # cond <- grep(pattern = 'rsrs', x = terra::sources(hotspots))

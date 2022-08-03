@@ -10,7 +10,7 @@ g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 .rs.restartR()                      # Restart R session
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
-suppressMessages(pacman::p_load(tidyverse, readxl, writexl, raster,terra, sp, sf, stringr, stringi, lattice, rasterVis, maptools,
+suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, writexl, raster,terra, sp, sf, stringr, stringi, lattice, rasterVis, maptools,
                                 latticeExtra, RColorBrewer,cowplot, grid,tmap, tmaptools, geojson, geojsonio, MetBrewer, paletteer))
 
 create_labels <- function(text, type = c("short", "long")){
@@ -112,6 +112,70 @@ cats_extract <- function(values, coverage_fractions){
   return(list(ret)) 
 }
 
+ip_text_description <- function(shp_object ,ip, df, n_vars = 10){
+  
+  
+  ip_var_list <- read_csv(paste0(root,"_results/hotspots/soc_eco_all_variables.csv")) %>% 
+    dplyr::mutate(Code = ifelse(grepl("\\{iso\\}", Code), gsub("\\{iso\\}", iso, Code), Code),
+                  Code = tolower(Code))
+  
+  
+  fl <- list.files(paste0(root,"_results/hotspots/"), pattern = paste0("_", ip, ".xlsx"), full.names = T)
+  tb <- readxl::read_excel(fl) %>% 
+    dplyr::mutate(Code = tolower(Code)) %>% 
+    dplyr::left_join(., ip_var_list %>% 
+                       dplyr::filter(IP_id == ip ) %>% 
+                       dplyr::select(-Variable, - Classification), by = c("Code" = "Code")) %>% 
+    dplyr::mutate(Code = ifelse(grepl("_awe", Code), paste0(iso,"_AWE"), Code),
+                  Code = ifelse(grepl("_rwi", Code), paste0(iso, "_rwi"), Code)) %>% 
+    dplyr::slice(1:n_vars) %>% 
+    dplyr::mutate(Variable = stringr::str_replace(Variable, pattern = "[0-9]+:", replacement = ""),
+                  Variable = stringr::str_trim(Variable)) %>% 
+    dplyr::select(Code, Variable, Percentile)
+  
+  df_proc <- df %>% 
+    dplyr::filter(IP_id == ip) %>%
+    dplyr::left_join(., tb , by = c("Code" = "Code")) %>% 
+    drop_na(Variable) %>%
+    dplyr::mutate(prefix = ifelse(Percentile == 0.9, paste0("[Values greather than ", Percentile, " distribution percentile]"),
+                                  paste0("[Values lower than ", Percentile, " distribution percentile]") ),
+                  txt_descp = paste(Variable, prefix, paste0("[",source_file ,"]") )) 
+  
+  text_raw <- lapply(1:nrow(df_proc), function(k){
+    r <- raster(df_proc$file_path[k])
+    lst <- exactextractr::exact_extract(r, sf::st_as_sf(shp_object))
+    
+    txt_out <- sapply(lst, function(i){
+      if(length(na.omit(i$value))> 0){
+        
+        ret <- df_proc$txt_descp[k]
+      }else{
+        ret <- ""
+      }
+      
+      return(ret)
+    })
+    
+    return(txt_out)
+    
+    
+    
+  }) %>% 
+    do.call(cbind, .) %>% 
+    apply(., 1, function(l){
+      
+      if(all(l == "")){
+        ret <- ""
+      }else{
+        ret <- paste(l[nchar(l) > 0], collapse = ";")
+      }
+      
+    })
+  
+  return(text_raw)
+}#end function
+
+
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 w_mask <- raster::raster(paste0(baseDir, "_global/masks/mask_world_1km.tif"))
 
@@ -142,7 +206,18 @@ clim_clust <- raster::shapefile(paste0(root, "_results/cluster_results/climate/c
 crs(conf_clust) <- crs(c_mask)
 crs(clim_clust) <- crs(c_mask)
 
-conf_clust@data <- conf_clust@data %>% 
+
+
+clim_clust_labs <- readr::read_csv(paste0(baseDir, iso, "/_results/cluster_results/climate/climate_reg_cluster_text_description.csv")) %>% 
+  dplyr::mutate(across(everything(.), as.character))
+
+conf_clust_labs <- read_csv(paste0(root, "_results/cluster_results/conflict/conflict_cluster_text_description.csv")) %>%
+  dplyr::mutate(across(everything(.), as.character))
+
+
+conf_clust@data <-  conf_clust@data %>% 
+  left_join(., conf_clust_labs , by = c("clust")) %>% 
+  dplyr::rename(clust_km = short_label)  %>% 
   rename_with(., function(i){return("conflict_cluster_text_description")}, starts_with("cltrt")) %>% 
   #dplyr::rename("label" = "clust") %>% 
   dplyr::mutate(short_label = stringr::str_extract(string = label, pattern = "[A-Za-z]+"),
@@ -150,8 +225,6 @@ conf_clust@data <- conf_clust@data %>%
   as_tibble()
 
 
-clim_clust_labs <- readr::read_csv(paste0(baseDir, iso, "/_results/cluster_results/climate/climate_reg_cluster_text_description.csv")) %>% 
-  dplyr::mutate(across(everything(.), as.character))
 
 clim_clust@data <- clim_clust@data %>%
   dplyr::mutate(clust = as.character(clust)) %>%
@@ -298,6 +371,50 @@ ggsave(g2,
        width=8,
        units="in")
 
+
+
+#######################################################################################
+############## create clim cluster maps with labels ##################################
+#####################################################################################
+
+
+
+lvls_clim <- clim_clust@data %>% 
+  dplyr::select(label, order) %>% 
+  dplyr::filter(!duplicated(label)) %>% 
+  dplyr::arrange(desc(order)) %>% 
+  pull(label) 
+
+clim_clust@data$label <- factor(clim_clust@data$label, levels = lvls_clim)
+
+clim_map <- tmap::tm_shape(shp)+
+  tm_borders(col = "black")+
+  tm_shape(clim_clust)+
+  tm_fill(col = "label", palette = "-YlOrRd" , alpha = 0.7, title = "Climatic clusters")+
+  #tm_borders(col ="black") + 
+  tm_compass(type = "8star", position = c("right", "top")) +
+  tm_scale_bar(breaks = c(0, 100, 200), text.size = 1, position = c(scale_bar_pos, scale_bar_top))+
+  tm_layout(legend.outside=T, 
+            legend.text.size = 1,
+            legend.title.size= 1.3,
+            legend.frame=F,
+            #legend.position=c(0.985, 0.985),
+            legend.just = c("left", "top"), 
+            legend.width= 1,
+            #outer.margins = c(0,0,0,0),
+            #inner.margins = c(0,0,0,0)
+            legend.height= -0.2 )
+#x11();inter_map
+
+tmap_save(clim_map,
+          filename= paste0(root, "_results/cluster_results/climate/climate_clusters_map.png" ),
+          dpi=300, 
+          #insets_tm=insetmap, 
+          #insets_vp=vp,
+          height=10,
+          width=24,
+          units="in")
+
 ######################################################################################
 ################## Create intersection of climate-conflict map #######################
 ######################################################################################
@@ -387,8 +504,8 @@ for(i in get_ip_names){
   
   cat(">>> creating maps for: ", ip_x, "\n")
 
-  ip_codes <- read_csv(paste0(root, "_results/hotspots/", iso, "_hotspots_values.csv")) %>% 
-    dplyr::filter(ip == i) 
+  ip_codes <- read_csv(paste0(root, "_results/hotspots/ip_maps/", iso, "_hotspots_values.csv")) %>% 
+    dplyr::filter(ip == ip_x) 
   
   
   labs_tbl <- lapply(1:length(unique(ip_codes$category)), function(i){
@@ -432,9 +549,6 @@ for(i in get_ip_names){
     left_join(., long_labels_tbl) %>%
     left_join(., ip_codes %>% dplyr::select(category, raster_value), by = c("rast_values" = "raster_value"))
   
-  
-  
-  
   tb <- read.csv(file = paste0(baseDir,iso,'/_results/hotspots/soc_eco_all_variables.csv')) # soc_eco_all_variables.csv # soc_eco_selected_variables.csv
   tb$Code <- gsub(pattern = '{iso}', replacement = iso, x = tb$Code, fixed = T)
   tb <- tb %>% dplyr::filter(IP_id == ip_x)
@@ -457,6 +571,7 @@ for(i in get_ip_names){
                   chars = nchar(final_short_lab),
                   seq = 1:nrow(.)) %>%
     arrange(chars)
+  
   
   rast_labs %>%
     dplyr::select(value_ID = ID, label = final_label) %>% 
@@ -556,7 +671,7 @@ for(i in get_ip_names){
     tm_borders(lw=2, col="red") +
     tm_layout(inner.margins = c(0.04,0.04,0.04,0.04), outer.margins=c(0,0,0,0))
  
-  if(var_name == "NAME_0"){
+  if(var_name == "NAME_0" | length(unique(shp_c@data[, var_name  ])) > 2){
     tmap_save(hots_map,
               filename= paste0(root, "_results/hotspots/ip_maps/", ip_x, "_", k,"_map.png"),
               dpi=300, 
@@ -640,7 +755,7 @@ for(i in get_ip_names){
                 legend.height= -0.2 )
     #x11();int_hotst_conf
     
-    if(var_name == "NAME_0"){
+    if(var_name == "NAME_0"| length(unique(shp_c@data[, var_name  ])) > 2){
       tmap_save(int_hotst_conf,
                 filename= paste0(root, "_results/cluster_results/",tolower(gsub(" ", "_", var)), "_",ip_x, "_", k , "_climate_intersection.png"),
                 dpi=300, 
@@ -680,7 +795,6 @@ for(i in get_ip_names){
 ################################################################################
 
 
-
 mf_diff <- raster::raster("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/KEN/education/medn_difference_edu.tif")
 
 m_edu <- raster::raster("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/KEN/education/medn_male_edu.tif")
@@ -695,7 +809,7 @@ m_pop[m_pop[] <= 1] <- NA
 f_pop <- raster::raster("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/KEN/gender_population/female_population.tif")
 f_pop[f_pop[] <= 1] <- NA
   
-  
+livelihoods <- raster::shapefile("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/KEN/livelihood/KE_LHZ_2011.shp")
 
 fips_country <- switch (iso,
                         "KEN" = "KE",
@@ -739,6 +853,10 @@ eth_c@data$eth_long_name <- eth_c@data %>%
 
 ###### save conflict-climate - ip's intersection
 
+#extract data from raster files
+
+#clusts_to_share <- as(sf::st_read(paste0(root, "/_results/clim_conflict_ips_overlays.geojson")), "Spatial")
+
 clusts_to_share <- conf_clust
 
 rs <- sp::over(clusts_to_share, shp, returnList = T) 
@@ -749,27 +867,63 @@ m_edu_ext <- exactextractr::exact_extract(m_edu, sf::st_as_sf(clusts_to_share), 
 f_edu_ext <- exactextractr::exact_extract(f_edu, sf::st_as_sf(clusts_to_share), fun = "median")
 m_pop_ext <- exactextractr::exact_extract(m_pop, sf::st_as_sf(clusts_to_share), fun = "sum")
 f_pop_ext <- exactextractr::exact_extract(f_pop, sf::st_as_sf(clusts_to_share), fun = "sum")
-
 eth_ext <- sp::over(clusts_to_share, eth_c, returnList = T) 
-
+liveext <- sp::over(clusts_to_share, livelihoods, returnList = T)
 
 
 clusts_to_share@data <- clusts_to_share@data %>% 
   dplyr::mutate(NAME_1 = lapply(rs, function(df){df %>% pull(NAME_1) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
                 NAME_2 = lapply(rs, function(df){df %>% pull(NAME_2) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
                 NAME_3 = lapply(rs, function(df){df %>% pull(NAME_3) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
+                livelihoods = lapply(liveext, function(df){df %>% pull(LZNAMEEN) %>% unique(.) %>% paste(., collapse = ";") }) %>%  unlist,
                 median_male_female_edu_diff  = mf_diff_ext,
                 median_male_edu = m_edu_ext,
                 median_female_edu = f_edu_ext,
+                male_population = m_pop_ext,
+                female_population = f_pop_ext,
                 ethnicity_short_name = lapply(eth_ext, function(df){df %>% pull(eth_short_name) %>% unique(.) %>% paste(., collapse =";")}) %>%  unlist,
                 ethnicity_long_name = lapply(eth_ext, function(df){df %>% pull(eth_long_name)%>% unique(.) %>% paste(., collapse =";") }) %>%  unlist ) 
 
 
+# extract information from ip variables
+rc_fls <- list.files(path = paste0(root, "_results/hotspots/ip_maps/"), pattern = "rc.tif$")
+
+ip_raw_info <- tibble(file_names = rc_fls,
+                      source_file = stringr::str_extract(rc_fls , pattern = "_([A-Z](\\w| )+)_") %>% 
+                        stringr::str_replace_all("_", ""),
+                      IP_id = stringr::str_extract(rc_fls , pattern = "ip[0-9]"),
+                      Code = str_replace(rc_fls , pattern = "_(ip[0-9]+rc.tif)", "") %>% 
+                        str_replace(. , pattern = "_[A-Z][a-z]+ [a-z]+", "") %>% 
+                        str_replace(. , pattern = "_[A-Z][a-z]+", "") ,
+                      file_path = paste0(root, "_results/hotspots/ip_maps/",rc_fls))
+
+  
+  
+
+for(ip_x in get_ip_names){
+  
+  v_name <- paste0(ip_x, "_text_description")
+  clusts_to_share@data <- clusts_to_share@data %>% 
+    dplyr::mutate(!!v_name := ip_text_description(shp_object = clusts_to_share,
+                                                  ip = ip_x,
+                                                  df = ip_raw_info,
+                                                  n_vars = 10 ))
+  
+}
+
+
+
 clusts_to_share@data <- clusts_to_share@data %>% 
   dplyr::mutate(across(everything(.), as.vector)) %>% 
-  dplyr::select(  conflict_clust_label = label, 
-                  conflict_clust_short_label = clst_km, 
-                  conflict_cluster_text_description,
+  dplyr::select(  EVENTS,
+                  TYPE_RICHNESS = TYPE_RI,
+                  SUBTYPE_RICHNESS = SUBTYPE,
+                  ACTOR1_RICHNESS = ACTOR1_,
+                  ACTOR2_RICHNESS = ACTOR2_,
+                  FATALITIES = FATALIT,
+                  conflict_clust_label = label, 
+                  conflict_clust_short_label = clust_km, 
+                  conflict_cluster_text_description = clutert_text_description,
                   clim_cluster_text_description = clim_cluster,
                   clim_cluster_short_label, 
                   intersect_conf_clim,
@@ -779,20 +933,20 @@ clusts_to_share@data <- clusts_to_share@data %>%
                   NAME_3,
                   clim_cluster_order,
                   starts_with("median"),
-                  starts_with("ethnicity")) 
+                  starts_with("ethnicity"),
+                  female_population,
+                  male_population,
+                  livelihoods) 
 
-
-clusts_to_share@data <- clusts_to_share@data %>% 
-  dplyr::mutate(male_population = m_pop_ext,
-                female_population = f_pop_ext)
+#clusts_to_share@data$conflict_cluster_text_description[1]
 
 row.names(clusts_to_share@data) <- sapply(slot(clusts_to_share, "polygons"), function(x) slot(x, "ID"))
 
 geojsonio::geojson_json(clusts_to_share) %>% 
-  geojsonio::geojson_write(., file = paste0(to_share_dir, "/", iso, "_clim_conflict_ips_overlays.geojson") )
+  geojsonio::geojson_write(., file = paste0(root, "/_results/clim_conflict_ips_overlays.geojson") )
 
-raster::shapefile(clusts_to_share, paste0(root, "_results/cluster_results/conflict/clim_conflict_ips_overlays.shp"), overwrite = T)
-
+#raster::shapefile(clusts_to_share, paste0(root, "_results/clim_conflict_ips_overlays.shp"), overwrite = T)
+base::saveRDS(clusts_to_share, paste0(root, "_results/clim_conflict_ips_overlays.rds"))
 
 hot_high_conflict_areas <- clusts_to_share %>%
   sf::st_as_sf() %>%
@@ -807,14 +961,15 @@ hot_moderate_conflict_areas <- clusts_to_share %>%
                 clim_cluster_order %in% c(3,4)) %>% 
   dplyr::filter(if_any(.cols = contains("category"), .fns = ~ nchar(.) != 0  ))  
 
-raster::shapefile(as(hot_high_conflict_areas, "Spatial"), paste0(root, "_results/hot_areas_high_conflict.shp"), overwrite  = T)
-raster::shapefile(as(hot_moderate_conflict_areas, "Spatial"), paste0(root, "_results/hot_areas_moderate_conflict.shp"), overwrite  = T)
 
 
+geojsonsf::sf_geojson(hot_high_conflict_areas) %>% 
+  geojsonio::geojson_write(., file = paste0(root, "_results/hot_areas_high_conflict.geojson") )
 
 
+geojsonsf::sf_geojson(hot_moderate_conflict_areas) %>% 
+  geojsonio::geojson_write(., file = paste0(root, "_results/hot_areas_moderate_conflict.geojson") )
 
 
-
-
-
+#raster::shapefile(as(hot_high_conflict_areas, "Spatial"), paste0(root, "_results/hot_areas_high_conflict.shp"), overwrite  = T)
+#raster::shapefile(as(hot_moderate_conflict_areas, "Spatial"), paste0(root, "_results/hot_areas_moderate_conflict.shp"), overwrite  = T)

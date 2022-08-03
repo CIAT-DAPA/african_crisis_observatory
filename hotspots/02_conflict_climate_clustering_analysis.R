@@ -74,13 +74,13 @@ reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimensi
   return(ret)
 }
 
-get_conflic_data <- function(root, iso, country = 'Senegal'){
+get_conflic_data <- function(root, iso, country = 'Senegal', world_mask){
   
   out <- paste0(root,'/data/',iso,'/conflict/',iso,'_conflict.csv')
   dir.create(path = dirname(out), F, T)
   if(!file.exists(out)){
     # Filter African conflict to the specific country
-    cnf <- readxl::read_excel(paste0(root,'/data/_global/conflict/Africa_1997-2021_Apr02.xlsx'), sheet = 1)
+    cnf <- readxl::read_excel(paste0(root,'/data/_global/conflict/Africa_1997-2022_Jul08.xlsx'), sheet = 1)
     cnf <- cnf %>% dplyr::filter(COUNTRY == country)
     readr::write_csv(cnf, out)
     conflict <- cnf; rm(cnf, out)
@@ -117,6 +117,25 @@ get_conflic_data <- function(root, iso, country = 'Senegal'){
     dplyr::ungroup() %>% 
     dplyr::select(x= LONGITUDE, y = LATITUDE, everything(.))
   
+  if(!file.exists(paste0(root,'/data/',iso,'/conflict/conflict_kernel_density.tif'))){
+    cat("Calculating conflict kernel density \n")
+    
+    ext <- extent(shp)
+    msk <- world_mask %>% 
+      raster::crop(., extent(shp)) %>% 
+      raster::mask(., shp)
+    
+    p_var <- spatstat.geom::ppp(cnf_summ$x, cnf_summ$y, 
+                                window = spatstat.geom::owin(c(ext[1], ext[2]), c(ext[3], ext[4]),
+                                                             mask = matrix(TRUE,dim(msk)[1],dim(msk)[2]) ))
+    ds <- spatstat.core::density.ppp(p_var, at = "pixels", kernel = "epanechnikov")
+    knl <- raster::raster(ds) %>% 
+      raster::crop(., extent(shp)) %>% 
+      raster::mask(., shp) %>% 
+      raster::resample(., raster(resolution = c(0.008983153, 0.008983153)))
+    
+    writeRaster(knl, paste0(root,'/data/',iso,'/conflict/conflict_kernel_density.tif'), overwrite = T)
+  }
   
   return(list(cnf_summ, sft))
 }
@@ -707,7 +726,8 @@ crs(knl) <- crs(world_mask)
 
 
 conflict_raw <-  get_conflic_data(root = root,
-                                  iso = iso) %>% 
+                                  iso = iso,
+                                  country = "Kenya") %>% 
   purrr::pluck(1)
 
 
@@ -804,6 +824,16 @@ cluster_labels <- original_df %>%
 
 write_csv(cluster_labels, paste0(root,"/data/", iso, "/_results/cluster_results/conflict/conflict_cluster_text_description.csv"))
 
+
+to_save <- original_df %>% 
+  st_drop_geometry() %>% 
+  dplyr::right_join(., grd, by = c("ov" = "id")) %>% 
+  dplyr::filter(!is.na(clust))
+
+
+sf::st_write(to_save, paste0(root, "/data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust.shp"), delete_dsn = T)
+#st_intersects(grd, shp) %>% unlist %>% lenght
+
 original_df <-  original_df %>% 
   left_join(., cluster_labels , by = c("clust")) %>% 
   dplyr::rename(clust_km = short_label) 
@@ -812,17 +842,6 @@ original_df <-  original_df %>%
 to_plot <- grd %>% 
   left_join(., original_df %>% st_drop_geometry(), by = c("id" = "ov")) %>% 
   dplyr::filter(!is.na(clust_km))
-
-
-to_save <- original_df %>% 
-  st_drop_geometry() %>% 
-  dplyr::right_join(., grd, by = c("ov" = "id")) %>% 
-  dplyr::filter(!is.na(clust))
-
-
-
-sf::st_write(to_save, paste0(root, "/data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust.shp"), delete_dsn = T)
-#st_intersects(grd, shp) %>% unlist %>% lenght
 
 
 mainmap3<- tmap::tm_shape(shp)+
