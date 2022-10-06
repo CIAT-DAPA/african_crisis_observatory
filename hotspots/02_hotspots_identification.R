@@ -20,8 +20,11 @@ suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
-iso <- 'KEN'
-country <- 'Kenya'
+iso <- 'SEN'
+country <-  switch (iso,
+                    "KEN" = "Kenya",
+                    "SEN" = "Senegal"
+)
 
 # Load and identify impact pathways
 ip_var_list <- read_csv(paste0(root, "/data/", iso, "/_results/hotspots/soc_eco_all_variables.csv")) %>% 

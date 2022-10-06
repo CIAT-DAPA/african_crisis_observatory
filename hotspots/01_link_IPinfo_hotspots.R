@@ -12,16 +12,29 @@ options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notat
 suppressMessages(library(pacman))   # Loading R-packages
 suppressMessages(pacman::p_load(tidyverse,readxl))
 
-root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
-iso  <- "KEN"
-cntr <- 'Kenya'
+
+
+
 
 select_eco_vars <- function(root, iso, cntr, ip){
   
+  
+  
   vr_tbl <- readxl::read_excel(path = paste0(root,'/Hostpots_data_dictionary.xlsx'), sheet = 1)
+  
+  result <- vr_tbl %>% 
+    dplyr::filter(to_use == "TRUE") %>% 
+    dplyr::mutate(Selected = 1,	Region_key = "NAME_0",	Region_value = cntr, IP_id = ip) %>% 
+    dplyr::select(Variable, Code, Selected, Region_key, Region_value, Threshold, Percentile, Classification, IP_id ) %>% 
+    dplyr::filter(!Classification %in% c("Conflict", "Climate") ) %>% 
+    dplyr::mutate(Code = stringr::str_replace(Code, "\\{iso\\}", iso))
+    
+    
+  
+  if(FALSE){
   # Impact pathways (IP) table
   ip_tbl <- readxl::read_excel(path = paste0(root,'/Africa Climate Security_Country Pathways.xlsx'), sheet = 2)
-  ip_tbl <- ip_tbl %>% dplyr::filter(Country == cntr & IP_id == ip)
+  ip_tbl <- ip_tbl %>% dplyr::filter(Country == cntr)# & IP_id == ip)
   
   ## ip_tbl$Values %>% purrr::map(.f = function(txt){base::strsplit(x = txt, split = "\\s{2,}")[[1]]})
   
@@ -29,6 +42,9 @@ select_eco_vars <- function(root, iso, cntr, ip){
   key <- ip_tbl$Values[setdiff(1:nrow(ip_tbl),grep(pattern = '[cC]limate', x = ip_tbl$Dimension))]
   key <- key[!is.na(key)]
   key <- strsplit(x = key, split = "\\s{2,}") %>% unlist() %>% unique() %>% na.omit() %>% as.character() %>% tolower()
+  
+  ip_tbl$Region_key <- "NAME_0"
+  ip_tbl$Region_value <- cntr
   
   region_key <- unique(ip_tbl$Region_key)
   region_val <- unique(ip_tbl$Region_value)
@@ -38,7 +54,7 @@ select_eco_vars <- function(root, iso, cntr, ip){
   val <- strsplit(x = val, split = ';')
   
   # Function to do the match between key and values
-  select_vars <- function(reference = key, values = val[[6]]){
+  select_vars <- function(reference = key, values = val[[7]]){
     if(all(is.na(values))){ 
       out <- NA; return(NA)
     }else{
@@ -76,27 +92,48 @@ select_eco_vars <- function(root, iso, cntr, ip){
   } else {
     result$Percentile <- as.numeric(result$Percentile)
   }
-  result$Name <- unique(ip_tbl$`Impact pathway`)
+  
+  }#end if (not run)
+  
+  #result$Name <- unique(ip_tbl$`Impact pathway`)
   
   return(result)
   
 }
+
+
+
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
+isos  <- c("KEN", "SEN")
+
+for(iso in isos){
+cat("Getting vars for: ", iso, "\n")
+cntr <- switch (iso,
+                   "KEN" = "Kenya",
+                   "SEN" = "Senegal"
+)
+
+
+to_save <- select_eco_vars(root =root, iso = iso, cntr = cntr, ip = "ip_all")
 dest_dir <- paste0(root ,"/data/",iso,"/_results/hotspots/soc_eco_all_variables.csv")
-if(!file.exists(dest_dir)){
-  ip_tbl <- readxl::read_excel(path = paste0(root,'/Africa Climate Security_Country Pathways.xlsx'), sheet = 2)
-  ip_tbl <- ip_tbl %>% dplyr::filter(Country == cntr)
-  ips <- unique(ip_tbl$IP_id); rm(ip_tbl)
-  ips %>%
-    purrr::map(.f = function(ip){
-      vrs <- select_eco_vars(root, iso, cntr, ip = ip)
-      vrs$IP_id <- ip
-      return(vrs)
-    }) %>%
-    dplyr::bind_rows() %>%
-    write.csv(x = ., file = dest_dir, row.names = F)
-} else {
-  read.csv(file = dest_dir)
+
+write_csv(to_save, dest_dir)
 }
+# if(!file.exists(dest_dir)){
+#   ip_tbl <- readxl::read_excel(path = paste0(root,'/Africa Climate Security_Country Pathways.xlsx'), sheet = 2)
+#   ip_tbl <- ip_tbl %>% dplyr::filter(Country == cntr)
+#   ips <- unique(ip_tbl$IP_id); rm(ip_tbl)
+#   ips %>%
+#     purrr::map(.f = function(ip){
+#       vrs <- select_eco_vars(root, iso, cntr, ip = ip)
+#       vrs$IP_id <- ip
+#       return(vrs)
+#     }) %>%
+#     dplyr::bind_rows() %>%
+#     write.csv(x = ., file = dest_dir, row.names = F)
+# } else {
+#   read.csv(file = dest_dir)
+# }
 
 # View(result)
 # Execute climate clusters code ...

@@ -64,6 +64,14 @@ get_sanit_vars <- function(iso = 'SDN'){
   names(st_flt) <- paste0('yr',2000:2017)
   
   # ------------------------------------ #
+  # average
+  # ------------------------------------ #
+  avgpp_wtr <- mean(pp_wtr)
+  avgst_flt <- mean(st_flt)
+  
+  
+  
+  # ------------------------------------ #
   # Median
   # ------------------------------------ #
   
@@ -89,6 +97,20 @@ get_sanit_vars <- function(iso = 'SDN'){
   out <- paste0(root,'/data/',iso,'/sanitation/medn_sanitation_facilities.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
   if(!file.exists(out)){ terra::writeRaster(x = mst_flt_crp, out) }
+  
+  # Crop average
+  avgpp_wtr_crp <- terra::crop(x = avgpp_wtr, terra::ext(shp))
+  avgpp_wtr_crp <- terra::resample(x = avgpp_wtr_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
+  out <- paste0(root,'/data/',iso,'/sanitation/avg_piped_water.tif')
+  dir.create(dirname(out), showWarnings = F, recursive = T)
+  if(!file.exists(out)){ terra::writeRaster(x = mpp_wtr_crp, out) }
+  
+  avgst_flt_crp <- terra::crop(x = avgst_flt, terra::ext(shp))
+  avgst_flt_crp <- terra::resample(x = avgst_flt_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
+  out <- paste0(root,'/data/',iso,'/sanitation/avg_sanitation_facilities.tif')
+  dir.create(dirname(out), showWarnings = F, recursive = T)
+  if(!file.exists(out)){ terra::writeRaster(x = mst_flt_crp, out) }
+  
   
   # Crop Coefficient of variation
   vpp_wtr_crp <- terra::crop(x = vpp_wtr, terra::ext(shp))

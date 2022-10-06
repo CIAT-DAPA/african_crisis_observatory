@@ -35,7 +35,7 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 # Obtain child growth failure variables
 # -------------------------------------- #
 
-isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
+isos <- c('SDN', "KEN",'ZWE','SEN','MLI','NGA','UGA')
 
 get_chld_grwht_fail <- function(iso = 'SDN'){
   
@@ -74,6 +74,14 @@ get_chld_grwht_fail <- function(iso = 'SDN'){
   names(wstng) <- paste0('yr',2000:2019)
   
   # ------------------------------------ #
+  # 90th percentile
+  # ------------------------------------ #
+  p90stntg <- quantile(stntg, probs = 0.9)
+  p90Avguwght <- quantile(uwght, probs = 0.9)
+  p90wstng <- quantile(wstng, probs = 0.9)
+  
+  
+  # ------------------------------------ #
   # Median
   # ------------------------------------ #
   
@@ -107,6 +115,26 @@ get_chld_grwht_fail <- function(iso = 'SDN'){
   out <- paste0(root,'/data/',iso,'/child_growth_failure/medn_wasting.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
   if(!file.exists(out)){ terra::writeRaster(x = mwstng_crp, out) }
+  
+  # 90th percentile
+  p90stntg_crp <- terra::crop(x = p90stntg, terra::ext(shp))
+  p90stntg_crp <- terra::resample(x = p90stntg_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
+  out <- paste0(root,'/data/',iso,'/child_growth_failure/p90_stunting.tif')
+  dir.create(dirname(out), showWarnings = F, recursive = T)
+  if(!file.exists(out)){ terra::writeRaster(x = p90stntg_crp, out) }
+  
+  p90Avguwght_crp <- terra::crop(x = p90Avguwght, terra::ext(shp))
+  p90Avguwght_crp <- terra::resample(x = p90Avguwght_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
+  out <- paste0(root,'/data/',iso,'/child_growth_failure/p90_underweight.tif')
+  dir.create(dirname(out), showWarnings = F, recursive = T)
+  if(!file.exists(out)){ terra::writeRaster(x = p90Avguwght_crp, out) }
+  
+  p90wstng_crp <- terra::crop(x = p90wstng, terra::ext(shp))
+  p90wstng_crp <- terra::resample(x = p90wstng_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
+  out <- paste0(root,'/data/',iso,'/child_growth_failure/p90_wasting.tif')
+  dir.create(dirname(out), showWarnings = F, recursive = T)
+  if(!file.exists(out)){ terra::writeRaster(x = p90wstng_crp, out) }
+  
   
   # Crop Coefficient of variation
   vstntg_crp <- terra::crop(x = vstntg, terra::ext(shp))
@@ -176,5 +204,6 @@ get_chld_grwht_fail <- function(iso = 'SDN'){
 }
 isos %>%
   purrr::map(.f = function(iso){
+    cat("Getting vars for: ", iso, "\n")
     get_chld_grwht_fail(iso = iso)
   })

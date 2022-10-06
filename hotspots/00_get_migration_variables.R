@@ -69,6 +69,17 @@ get_migr_vars <- function(iso = 'SDN'){
   dir.create(dirname(out), showWarnings = F, recursive = T)
   if(!file.exists(out)){ terra::writeRaster(x = mmgrt_crp, out) }
   
+  # ------------------------------------- #
+  # 90th percentile
+  # ------------------------------------- #
+  
+  p95mgrt <- terra::quantile(mgrt, probs = 0.90)
+  vmgrt_crp <- terra::resample(x = p95mgrt, y = ref) %>% terra::mask(x = ., mask = shpr)
+  out <- paste0(root,'/data/',iso,'/migration/p90_migration.tif')
+  dir.create(dirname(out), showWarnings = F, recursive = T)
+  if(!file.exists(out)){ terra::writeRaster(x = vmgrt_crp, out) }
+  
+  
   # ------------------------------------ #
   # Coefficient of variation
   # ------------------------------------ #

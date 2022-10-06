@@ -17,7 +17,7 @@ g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 .rs.restartR()                      # Restart R session
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
-suppressMessages(pacman::p_load(tidyverse,terra,raster,sf,stars,motif,tmap))
+suppressMessages(pacman::p_load(tidyverse,terra,raster,sf,stars,motif,tmap,spdep))
 suppressMessages(pacman::p_load(meteo,sp,spacetime,gstat,plyr,xts,snowfall,doParallel,CAST,ranger))
 suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr))
 
@@ -87,7 +87,7 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask){
   } else {
     # Load country conflict
     conflict <- readr::read_csv(out); rm(out)
-  }; rm(out)
+  }
   
   # Load the country lowest administrative level shapefile
   if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
@@ -381,6 +381,7 @@ labeling_function <- function(db, n_vars){
     pull(var_name)
   
   
+  
   glb_df <- read_csv(paste0(dest_dir, dimension, "_reg_cluster_statistics.csv"))%>% 
     dplyr::filter(variable %in% selected_vars)
   
@@ -450,7 +451,7 @@ labeling_function <- function(db, n_vars){
   
   ret <- tibble(clust = unique(fr$clust), text_output )
   
-  return(ret)
+  return(list(text_output = ret, var_imp = selected_vars))
 }#end function
 
 
@@ -458,12 +459,20 @@ labeling_function <- function(db, n_vars){
 
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
-country_iso2 <- iso <- "KEN"
+
+
+country_iso2 <- iso <- "SEN"
+
+
+country <- switch (iso,
+  "KEN" = "Kenya",
+  "SEN" = "Senegal"
+)
 
 baseDir <- paste0(root, "data/",country_iso2)
 
 shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>% 
-  sf::st_as_sf() %>% 
+  sf::st_as_sf(.) %>% 
   dplyr::mutate(id = 1:nrow(.))
 
 country <- unique(shp$NAME_0)
@@ -476,7 +485,8 @@ clm <- select_clim_vars(root = substr(root, start = 1, stop = nchar(root)-1 ),
                         iso  = iso, 
                         cntr = country) %>% 
   dplyr::pull(Code) %>% 
-  unique()
+  unique() %>% 
+ .[!grepl("p90|avg|CV_cv", .)]
 
 
 fls <- list.files(path = paste0(root,'/data/',country_iso2), pattern = 'tif$', full.names = T, recursive = T)
@@ -489,7 +499,8 @@ fls <- as.character(na.omit(fls))
 
 file_paths <- tibble(path = fls,
                      type = "climate" ) %>% 
-  add_row(path = c(list.files(paste0(baseDir, '/conflict'), pattern = ".tif$", full.names = T)), type = "conflict")
+  add_row(path = c(list.files(paste0(baseDir, '/conflict'), pattern = ".tif$", full.names = T)), type = "conflict") %>% 
+  dplyr::filter(!grepl("old|temp|tmp", path))
 
 
 check_files <- lapply(file_paths$path, file.exists) %>% unlist()
@@ -648,8 +659,8 @@ clust_mtrs$reg_rel_change <- clust_descriptives(clust_sum = clust_mtrs$reg_clust
 if(length(unique(clust_mtrs$reg_clust_values$clust)) <= 7){
   
   cluster_text <- labeling_function(db = clust_mtrs$reg_clust_values, n_vars = 6)
-  write_csv(cluster_text, paste0(dest_dir, dimension, "_reg_cluster_text_description.csv"))
-  
+  write_csv(cluster_text$text_output, paste0(dest_dir, dimension, "_reg_cluster_text_description.csv"))
+  write_csv(data.frame(var = cluster_text$var_imp), paste0(dest_dir, dimension, "_most_imp_clim_vars.csv") )
   
 }else{
   cat("Number of cluster greather than 7")
@@ -675,7 +686,7 @@ write_csv(clust_mtrs$reg_clust_values, paste0(dest_dir, dimension, "_reg_cluster
 # write_csv(clust_mtrs_cl, paste0(dest_dir, dimension, "_cluster_eval.csv"))
 # 
 cat(">>>writing clusters grid to dest_dir \n")
-sf::st_write(eco_grid_sf, paste0(dest_dir, dimension,"_regular_clust.shp"), delete_dsn = T)
+sf::st_write(eco_grid_sf %>% dplyr::select(-signature), paste0(dest_dir, dimension,"_regular_clust.shp"), delete_dsn = T)
 #sf::st_write(eco_grid_sf_irr, paste0(dest_dir, dimension,"_irregular_clust.shp"), delete_dsn = T)
 
 
@@ -703,7 +714,27 @@ if(dimension != "climate"){
 
 ggsave(plot = g1, filename = paste0(dest_dir, dimension,'_regular_boxplots.png'), dpi = 400, width = 15, height = 8, units = "in")
 
-ggsave(plot = g2, filename = paste0(dest_dir, dimension,'_irregular_boxplots.png'), dpi = 400, width = 15, height = 8, units = "in")
+#ggsave(plot = g2, filename = paste0(dest_dir, dimension,'_irregular_boxplots.png'), dpi = 400, width = 15, height = 8, units = "in")
+
+
+clim_clust_map<- tmap::tm_shape(shp)+
+  tm_borders(col = "black")+
+  tm_shape(eco_grid_sf)+
+  tm_fill(col = "clust", palette = RColorBrewer::brewer.pal(c_optim_num, "BrBG") , alpha = 0.7, title = expression("Conflict clusters"))#+
+#tm_borders(col ="black") 
+
+
+x11();clim_clust_map
+
+tmap_save(clim_clust_map,
+          filename= paste0(root, "/data/", iso, "/_results/cluster_results/climate/climate_regular_clust_map.png"),
+          dpi=300, 
+          #insets_tm=insetmap, 
+          #insets_vp=vp,
+          height=8,
+          width=15,
+          units="in")
+
 
 
 
@@ -721,15 +752,16 @@ shp <- raster::shapefile(paste0(root,"/data/", iso, "/_shps/",iso,".shp" )) %>%
 world_mask <- raster::raster(paste0(root,"/data/_global/masks/mask_world_1km.tif")) %>% 
   raster::crop(., extent(shp))
 
-knl <- raster::raster(paste0(root, "/data/", iso, "/conflict/conflict_kernel_density.tif"))
-crs(knl) <- crs(world_mask)
-
 
 conflict_raw <-  get_conflic_data(root = root,
                                   iso = iso,
-                                  country = "Kenya") %>% 
+                                  country = country,
+                                  world_mask = world_mask) %>% 
   purrr::pluck(1)
 
+
+knl <- raster::raster(paste0(root, "/data/", iso, "/conflict/conflict_kernel_density.tif"))
+crs(knl) <- crs(world_mask)
 
 
 
@@ -783,7 +815,7 @@ cords <- rbind(x$ind$coord) %>%
 thr <- cords %>% dplyr::filter(rng) %>% pull(dst) %>% quantile %>% .[4]
 
 wh <- cords %>% 
-  dplyr::mutate(wh = ifelse(dst > thr, 7, 1)) %>% 
+  dplyr::mutate(wh = ifelse(dst > thr, 8, 1)) %>% 
   dplyr::pull(wh)
 
 
@@ -865,7 +897,7 @@ tmap_save(mainmap3,
 
 
 to_boxplot <- to_save %>% 
-  dplyr::select(-x, -clust_km)
+  dplyr::select(-ov)
 
 g <- make_cluster_plots(df = to_boxplot)
 x11();g
