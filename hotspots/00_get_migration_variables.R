@@ -29,7 +29,7 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 # Obtain migration variables
 # -------------------------------------- #
 
-isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
+isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA', "ETH", "GTM", "PHL", "ZMB")
 
 get_migr_vars <- function(iso = 'SDN'){
   
@@ -91,7 +91,8 @@ get_migr_vars <- function(iso = 'SDN'){
   if(!file.exists(out)){ terra::writeRaster(x = vmgrt_crp, out) }
   
   # Crop Trend
-  tmgrt <- terra::app(x = mgrt, fun = function(x){
+  out <- paste0(root,'/data/',iso,'/migration/trnd_migration.tif')
+  if(!file.exists(out)){ tmgrt <- terra::app(x = mgrt, fun = function(x){
     x <- as.numeric(na.omit(x))
     if(length(x) > 1){
       y <- trend::sens.slope(x)$estimates
@@ -101,12 +102,15 @@ get_migr_vars <- function(iso = 'SDN'){
     return(y)
   })
   tmgrt_crp <- terra::resample(x = tmgrt, y = ref) %>% terra::mask(x = ., mask = shpr)
-  out <- paste0(root,'/data/',iso,'/migration/trnd_migration.tif')
+  
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = tmgrt_crp, out) }
+  terra::writeRaster(x = tmgrt_crp, out)
+  }
   
 }
+
 isos %>%
   purrr::map(.f = function(iso){
+    cat("processing: ", iso, "\n")
     get_migr_vars(iso = iso)
   })

@@ -26,6 +26,9 @@ select_clim_vars <- function(root, iso, cntr){
     vr_tbl <- readxl::read_excel(path = paste0(root,'/Hostpots_data_dictionary.xlsx'), sheet = 1)
     # Impact pathways (IP) table
     ip_tbl <- readxl::read_excel(path = paste0(root,'/Africa Climate Security_Country Pathways.xlsx'), sheet = 2)
+    if(!cntr %in% unique(ip_tbl$Country)){
+      cntr <- "Kenya"
+    }
     ip_tbl <- ip_tbl %>% dplyr::filter(Country == cntr)
     
     ## ip_tbl$Values %>% purrr::map(.f = function(txt){base::strsplit(x = txt, split = "\\s{2,}")[[1]]})

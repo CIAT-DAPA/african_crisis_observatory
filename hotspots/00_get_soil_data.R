@@ -6,10 +6,9 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/agro-clim-indices/main/AWCPT
 #   outfiles: output file paths
 # Output:
 #   Raster files of soil capacity and soil saturation values
-shp_fl <- 'W:/1.Data/Palmira/CSO/data/SEN/_shps/SEN.shp'
 
-get_soil <- function(shp_fl = shp_fl, root_depth = 60, outfiles = c('W:/1.Data/Palmira/CSO/data/SEN/climatic_indexes/temp/soilcp.tif',
-                                                                    'W:/1.Data/Palmira/CSO/data/SEN/climatic_indexes/temp/soilsat.tif')){
+get_soil <- function(shp_fl = shp_fl, root_depth = 60, outfiles = c(soil_cp,
+                                                                    soil_sat)){
   
   if(sum(!file.exists(outfiles)) != 0){
     # Load packages
@@ -139,5 +138,34 @@ get_soil <- function(shp_fl = shp_fl, root_depth = 60, outfiles = c('W:/1.Data/P
 }
 
 
-get_soil(shp_fl = shp_fl, root_depth = 60, outfiles = c('W:/1.Data/Palmira/CSO/data/SEN/climatic_indexes/temp/soilcp.tif',
-                                                        'W:/1.Data/Palmira/CSO/data/SEN/climatic_indexes/temp/soilsat.tif'))
+
+
+
+future::plan(multisession, workers = 11)
+isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA', "ETH", "GTM", "PHL", "ZMB")
+
+isos %>% 
+  furrr::future_map(.x = ., .f = function(.x){
+    iso <- .x
+    cat("Processing: ", iso, "/n")
+    shp_fl <- paste0('//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/', iso,'/_shps/', iso, '.shp')
+    
+    out_dir_soil <- paste0('//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/', iso,'/climatic_indexes/temp/')
+    
+    if(!dir.exists(out_dir_soil)){dir.create(out_dir_soil)}
+    
+    soil_cp  <- paste0('//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/', iso,'/climatic_indexes/temp/soilcp.tif')
+    soil_sat <- paste0('//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/', iso,'/climatic_indexes/temp/soilsat.tif')
+    
+    if(file.exists(soil_cp) & file.exists(soil_sat)){
+      print("file already exists")
+    }else{
+      get_soil(shp_fl = shp_fl, root_depth = 60, outfiles = c(soil_cp,
+                                                              soil_sat))
+      
+    }
+    
+   return(NULL)  
+  })
+
+future::plan(sequential)

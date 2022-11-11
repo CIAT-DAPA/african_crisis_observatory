@@ -45,7 +45,7 @@ gdp  <- readr::read_csv(paste0(root,'/data/_global/wealth_index/API_NY.GDP.PCAP.
 gini <- readr::read_csv(paste0(root,'/data/_global/wealth_index/API_SI.POV.GINI_DS2_en_csv_v2_2445276/API_SI.POV.GINI_DS2_en_csv_v2_2445276.csv'))
 mask <- raster::raster(paste0(root,'/data/_global/masks/mask_world_1km.tif'))
 
-ISO3 <- "SDN"
+ISO3 <- "GTM"
 
 wealth_dir <- paste0(root,'/data/_global/wealth_index')
 rwi_out_dir <-  paste0(root,'/data/', ISO3,'/wealth_index')
@@ -54,7 +54,7 @@ if(!dir.exists(rwi_out_dir)){dir.create(rwi_out_dir, F, T)}
 
 country_gini <- gini %>% 
   dplyr::filter(`Country Code` == ISO3) %>% 
-  dplyr::select(tidyselect::where(~!all(is.na(.)))) %>% 
+  dplyr::select(where(~!all(is.na(.)))) %>% 
   dplyr::pull(ncol(.))
 country_gini <- country_gini/100
 
@@ -180,3 +180,15 @@ r_f <- rasterize(country_rwi, r, fun = mean, field = "AWE")
 r_f <- raster::resample(r_f, mask %>% raster::crop(., extent(shp_country)) )
 
 writeRaster(r_f, paste0(wealth_dir, "/AWE_africa.tif"), overwrite = T)
+
+# 
+# awe_af <- terra::rast("W:/1.Data/Palmira/CSO/data/_global/wealth_index/AWE_africa.tif")
+# shp_c <- terra::vect("W:/1.Data/Palmira/CSO/data/SDN/_shps/.shp")
+# 
+# r <- awe_af %>% 
+#   terra::mask(., shp_c) 
+# 
+# terra::writeRaster(r, "W:/1.Data/Palmira/CSO/data/ETH/wealth_index/ETH_AWE.tif")
+# plot(r)
+
+

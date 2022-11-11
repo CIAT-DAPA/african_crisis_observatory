@@ -58,6 +58,7 @@ calc_AgrClm_cmplx <- function(season = season, shp_fl = shp_fl,
   # Filtering days within the season
   yrs <- lubridate::year(tmx_dts)
   yrs <- names(table(yrs)[table(yrs) %in% 365:366])
+  yrs <- yrs[!yrs %in% c("2020", "2021")]
   
   tmx_fls <- tmx_fls[lubridate::year(tmx_dts) %in% yrs]
   tmn_fls <- tmn_fls[lubridate::year(tmn_dts) %in% yrs]
@@ -173,17 +174,25 @@ calc_AgrClm_cmplx <- function(season = season, shp_fl = shp_fl,
 
 
 
-iso <- "SEN"
-
+iso <- "ZMB"
 
 seasons <- switch(iso, "KEN" = list(season_type_1 = 1:6, season_type_2 = 7:12),
-                  "SEN" = list(season_type_1 = 6:12)  #source: https://www.fao.org/giews/countrybrief/country.jsp?lang=en&code=SEN
+                  "SEN" = list(season_type_1 = 6:12),
+                  "ETH" = list(season_type_1 = 4:10),
+                  "GTM" = list(season_type_1 = 5:11),
+                  "MLI" = list(season_type_1 = 6:12),
+                  "NGA" = list(season_type_1 = 6:12),
+                  "PHL" = list(season_type_1 = 6:12),
+                  "SDN" = list(season_type_1 = 6:10),
+                  "UGA" = list(season_type_1 = 3:10),
+                  "ZMB" = list(season_type_1 = 1:6, season_type_2 = 7:12),
+                  "ZWE" = list(season_type_1 = 1:6, season_type_2 = 7:12)
 )
 
 
-shp_fl <- paste0("W:/1.Data/Palmira/CSO/data/" ,iso, "/_shps/" , iso, ".shp")
+shp_fl <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/" ,iso, "/_shps/" , iso, ".shp")
 tmp_path <- "//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/chirps-v2.0.2020.01.01.tif"
-out_root_dir <- paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/temp/")
+out_root_dir <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/temp/")
 #soil_pth <- "//catalogue/workspace_cluster_14/WFP_ClimateRiskPr/1.Data/soil/KEN"
 
 
@@ -193,8 +202,8 @@ out_root_dir <- paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/te
     cat(paste0('Processing season ',names(seasons)[s],':\n'))
     # Indices calculation
     indices <- calc_AgrClm_cmplx(seasons[[s]], shp_fl,
-                                 soil_cp_pth = 'W:/1.Data/Palmira/CSO/data/SEN/climatic_indexes/temp/soilcp.tif',
-                                 soil_sat_pth = 'W:/1.Data/Palmira/CSO/data/SEN/climatic_indexes/temp/soilsat.tif')
+                                 soil_cp_pth =  paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/temp/soilcp.tif"),
+                                 soil_sat_pth = paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/temp/soilsat.tif"))
     # Saving results
     out <- paste0(out_root_dir,names(seasons)[s]); if(!dir.exists(out)){dir.create(out,F,T)}
     1:length(names(indices)) %>%

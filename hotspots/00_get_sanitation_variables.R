@@ -31,7 +31,8 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 # Obtain sanitation facilities variables
 # -------------------------------------- #
 
-isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
+
+isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA', "ETH", "GTM", "PHL", "ZMB")
 
 get_sanit_vars <- function(iso = 'SDN'){
   
@@ -126,38 +127,48 @@ get_sanit_vars <- function(iso = 'SDN'){
   if(!file.exists(out)){ terra::writeRaster(x = vst_flt_crp, out) }
   
   # Crop Trend
-  pp_wtr_crp <- terra::crop(x = pp_wtr, terra::ext(shp))
-  tpp_wtr_crp <- terra::app(x = pp_wtr_crp, fun = function(x){
-    x <- as.numeric(na.omit(x))
-    if(length(x) > 1){
-      y <- trend::sens.slope(x)$estimates
-    } else {
-      y <- NA
-    }
-    return(y)
-  })
-  tpp_wtr_crp <- terra::resample(x = tpp_wtr_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/sanitation/trnd_piped_water.tif')
-  dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = tpp_wtr_crp, out) }
+  if(!file.exists(out)){ 
+    pp_wtr_crp <- terra::crop(x = pp_wtr, terra::ext(shp))
+    tpp_wtr_crp <- terra::app(x = pp_wtr_crp, fun = function(x){
+      x <- as.numeric(na.omit(x))
+      if(length(x) > 1){
+        y <- trend::sens.slope(x)$estimates
+      } else {
+        y <- NA
+      }
+      return(y)
+    })
+    tpp_wtr_crp <- terra::resample(x = tpp_wtr_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
+    
+    dir.create(dirname(out), showWarnings = F, recursive = T)
+    
+    terra::writeRaster(x = tpp_wtr_crp, out) }
   
-  st_flt_crp <- terra::crop(x = st_flt, terra::ext(shp))
-  tst_flt_crp <- terra::app(x = st_flt_crp, fun = function(x){
-    x <- as.numeric(na.omit(x))
-    if(length(x) > 1){
-      y <- trend::sens.slope(x)$estimates
-    } else {
-      y <- NA
-    }
-    return(y)
-  })
-  tst_flt_crp <- terra::resample(x = tst_flt_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
+  
+  
+  
   out <- paste0(root,'/data/',iso,'/sanitation/trnd_sanitation_facilities.tif')
-  dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = tst_flt_crp, out) }
+  if(!file.exists(out)){
+    st_flt_crp <- terra::crop(x = st_flt, terra::ext(shp))
+    tst_flt_crp <- terra::app(x = st_flt_crp, fun = function(x){
+      x <- as.numeric(na.omit(x))
+      if(length(x) > 1){
+        y <- trend::sens.slope(x)$estimates
+      } else {
+        y <- NA
+      }
+      return(y)
+    })
+    tst_flt_crp <- terra::resample(x = tst_flt_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
+   
+    dir.create(dirname(out), showWarnings = F, recursive = T)
+    terra::writeRaster(x = tst_flt_crp, out) }
   
 }
+
 isos %>%
   purrr::map(.f = function(iso){
+    cat("processing: ", iso, "\n")
     get_sanit_vars(iso = iso)
   })
