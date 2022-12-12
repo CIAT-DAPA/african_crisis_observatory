@@ -13,6 +13,7 @@
 # ----------------------------------------------------------------------------------- #
 
 # R options
+
 g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 .rs.restartR()                      # Restart R session
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
@@ -134,7 +135,7 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask){
       raster::mask(., shp) %>% 
       raster::resample(., raster(resolution = c(0.008983153, 0.008983153)))
     
-    writeRaster(knl, paste0(root,'/data/',iso,'/conflict/conflict_kernel_density.tif'), overwrite = T)
+    raster::writeRaster(knl, paste0(root,'/data/',iso,'/conflict/conflict_kernel_density.tif'), overwrite = T)
   }
   
   return(list(cnf_summ, sft))
@@ -159,19 +160,19 @@ get_cluster_labels <- function(df){
     dplyr::select(definition = Variable, Code, Units) %>% 
     dplyr::mutate(Code = toupper(Code))
   
-   
-   to_label <- df %>% 
+  
+  to_label <- df %>% 
     dplyr::select(EVENTS:FATALITIES, starts_with("clust")) %>% 
     dplyr::group_by(clust) %>% 
     dplyr::summarise(across(EVENTS:FATALITIES, median)) %>% 
-     dplyr::select(clust, EVENTS, FATALITIES, everything(.)) %>% 
+    dplyr::select(clust, EVENTS, FATALITIES, everything(.)) %>% 
     tidyr::pivot_longer(., cols = -clust, names_to = "variable", values_to = "median") %>% 
     dplyr::left_join(., 
                      lbls, by = c("variable" = "Code")) %>% 
-     dplyr::mutate(id = 1:nrow(.) )
+    dplyr::mutate(id = 1:nrow(.) )
   
-   
-   
+  
+  
   cats <- c("High", "Moderate", "Limited")
   
   for(k in unique(to_label$variable)){
@@ -188,7 +189,7 @@ get_cluster_labels <- function(df){
   
   
   txt_desc <- lapply(unique(to_label$clust), function(i){
-   # start_text <- paste("Conflict cluster ", i , " is characterized by: ")
+    # start_text <- paste("Conflict cluster ", i , " is characterized by: ")
     ret <- to_label %>% 
       dplyr::filter(clust == i) %>% 
       dplyr::mutate(text = purrr::pmap(.l = list(def = definition, un = Units, pr = prefix, me = median), .f= function(def, un, pr, me){
@@ -347,14 +348,14 @@ clust_descriptives <- function(clust_sum){
     }))%>%
     ungroup() 
   
- ret <- purrr::reduce(results, left_join, by  = "clust")
- ret$clust <- paste0("cluster_", ret$clust)
- global_metrics <- c("global_metrics",global_median, rep(0.15, ncol(results$cv_rel_change)-1), rep(0.1, ncol(results$trnd_rel_change)-1))
- 
- ret <- rbind(ret, global_metrics) %>% 
-     tidyr::pivot_longer(., cols = -c("clust"), names_to = "variable", values_to ="value") %>% 
-   tidyr::pivot_wider(names_from = "clust", values_from = "value")
- 
+  ret <- purrr::reduce(results, left_join, by  = "clust")
+  ret$clust <- paste0("cluster_", ret$clust)
+  global_metrics <- c("global_metrics",global_median, rep(0.15, ncol(results$cv_rel_change)-1), rep(0.1, ncol(results$trnd_rel_change)-1))
+  
+  ret <- rbind(ret, global_metrics) %>% 
+    tidyr::pivot_longer(., cols = -c("clust"), names_to = "variable", values_to ="value") %>% 
+    tidyr::pivot_wider(names_from = "clust", values_from = "value")
+  
   return(ret)
 }
 
@@ -455,20 +456,17 @@ labeling_function <- function(db, n_vars){
 }#end function
 
 
-
-
-
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 
 
-country_iso2 <- iso <- "ETH"
+country_iso2 <- iso <- "NGA"
 
 
-country <- switch (iso,
-  "KEN" = "Kenya",
-  "SEN" = "Senegal",
-  "ETH" = "Ethiopia"
-)
+# country <- switch (iso,
+#   "KEN" = "Kenya",
+#   "SEN" = "Senegal",
+#   "ETH" = "Ethiopia"
+# )
 
 baseDir <- paste0(root, "data/",country_iso2)
 
@@ -476,268 +474,9 @@ shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>%
   sf::st_as_sf(.) %>% 
   dplyr::mutate(id = 1:nrow(.))
 
-country <- unique(shp$NAME_0)
-
-source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/hotspots/01_link_IPinfo_climate_clusters.R') # Link IP text to identify climate variables
-
-out_clim_dir_pth <- paste0(root, "/data/",iso, "/_results/cluster_results/climate")
-if(!dir.exists(out_clim_dir_pth)){dir.create(out_clim_dir_pth, recursive = T)}
-
-clm <- select_clim_vars(root = substr(root, start = 1, stop = nchar(root)-1 ), 
-                        iso  = iso, 
-                        cntr = country) %>% 
-  dplyr::pull(Code) %>% 
-  unique() %>% 
- .[!grepl("p90|avg|CV_cv", .)]
-
-
-fls <- list.files(path = paste0(root,'/data/',country_iso2), pattern = 'tif$', full.names = T, recursive = T)
-grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
-fls <- fls[unlist(grep2(pattern = clm, x = fls))]; rm(clm)
-fls <- unique(fls)
-fls <- as.character(na.omit(fls))
-
-
-
-file_paths <- tibble(path = fls,
-                     type = "climate" ) %>% 
-  add_row(path = c(list.files(paste0(baseDir, '/conflict'), pattern = ".tif$", full.names = T)), type = "conflict") %>% 
-  dplyr::filter(!grepl("old|temp|tmp", path))
-
-
-check_files <- lapply(file_paths$path, file.exists) %>% unlist()
-
-world_mask <- raster(paste0(root, "/data/_global/masks/mask_world_1km.tif"))
-
-
-pop_dens <- raster::raster(paste0(root,"/data/",iso, "/population_density/medn_popd.tif"))
-
-
-knl <- raster::raster(paste0(root, "/data/", iso, "/conflict/conflict_kernel_density.tif"))
-crs(knl) <- crs(world_mask)
-
-
 grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>% 
   st_as_sf(.) %>%
   dplyr::mutate(id = 1:nrow(.))
-
-
-
-stopifnot("File not found in paths. " = all(check_files))
-
-### load and reclassify all rasters
-
-dimension <- "climate"
-
-cat(">>> starting process for: ", dimension, "\n")
-
-
-dest_dir <- paste0(baseDir, "/_results/cluster_results/", dimension, "/")
-
-
-if(!dir.exists(dest_dir)){dir.create(dest_dir, recursive = T)}
-
-#file_paths %>% filter(type == dimension)  %>% pull(path)
-r_files <- lapply(file_paths %>% filter(type == dimension)  %>% pull(path),
-                  reclass_raster, 
-                  shp_ext = extent(grd), 
-                  world_mask= world_mask,
-                  dimension  = dimension,
-                  conflict_area = paste0(baseDir, "/conflict/conflict_area.shp"))
-
-r_names <- lapply(file_paths %>% filter(type == dimension)  %>% pull(path), function(i){names(raster(i))})
-names(r_files) <- unlist(r_names)
-
-# =========================================================== #
-# Spatial patterns clustering
-# =========================================================== #
-cat(">>> Calculating regular clusters \n")
-
-eco_data <- r_files %>% purrr::reduce(., c, try_hard = T)
-
-
-eco_signature <- motif::lsp_signature(eco_data, type = "incove", window = grd["id"])
-
-eco_dist      <- motif::lsp_to_dist(eco_signature, dist_fun = "jensen-shannon")
-
-eco_hclust <- hclust(eco_dist, method = "ward.D2")
-
-###optimal number of cluster following 
-###Kelley, L.A., Gardner, S.P., Sutcliffe, M.J. (1996) An automated approach for clustering an ensemble of NMR-derived protein structures into conformationally-related subfamilies, Protein Engineering, 9, 1063-1065.
-
-
-if(dimension == "conflict"){
-  c_optim_num <- 3
-}else{
-  optcl2 <- maptree::kgs(cluster = eco_hclust, diss = eco_dist, maxclust = 10)
-  
-  c_optim_num <- as.numeric(names(optcl2[which(optcl2 == min(optcl2))]))
-  
-}
-
-cat(">>> Optim number of cluster is:",c_optim_num ,"/n")
-
-clusters <- cutree(eco_hclust, k = c_optim_num)
-
-ext <- c(xmin = extent(shp)[1], ymin = extent(shp)[3], xmax = extent(shp)[2], ymax = extent(shp)[4] )
-
-eco_grid_sf <- motif::lsp_add_clusters(eco_signature, clusters, window = grd["id"])
-
-
-#sf::st_write(eco_grid_sf, "D:/OneDrive - CGIAR/Attachments/Desktop/mapas/motfi_tr_conf_x.shp", delete_dsn = T)
-
-
-metrics_clust <- motif::lsp_add_quality(eco_grid_sf, eco_dist, type = "cluster") %>%
-  dplyr::group_by(clust) %>%
-  dplyr::summarise(inhomogeneity = mean(inhomogeneity),
-                   distinction = mean(distinction),
-                   quality = mean(quality)) %>% 
-  sf::st_drop_geometry() %>% 
-  dplyr::mutate(cluster_type = "regular")
-
-# # =========================================================== #
-# # Irregular clusterin patters
-# # =========================================================== #
-# 
-# cat(">>> Calculating irregular clusters /n")
-# 
-# irr_clust_lsp <- lsp_signature(eco_data, type = "incove",
-#                                window = shp["id"], normalization = "pdf") 
-# 
-# irr_clust_dist <- lsp_to_dist(irr_clust_lsp, dist_fun = "jensen-shannon")
-# irr_clust_dist_hc <-  hclust(irr_clust_dist, method = "ward.D2")
-# 
-# if(dimension == "conflict"){
-#   c_optim_num_irr <- 3
-# }else{
-#   optcl_irr <- maptree::kgs(cluster = irr_clust_dist_hc, diss = irr_clust_dist, maxclust = 40)
-#   
-#   c_optim_num_irr <- as.numeric(names(optcl_irr[which(optcl_irr == min(optcl_irr))]))
-# }
-# 
-# 
-# cat(">>> Optim number of irregular cluster is:", c_optim_num_irr ,"/n")
-# 
-# clusters_irr <- cutree(irr_clust_dist_hc, k = c_optim_num_irr)
-# 
-# eco_grid_sf_irr <- motif::lsp_add_clusters(irr_clust_lsp, clusters_irr, window = shp["id"])
-# 
-# metrics_clust_irr <- motif::lsp_add_quality(eco_grid_sf_irr, irr_clust_dist, type = "cluster") %>%
-#   dplyr::group_by(clust) %>%
-#   dplyr::summarise(inhomogeneity = mean(inhomogeneity),
-#                    distinction = mean(distinction),
-#                    quality = mean(quality)) %>% 
-#   sf::st_drop_geometry() %>% 
-#   dplyr::mutate(cluster_type = "irregular")
-# 
-###================================================##
-###============== SAVER RESULTS ===================##
-###================================================##
-
-cat(">>>Calculating summary metrics for each cluser \n")
-clust_mtrs <- list()
-
-clust_mtrs$reg_clust_values <- get_sum_cl_mtrs(rast_paths = file_paths %>% filter(type == dimension) %>% pull(path), eco_grid_sf = eco_grid_sf, world_mask = world_mask, shp_ext = extent(shp)) %>% 
-  drop_na()
-
-
-lapply(unique(clust_mtrs$reg_clust_values$clust), function(i){
-  
-  clust_mtrs$reg_clust_values %>%
-    dplyr::filter(clust == i) %>% 
-    dplyr::select(-clust) %>% 
-    psych::describe(., na.rm = T) %>% 
-    dplyr::select(-vars, -n) %>% 
-    dplyr::mutate(clust = i) %>% 
-    as_tibble(., rownames = "variable")
-}) %>% 
-  dplyr::bind_rows() %>% 
-  write_csv(., paste0(dest_dir, dimension, "_reg_cluster_statistics.csv"))
-
-
-clust_mtrs$reg_rel_change <- clust_descriptives(clust_sum = clust_mtrs$reg_clust_values)
-
-
-if(length(unique(clust_mtrs$reg_clust_values$clust)) <= 7){
-  
-  cluster_text <- labeling_function(db = clust_mtrs$reg_clust_values, n_vars = 6)
-  write_csv(cluster_text$text_output, paste0(dest_dir, dimension, "_reg_cluster_text_description.csv"))
-  write_csv(data.frame(var = cluster_text$var_imp), paste0(dest_dir, dimension, "_most_imp_clim_vars.csv") )
-  
-}else{
-  cat("Number of cluster greather than 7")
-}
-
-
-# clust_mtrs$irr_clust_values <- get_sum_cl_mtrs(rast_paths = file_paths %>% filter(type == dimension) %>% pull(path), eco_grid_sf = eco_grid_sf_irr, world_mask = world_mask, shp_ext = extent(shp))
-
-# clust_mtrs$irr_rel_change <- clust_descriptives(clust_sum = clust_mtrs$irr_clust_values)
-
-
-
-#writexl::write_xlsx(clust_mtrs[c("irr_rel_change", "reg_rel_change")], paste0(dest_dir, dimension, "_cluster_summary_metrics.xlsx"))
-write_csv(clust_mtrs$reg_rel_change, paste0(dest_dir, dimension, "_cluster_rel_change.csv"))
-write_csv(clust_mtrs$reg_clust_values, paste0(dest_dir, dimension, "_reg_cluster_values_extracted.csv"))
-
-#write_csv(clust_mtrs$irr_clust_values, paste0(dest_dir, dimension, "_irr_cluster_values_extracted.csv"))
-
-
-
-# cat(">>>saving clusters motif metrics to dest_dir \n")
-# clust_mtrs_cl <- bind_rows(metrics_clust,  metrics_clust_irr)
-# write_csv(clust_mtrs_cl, paste0(dest_dir, dimension, "_cluster_eval.csv"))
-# 
-cat(">>>writing clusters grid to dest_dir \n")
-sf::st_write(eco_grid_sf %>% dplyr::select(-signature), paste0(dest_dir, dimension,"_regular_clust.shp"), delete_dsn = T)
-#sf::st_write(eco_grid_sf_irr, paste0(dest_dir, dimension,"_irregular_clust.shp"), delete_dsn = T)
-
-
-cat(">>>Making boxplots \n")
-
-g1 <- clust_mtrs$reg_clust_values %>% 
-  pivot_longer(., cols =  -clust, names_to = "variable", values_to = "values") %>% 
-  dplyr::mutate(clust = paste0("cluster_",clust)
-                #,values = ifelse(values < 1, 1, values)
-  ) %>% 
-  #filter(values > 1) %>%
-  ggplot(aes(y= values, x = clust))+
-  geom_violin(trim=FALSE, fill="gray")+
-  geom_boxplot(width=0.1, fill="white")+
-  facet_wrap(~variable, scales = "free")+
-  xlab("")+
-  theme_bw(base_size = 10)
-
-if(dimension != "climate"){
-  g1 <- g1 +
-    scale_y_log10()
- 
-}
-
-
-ggsave(plot = g1, filename = paste0(dest_dir, dimension,'_regular_boxplots.png'), dpi = 400, width = 15, height = 8, units = "in")
-
-#ggsave(plot = g2, filename = paste0(dest_dir, dimension,'_irregular_boxplots.png'), dpi = 400, width = 15, height = 8, units = "in")
-
-
-clim_clust_map<- tmap::tm_shape(shp)+
-  tm_borders(col = "black")+
-  tm_shape(eco_grid_sf)+
-  tm_fill(col = "clust", palette = RColorBrewer::brewer.pal(c_optim_num, "BrBG") , alpha = 0.7, title = expression("Conflict clusters"))#+
-#tm_borders(col ="black") 
-
-
-x11();clim_clust_map
-
-tmap_save(clim_clust_map,
-          filename= paste0(root, "/data/", iso, "/_results/cluster_results/climate/climate_regular_clust_map.png"),
-          dpi=300, 
-          #insets_tm=insetmap, 
-          #insets_vp=vp,
-          height=8,
-          width=15,
-          units="in")
-
-
 
 
 #######################################################
@@ -785,7 +524,7 @@ grd <- grd %>%
 
 
 to_cluster <- conflict_sf %>% 
-  dplyr::mutate(ov = unlist(st_intersects(conflict_sf, grd)),
+  dplyr::mutate(ov = sapply(st_intersects(conflict_sf, grd), function(i){ifelse(length(i)==0,NA, i)}),
                 pop_dens =raster::extract(pop_dens, st_as_sf(.) %>% st_cast("POINT")%>% st_coordinates()),
                 EVENTS = ifelse(pop_dens == 0 , 1, EVENTS/pop_dens),
                 FATALITIES = ifelse(pop_dens == 0 , 1, FATALITIES/pop_dens),
@@ -839,7 +578,7 @@ table(km$cluster)
 
 
 original_df <- conflict_sf %>% 
-  dplyr::mutate(ov = unlist(st_intersects(conflict_sf, grd)),
+  dplyr::mutate(ov = sapply(st_intersects(conflict_sf, grd), function(i){ifelse(length(i)==0,NA, i)}),
                 knl = raster::extract(knl, st_as_sf(.) %>% st_cast("POINT")%>% st_coordinates())) %>%
   dplyr::group_by(ov) %>% 
   dplyr::summarise(EVENTS = sum(EVENTS, na.rm = T),

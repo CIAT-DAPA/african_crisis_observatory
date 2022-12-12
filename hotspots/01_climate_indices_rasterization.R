@@ -1,7 +1,7 @@
 
 pacman::p_load(tidyverse, terra, raster)
 
-iso <- "UGA"
+iso <- "ZMB"
 
 n_dirs <- list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/",iso, "/climatic_indexes/temp/"), pattern = "season_type") %>% 
   length()
@@ -39,16 +39,16 @@ if(n_dirs == 1){
         
         
         terra::rast(x = as.matrix(data.frame(x_season_df[, c("x", "y")], avg = avg)), type="xyz") %>% 
-          terra::writeRaster(., paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_p90.tif")),overwrite=TRUE)
+          terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_p90.tif")),overwrite=TRUE)
         
         
       }
-      if("CV_prec.tif" == .y|"NDWS.tif" == .y | "THI.tif" == .y| "NTx35.tif" == .y){
+      if("CV_prec.tif" == .y|"NDWS.tif" == .y | "THI.tif" == .y| "NTx35.tif" == .y| "CV.tif" == .y){
         avg <- apply(x_season_df[, 3:ncol(x_season_df)], 1, function(i){mean(i, na.rm = T)} )
         
         
         terra::rast(x = as.matrix(data.frame(x_season_df[, c("x", "y")], avg = avg)), type="xyz") %>% 
-          terra::writeRaster(., paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_avg.tif")),overwrite=TRUE)
+          terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_avg.tif")),overwrite=TRUE)
         
         
       }
@@ -57,7 +57,7 @@ if(n_dirs == 1){
         
         
         terra::rast(x = as.matrix(data.frame(x_season_df[, c("x", "y")], avg = avg) ), type="xyz") %>% 
-          terra::writeRaster(., paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_avg.tif")),overwrite=TRUE)
+          terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_avg.tif")),overwrite=TRUE)
         
         
       }
@@ -69,14 +69,14 @@ if(n_dirs == 1){
       x_season_df$trnd <- trnd
       
       terra::rast(x = as.matrix(x_season_df[, c("x", "y", "medn")]), type="xyz") %>% 
-        terra::writeRaster(., paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_median.tif")),overwrite=TRUE)
+        terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_median.tif")),overwrite=TRUE)
       
       
       terra::rast(x = as.matrix(x_season_df[, c("x", "y", "cv")]), type="xyz") %>% 
-        terra::writeRaster(., paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/coef_var/", stringr::str_replace(.y, ".tif", "_cv.tif")), overwrite=TRUE)
+        terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/coef_var/", stringr::str_replace(.y, ".tif", "_cv.tif")), overwrite=TRUE)
       
       terra::rast(x = as.matrix(x_season_df[, c("x", "y", "trnd")]), type="xyz") %>% 
-        terra::writeRaster(., paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/trend/", stringr::str_replace(.y, ".tif", "_trnd.tif")), overwrite=TRUE)
+        terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/trend/", stringr::str_replace(.y, ".tif", "_trnd.tif")), overwrite=TRUE)
       
       
       
@@ -88,6 +88,7 @@ if(n_dirs == 1){
   
   
 }else if(n_dirs == 2){
+  
   fls_df <- tibble(season_type_1 = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/",iso, "/climatic_indexes/temp/season_type_1"), recursive = T, full.names= T),
                    season_type_2 = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/temp/season_type_2"), recursive = T, full.names= T),
                    file_name = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso,"/climatic_indexes/temp/season_type_1"), full.names = F))
@@ -99,6 +100,7 @@ if(n_dirs == 1){
   fls_df %>% 
     dplyr::mutate( rst =   purrr::pmap(.l = list(x = season_type_1, y = season_type_2, fl_name = file_name), function(x,y, fl_name){
       cat(">>> Processing : ", fl_name, "\n")
+      .y = fl_name
       
       x_season_x <- terra::rast(purrr::map(list(x, y), terra::rast) )
       x_season_df <- terra::as.data.frame(x_season_x, xy = T, na.rm = T)
@@ -116,12 +118,23 @@ if(n_dirs == 1){
       cv <-  apply(x_season_df[,  3:ncol(x_season_df)], 1, function(i){sd(i, na.rm = T)/mean(i, na.rm = T)}  )
       trnd <- apply(x_season_df[,  3:ncol(x_season_df)], 1, function(i){trend::sens.slope(i)$estimates})
       
-      if("CV_prec.tif" == .y|"NDWS.tif" == .y | "THI.tif" == .y){
+      
+      if("NWLD.tif" == .y){
+        
+        avg <- apply(x_season_df[, 3:ncol(x_season_df)], 1, function(i){ as.numeric(quantile(i, probs = 0.90, na.rm = T)) } )
+        
+        
+        terra::rast(x = as.matrix(data.frame(x_season_df[, c("x", "y")], avg = avg)), type="xyz") %>% 
+          terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_p90.tif")),overwrite=TRUE)
+        
+        
+      }
+      if("CV_prec.tif" == .y|"NDWS.tif" == .y | "NTx35.tif" == .y | "THI.tif" == .y | "CV.tif" == .y){
         avg <- apply(x_season_df[, 3:ncol(x_season_df)], 1, function(i){mean(i, na.rm = T)} )
         
         
         terra::rast(x = as.matrix(data.frame(x_season_df[, c("x", "y")], avg = avg)), type="xyz") %>% 
-          terra::writeRaster(., paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_avg.tif")),overwrite=TRUE)
+          terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_avg.tif")),overwrite=TRUE)
         
         
       }
@@ -130,7 +143,7 @@ if(n_dirs == 1){
         
         
         terra::rast(x = as.matrix(data.frame(x_season_df[, c("x", "y")], avg = avg) ), type="xyz") %>% 
-          terra::writeRaster(., paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_avg.tif")),overwrite=TRUE)
+          terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(.y, ".tif", "_avg.tif")),overwrite=TRUE)
         
         
       }
@@ -141,14 +154,14 @@ if(n_dirs == 1){
       x_season_df$trnd <- trnd
       
       terra::rast(x = as.matrix(x_season_df[, c("x", "y", "medn")]), type="xyz") %>% 
-        terra::writeRaster(., paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(fl_name, ".tif", "_median.tif")),overwrite=TRUE)
+        terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/median/", stringr::str_replace(fl_name, ".tif", "_median.tif")),overwrite=TRUE)
       
       
       terra::rast(x = as.matrix(x_season_df[, c("x", "y", "cv")]), type="xyz") %>% 
-        terra::writeRaster(., paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/coef_var/", stringr::str_replace(fl_name, ".tif", "_cv.tif")), overwrite=TRUE)
+        terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/coef_var/", stringr::str_replace(fl_name, ".tif", "_cv.tif")), overwrite=TRUE)
       
       terra::rast(x = as.matrix(x_season_df[, c("x", "y", "trnd")]), type="xyz") %>% 
-        terra::writeRaster(., paste0("W:/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/trend/", stringr::str_replace(fl_name, ".tif", "_trnd.tif")), overwrite=TRUE)
+        terra::writeRaster(., paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/trend/", stringr::str_replace(fl_name, ".tif", "_trnd.tif")), overwrite=TRUE)
       
       return("Done")
     })

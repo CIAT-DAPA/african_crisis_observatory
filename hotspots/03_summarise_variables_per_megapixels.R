@@ -12,7 +12,7 @@ suppressMessages(pacman::p_load(tidyverse, raster, terra, exactextractr, vroom))
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
-iso <- 'SEN'
+iso <- 'ZMB'
 # Country shapefile
 shp <- terra::vect(paste0(root,'/data/', iso,'/_shps/', iso,'.shp'))
 # Conflict clusters
@@ -47,6 +47,7 @@ rst <- vrs %>% purrr::map(.f = function(vr){
   names(r) <-  str_extract(vr, "[A-Za-z0-9_]+.tif") %>% str_replace(., ".tif", "")
   return(r)
 }) %>% terra::rast()
+
 vls <- exactextractr::exact_extract(x = rst, y = sf::st_as_sf(clt), full_colnames = T)
 
 dfm <- 1:length(vls) %>% purrr::map(.f = function(i){
@@ -86,4 +87,4 @@ names(dfm)[1:9] <- c('id','EVENTS',
 #   ggplot2::facet_wrap(~CONFLICT_CLUSTER)
 
 vroom::vroom_write(x = dfm, file = paste0(root,'/data_extracted/',iso,'_stats.csv'), delim = ',')
-dfm <- vroom::vroom(paste0(root,'/data_extracted/',iso,'_stats.csv'), delim = ',')
+#dfm <- vroom::vroom(paste0(root,'/data_extracted/',iso,'_stats.csv'), delim = ',')
