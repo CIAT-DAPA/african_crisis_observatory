@@ -37,7 +37,7 @@ avaliable_files <- lapply(list.files(baseDir, recursive = F, pattern = "[A-Z]{3}
 bind_cols(base_files, avaliable_files) %>% View
 
 
-  writexl::write_xlsx(., "D:/OneDrive - CGIAR/Documents/AFO_progress.xlsx")
+ # writexl::write_xlsx(., "D:/OneDrive - CGIAR/Documents/AFO_progress.xlsx")
 
 
 

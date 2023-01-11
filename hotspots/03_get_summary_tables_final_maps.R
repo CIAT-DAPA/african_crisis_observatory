@@ -10,7 +10,7 @@ g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 .rs.restartR()                      # Restart R session
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
-suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, RColorBrewer, writexl, raster,terra, sp, sf, stringr, stringi, lattice, rasterVis, maptools,
+suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColorBrewer, writexl, raster,terra, sp, sf, stringr, stringi, lattice, rasterVis, maptools,
                                 latticeExtra, RColorBrewer,cowplot, grid,tmap, tmaptools, geojson, geojsonio, MetBrewer, paletteer))
 
 create_labels <- function(text, type = c("short", "long")){
@@ -179,7 +179,7 @@ ip_text_description <- function(shp_object ,ip, df, n_vars = 10){
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 w_mask <- raster::raster(paste0(baseDir, "_global/masks/mask_world_1km.tif"))
 
-iso <- "SEN"
+iso <- "NGA"
 
 root <- paste0(baseDir, iso, "/")
 
@@ -304,9 +304,6 @@ write_csv(events_bp %>%
             dplyr::group_by(EVENT_TYPE) %>% 
             dplyr::summarise(short_label, n, freq = prop.table(n)), paste0(root, "_results/cluster_results/conflict/EVENTS_TYPE_barplot_df.csv"))
 
-write_csv(events_bp %>% 
-            dplyr::group_by(EVENT_TYPE) %>% 
-            dplyr::summarise(short_label, n, freq = prop.table(n)), paste0(to_share_dir, "/EVENTS_TYPE_conflict_barplot_df.csv"))
 
 g1 <- events_bp %>% 
   dplyr::mutate(short_label = factor(x = short_label, levels = c('High','Moderate','Limited'))) %>%
@@ -347,9 +344,6 @@ write_csv(fata_bp %>%
             dplyr::summarise(short_label, counts, freq = prop.table(counts))
           , paste0(root, "_results/cluster_results/conflict/FATALITIES_barplot_df.csv"))
 
-write_csv(fata_bp %>% 
-            dplyr::group_by(EVENT_TYPE) %>% 
-            dplyr::summarise(short_label, counts, freq = prop.table(counts)), paste0(to_share_dir, "/FATALITIES_conflict_barplot_df.csv"))
 
 g2 <- fata_bp %>% 
   dplyr::mutate(short_label  = factor(short_label , levels = c("High", "Moderate", "Limited"))) %>% 
@@ -376,7 +370,6 @@ ggsave(g2,
 #######################################################################################
 ############## create clim cluster maps with labels ##################################
 #####################################################################################
-
 
 
 lvls_clim <- clim_clust@data %>% 
@@ -843,7 +836,11 @@ for(i in get_ip_names){
 ################################################################################
 
 
-
+livelihood_pth <-  switch (iso,
+                           "KEN" =  "livelihood/KE_LHZ_2011.shp",
+                           "SEN" =  "livelihood/SN_LHZ_2021.shp",
+                           "NGA" =  "livelihood/NG_LHZ_2018.shp"
+)
 
 mf_diff <- raster::raster(paste0(root, "education/medn_difference_edu.tif"))
 
@@ -860,10 +857,6 @@ f_pop <- raster::raster(paste0(root, "gender_population/", iso,"_female_populati
 f_pop[f_pop[] <= 1] <- NA
 
 
-livelihood_pth <-  switch (iso,
-  "KEN" =  "livelihood/KE_LHZ_2011.shp",
-  "SEN" =  "livelihood/SN_LHZ_2021.shp"
-)
   
 livelihoods <- raster::shapefile(paste0(root, livelihood_pth ))
 
@@ -941,7 +934,7 @@ clim_rasts <- all_rasts %>%
   dplyr::filter(grepl( clim_selc, var_name)) %>% 
   purrr::pmap(., .f = function(var_name, full_path ){
     
-    to_ret <- data.frame(vr = exact_extract(raster(full_path), sf::st_as_sf(clusts_to_share), fun = "median") )
+    to_ret <- data.frame(vr = exactextractr::exact_extract(raster(full_path), sf::st_as_sf(clusts_to_share), fun = "median") )
      names(to_ret) <- stringr::str_extract(var_name, pattern = "[a-zA-Z0-9_]+.tif" ) %>% 
        stringr::str_replace(., pattern = ".tif", replacement = "") %>% 
        paste0("climvar_", .)
@@ -1096,33 +1089,35 @@ row.names(clusts_to_share@data) <- sapply(slot(clusts_to_share, "polygons"), fun
 geojsonio::geojson_json(clusts_to_share) %>% 
   geojsonio::geojson_write(., file = paste0(root, "/_results/clim_conflict_ips_overlays.geojson") )
 
+clusts_to_share@data %>% writexl::write_xlsx(paste0(root, "_results/clim_conflict_ips_overlays.xlsx"))
+
 #raster::shapefile(clusts_to_share, paste0(root, "_results/clim_conflict_ips_overlays.shp"), overwrite = T)
 base::saveRDS(clusts_to_share, paste0(root, "_results/clim_conflict_ips_overlays.rds"))
 
 
-
-hot_high_conflict_areas <- clusts_to_share %>%
-  sf::st_as_sf() %>%
-  dplyr::filter(conflict_clust_short_label == "High",
-                clim_cluster_order %in% c(3,4)) %>% 
-  dplyr::filter(if_any(.cols = contains("category"), .fns = ~ nchar(.) != 0  ))  
-
-
-hot_moderate_conflict_areas <- clusts_to_share %>%
-  sf::st_as_sf() %>%
-  dplyr::filter(conflict_clust_short_label == "Moderate",
-                clim_cluster_order %in% c(3,4)) %>% 
-  dplyr::filter(if_any(.cols = contains("category"), .fns = ~ nchar(.) != 0  ))  
-
-
-
-geojsonsf::sf_geojson(hot_high_conflict_areas) %>% 
-  geojsonio::geojson_write(., file = paste0(root, "_results/hot_areas_high_conflict.geojson") )
-
-
-geojsonsf::sf_geojson(hot_moderate_conflict_areas) %>% 
-  geojsonio::geojson_write(., file = paste0(root, "_results/hot_areas_moderate_conflict.geojson") )
-
+# 
+# hot_high_conflict_areas <- clusts_to_share %>%
+#   sf::st_as_sf() %>%
+#   dplyr::filter(conflict_clust_short_label == "High",
+#                 clim_cluster_order %in% c(3,4)) %>% 
+#   dplyr::filter(if_any(.cols = contains("category"), .fns = ~ nchar(.) != 0  ))  
+# 
+# 
+# hot_moderate_conflict_areas <- clusts_to_share %>%
+#   sf::st_as_sf() %>%
+#   dplyr::filter(conflict_clust_short_label == "Moderate",
+#                 clim_cluster_order %in% c(3,4)) %>% 
+#   dplyr::filter(if_any(.cols = contains("category"), .fns = ~ nchar(.) != 0  ))  
+# 
+# 
+# 
+# geojsonsf::sf_geojson(hot_high_conflict_areas) %>% 
+#   geojsonio::geojson_write(., file = paste0(root, "_results/hot_areas_high_conflict.geojson") )
+# 
+# 
+# geojsonsf::sf_geojson(hot_moderate_conflict_areas) %>% 
+#   geojsonio::geojson_write(., file = paste0(root, "_results/hot_areas_moderate_conflict.geojson") )
+# 
 
 #raster::shapefile(as(hot_high_conflict_areas, "Spatial"), paste0(root, "_results/hot_areas_high_conflict.shp"), overwrite  = T)
 #raster::shapefile(as(hot_moderate_conflict_areas, "Spatial"), paste0(root, "_results/hot_areas_moderate_conflict.shp"), overwrite  = T)

@@ -1,7 +1,7 @@
 
 pacman::p_load(tidyverse, terra, raster)
 
-iso <- "ZMB"
+iso <- "GTM"
 
 n_dirs <- list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/",iso, "/climatic_indexes/temp/"), pattern = "season_type") %>% 
   length()
@@ -15,8 +15,8 @@ paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/d
 
 
 if(n_dirs == 1){
-  fls_df <- tibble(season_type_1 = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/",iso, "/climatic_indexes/temp/season_type_1"), recursive = T, full.names= T),
-                   file_name = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso,"/climatic_indexes/temp/season_type_1"), full.names = F))
+  fls_df <- tibble(season_type_1 = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/",iso, "/climatic_indexes/temp/season_type_1"), recursive = T, full.names= T, pattern = ".tif$"),
+                   file_name = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso,"/climatic_indexes/temp/season_type_1"), full.names = F,  pattern = ".tif$"))
   
   
   
@@ -30,7 +30,16 @@ if(n_dirs == 1){
       
       
       medn <-  apply(x_season_df[, 3:ncol(x_season_df)], 1, function(i){median(i, na.rm = T)} )
-      cv <-  apply(x_season_df[,  3:ncol(x_season_df)], 1, function(i){sd(i, na.rm = T)/mean(i, na.rm = T)}  )
+      cv <-  apply(x_season_df[,  3:ncol(x_season_df)], 1, function(i){
+        if(mean(i, na.rm = T) == 0){
+          cv_fn <- 0
+        }else{
+          cv_fn <- sd(i, na.rm = T)/mean(i, na.rm = T)
+        }
+        
+        return(cv_fn)
+        }  )
+      
       trnd <- apply(x_season_df[,  3:ncol(x_season_df)], 1, function(i){trend::sens.slope(i)$estimates})
       
       if("NWLD.tif" == .y){
@@ -89,9 +98,9 @@ if(n_dirs == 1){
   
 }else if(n_dirs == 2){
   
-  fls_df <- tibble(season_type_1 = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/",iso, "/climatic_indexes/temp/season_type_1"), recursive = T, full.names= T),
-                   season_type_2 = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/temp/season_type_2"), recursive = T, full.names= T),
-                   file_name = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso,"/climatic_indexes/temp/season_type_1"), full.names = F))
+  fls_df <- tibble(season_type_1 = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/",iso, "/climatic_indexes/temp/season_type_1"), recursive = T, full.names= T, pattern = ".tif$"),
+                   season_type_2 = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/temp/season_type_2"), recursive = T, full.names= T, pattern = ".tif$"),
+                   file_name = list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso,"/climatic_indexes/temp/season_type_1"), full.names = F, pattern = ".tif$"))
   
   
   
@@ -115,7 +124,15 @@ if(n_dirs == 1){
       x_season_df <- x_season_df[, c("x","y", new_order)]
       
       medn <-  apply(x_season_df[, 3:ncol(x_season_df)], 1, function(i){median(i, na.rm = T)} )
-      cv <-  apply(x_season_df[,  3:ncol(x_season_df)], 1, function(i){sd(i, na.rm = T)/mean(i, na.rm = T)}  )
+      cv <-  apply(x_season_df[,  3:ncol(x_season_df)], 1, function(i){
+        if(mean(i, na.rm = T) == 0){
+          cv_fn <- 0
+        }else{
+          cv_fn <- sd(i, na.rm = T)/mean(i, na.rm = T)
+        }
+        
+        return(cv_fn)
+      }  )
       trnd <- apply(x_season_df[,  3:ncol(x_season_df)], 1, function(i){trend::sens.slope(i)$estimates})
       
       

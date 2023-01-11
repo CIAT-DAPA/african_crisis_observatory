@@ -23,7 +23,8 @@ root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 iso <- 'SEN'
 country <-  switch (iso,
                     "KEN" = "Kenya",
-                    "SEN" = "Senegal"
+                    "SEN" = "Senegal",
+                    "NGA" = "Nigeria"
 )
 
 # Load and identify impact pathways

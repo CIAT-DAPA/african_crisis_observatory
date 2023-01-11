@@ -9,7 +9,7 @@ options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notat
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse,terra,raster,sf,stars,motif,tmap,spdep))
 suppressMessages(pacman::p_load(meteo,sp,spacetime,gstat,plyr,xts,snowfall,doParallel,CAST,ranger))
-suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr))
+suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr, psych, FactoMineR))
 
 
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
@@ -466,9 +466,15 @@ shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>%
   sf::st_as_sf(.) %>% 
   dplyr::mutate(id = 1:nrow(.))
 
+#grd2 <- st_read(paste0(root, "data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust.shp"))
+
 grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>% 
   st_as_sf(.) %>%
   dplyr::mutate(id = 1:nrow(.))
+
+
+
+st_crs(grd) <- st_crs(shp)
 
 
 country <- unique(shp$NAME_0)
@@ -503,16 +509,6 @@ file_paths <- tibble(path = fls,
 check_files <- lapply(file_paths$path, file.exists) %>% unlist()
 
 world_mask <- raster(paste0(root, "/data/_global/masks/mask_world_1km.tif"))
-
-
-pop_dens <- raster::raster(paste0(root,"/data/",iso, "/population_density/medn_popd.tif"))
-
-
-knl <- raster::raster(paste0(root, "/data/", iso, "/conflict/conflict_kernel_density.tif"))
-crs(knl) <- crs(world_mask)
-
-
-
 
 
 stopifnot("File not found in paths. " = all(check_files))
@@ -638,7 +634,7 @@ lapply(unique(clust_mtrs$reg_clust_values$clust), function(i){
   clust_mtrs$reg_clust_values %>%
     dplyr::filter(clust == i) %>% 
     dplyr::select(-clust) %>% 
-    psych::describe(., na.rm = T) %>% 
+    psych::describe(., na.rm = T, fast=FALSE) %>% 
     dplyr::select(-vars, -n) %>% 
     dplyr::mutate(clust = i) %>% 
     as_tibble(., rownames = "variable")
