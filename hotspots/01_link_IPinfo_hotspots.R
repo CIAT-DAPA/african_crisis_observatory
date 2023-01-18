@@ -104,17 +104,20 @@ select_eco_vars <- function(root, iso, cntr, ip){
 
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
-isos  <- c("KEN", "SEN")
+isos  <- c("KEN", "SEN", "ZWE", "SDN")
 
 for(iso in isos){
 cat("Getting vars for: ", iso, "\n")
 cntr <- switch (iso,
                    "KEN" = "Kenya",
-                   "SEN" = "Senegal"
+                   "SEN" = "Senegal",
+                   "ZWE" = "Zimbabwe",
+                   "SDN" = "Sudan"
 )
 
 
 to_save <- select_eco_vars(root =root, iso = iso, cntr = cntr, ip = "ip_all")
+
 dest_dir <- paste0(root ,"/data/",iso,"/_results/hotspots/soc_eco_all_variables.csv")
 
 write_csv(to_save, dest_dir)
