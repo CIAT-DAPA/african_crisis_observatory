@@ -12,9 +12,9 @@
 # suppressMessages(library(pacman))   # Loading R-packages
 # suppressMessages(pacman::p_load(tidyverse,readxl))
 
-# root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
-# iso <- "KEN"
-# cntr <- 'Kenya'
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
+iso <- "MLI"
+cntr <- 'Mali'
 
 select_clim_vars <- function(root, iso, cntr){
   # Data dictionary
@@ -72,3 +72,4 @@ select_clim_vars <- function(root, iso, cntr){
 }
 # View(result)
 # Execute climate clusters code ...
+select_clim_vars(root, iso, cntr)
