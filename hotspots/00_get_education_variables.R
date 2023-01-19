@@ -34,7 +34,7 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 # Obtain education variables
 # ------------------------------------ #
 
-isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
+isos <- c('MLI', 'SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
 
 get_edu_vars <- function(iso = 'SDN'){
   
