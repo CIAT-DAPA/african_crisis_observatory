@@ -20,11 +20,15 @@ suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
-iso <- 'SEN'
+iso <- 'ZWE'
 country <-  switch (iso,
                     "KEN" = "Kenya",
                     "SEN" = "Senegal",
-                    "NGA" = "Nigeria"
+                    "NGA" = "Nigeria",
+                    "UGA" = "Uganda",
+                    "ZWE" = "Zimbabwe",
+                    "MLI" = "Mali",
+                    "SDN"  = "Sudan"
 )
 
 # Load and identify impact pathways
