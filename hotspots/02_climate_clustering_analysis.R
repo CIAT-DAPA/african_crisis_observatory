@@ -451,7 +451,7 @@ labeling_function <- function(db, n_vars){
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 
 
-country_iso2 <- iso <- "NGA"
+country_iso2 <- iso <- "MLI"
 
 
 # country <- switch (iso,
@@ -484,7 +484,8 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 out_clim_dir_pth <- paste0(root, "/data/",iso, "/_results/cluster_results/climate")
 if(!dir.exists(out_clim_dir_pth)){dir.create(out_clim_dir_pth, recursive = T)}
 
-clm <- select_clim_vars(root = substr(root, start = 1, stop = nchar(root)-1 ), 
+#clm <- select_clim_vars(root = substr(root, start = 1, stop = nchar(root)-1 ),
+clm <- select_clim_vars(root,
                         iso  = iso, 
                         cntr = country) %>% 
   dplyr::pull(Code) %>% 
