@@ -20,7 +20,7 @@ suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
-iso <- 'ZWE'
+iso <- 'MLI'
 country <-  switch (iso,
                     "KEN" = "Kenya",
                     "SEN" = "Senegal",
