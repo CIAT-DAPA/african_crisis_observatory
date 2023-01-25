@@ -179,7 +179,7 @@ ip_text_description <- function(shp_object ,ip, df, n_vars = 10){
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 w_mask <- raster::raster(paste0(baseDir, "_global/masks/mask_world_1km.tif"))
 
-iso <- "NGA"
+iso <- "MLI"
 
 root <- paste0(baseDir, iso, "/")
 
@@ -839,7 +839,8 @@ for(i in get_ip_names){
 livelihood_pth <-  switch (iso,
                            "KEN" =  "livelihood/KE_LHZ_2011.shp",
                            "SEN" =  "livelihood/SN_LHZ_2021.shp",
-                           "NGA" =  "livelihood/NG_LHZ_2018.shp"
+                           "NGA" =  "livelihood/NG_LHZ_2018.shp",
+                           "MLI" =  "livelihood/ML_LHZ_2014.shp"
 )
 
 mf_diff <- raster::raster(paste0(root, "education/medn_difference_edu.tif"))
@@ -947,6 +948,11 @@ clim_rasts <- all_rasts %>%
 ip <- "ip_all"
 
 n_vars <- 10
+
+ip_var_list <- read_csv(paste0(root,"_results/hotspots/soc_eco_all_variables.csv")) %>% 
+  dplyr::mutate(Code = ifelse(grepl("\\{iso\\}", Code), gsub("\\{iso\\}", iso, Code), Code),
+                Code = tolower(Code))
+
 ip_vars <- list.files(paste0(root,"_results/hotspots/"), pattern = paste0("_", ip, ".xlsx"), full.names = T) %>%  
   readxl::read_excel(.) %>% 
   dplyr::mutate(Code = tolower(Code)) %>% 
