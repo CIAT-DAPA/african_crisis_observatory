@@ -11,7 +11,7 @@ g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColorBrewer, writexl, raster,terra, sp, sf, stringr, stringi, lattice, rasterVis, maptools,
-                                latticeExtra, RColorBrewer,cowplot, grid,tmap, tmaptools, geojson, geojsonio, MetBrewer, paletteer))
+                                latticeExtra, RColorBrewer,cowplot, grid,tmap, tmaptools, geojson, geojsonio, MetBrewer, paletteer, exactextractr))
 
 create_labels <- function(text, type = c("short", "long")){
   
