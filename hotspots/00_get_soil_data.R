@@ -140,8 +140,11 @@ get_soil <- function(shp_fl = shp_fl, root_depth = 60, outfiles = c(soil_cp,
 
 
 
-
+library(future)
+library(furrr)
+library(tidyverse)
 future::plan(multisession, workers = 11)
+
 isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA', "ETH", "GTM", "PHL", "ZMB")
 
 isos %>% 

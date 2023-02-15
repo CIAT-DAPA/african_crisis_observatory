@@ -34,7 +34,7 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 
 isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA', "ETH", "GTM", "PHL", "ZMB")
 
-get_sanit_vars <- function(iso = 'SDN'){
+get_sanit_vars <- function(iso = 'PHL'){
   
   # Load the country lowest administrative level shapefile
   if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
@@ -163,7 +163,7 @@ get_sanit_vars <- function(iso = 'SDN'){
     tst_flt_crp <- terra::resample(x = tst_flt_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
    
     dir.create(dirname(out), showWarnings = F, recursive = T)
-    terra::writeRaster(x = tst_flt_crp, out) }
+    terra::writeRaster(x = tst_flt_crp, out, overwrite = TRUEs) }
   
 }
 
