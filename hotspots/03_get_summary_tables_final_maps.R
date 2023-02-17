@@ -6,12 +6,22 @@
 # ----------------------------------------------------------------------------------- #
 
 # R options
-g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 .rs.restartR()                      # Restart R session
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColorBrewer, writexl, raster,terra, sp, sf, stringr, stringi, lattice, rasterVis, maptools,
                                 latticeExtra, RColorBrewer,cowplot, grid,tmap, tmaptools, geojson, geojsonio, MetBrewer, paletteer, exactextractr))
+
+#' Variable definition
+#'
+
+iso <- "PHL"
+baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
+root <- paste0(baseDir, iso, "/")
+scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right")
+scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom", 'PHL'="top")
+
 
 create_labels <- function(text, type = c("short", "long")){
   
@@ -120,7 +130,7 @@ ip_text_description <- function(shp_object ,ip, df, n_vars = 10){
                   Code = tolower(Code))
   
   
-  fl <- list.files(paste0(root,"_results/hotspots/"), pattern = paste0("_", ip, ".xlsx"), full.names = T)
+  fl <- list.files(paste0(root,"_results/hotspots/"), pattern = paste0("_sorted_",unique(shp$NAME_0), '_', ip, ".xlsx"), full.names = T)
   tb <- readxl::read_excel(fl) %>% 
     dplyr::mutate(Code = tolower(Code)) %>% 
     dplyr::left_join(., ip_var_list %>% 
@@ -175,19 +185,12 @@ ip_text_description <- function(shp_object ,ip, df, n_vars = 10){
   return(text_raw)
 }#end function
 
-
-baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 w_mask <- raster::raster(paste0(baseDir, "_global/masks/mask_world_1km.tif"))
 
-iso <- "MLI"
 
-root <- paste0(baseDir, iso, "/")
 
 to_share_dir <- paste0(root, "_results/", iso, "_to_share")
 if(!dir.exists(to_share_dir)){dir.create(to_share_dir)}
-
-scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right")
-scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom")
 
 ##################################################################
 ######### Generate climate and conflict intersection #############
@@ -835,12 +838,13 @@ for(i in get_ip_names){
 ############## conflict-climte-ip's overlays ####################################
 ################################################################################
 
-
+#' Donwload from https://fews.net/fews-data/335
 livelihood_pth <-  switch (iso,
                            "KEN" =  "livelihood/KE_LHZ_2011.shp",
                            "SEN" =  "livelihood/SN_LHZ_2021.shp",
                            "NGA" =  "livelihood/NG_LHZ_2018.shp",
-                           "MLI" =  "livelihood/ML_LHZ_2014.shp"
+                           "MLI" =  "livelihood/ML_LHZ_2014.shp",
+                           "PHL" =  "livelihood/ML_LHZ_2014.shp"
 )
 
 mf_diff <- raster::raster(paste0(root, "education/medn_difference_edu.tif"))
@@ -872,7 +876,8 @@ fips_country <- switch (iso,
                         "SEN" = "SG",
                         "ETH" = "ET",
                         "ZMB" = "ZA",
-                        "ZWE" = "ZI"
+                        "ZWE" = "ZI",
+                        "PHL" = "PH"
 )
 
 gwis_country <- switch (iso,
@@ -949,11 +954,11 @@ ip <- "ip_all"
 
 n_vars <- 10
 
-ip_var_list <- read_csv(paste0(root,"_results/hotspots/soc_eco_all_variables.csv")) %>% 
+ip_var_list <- read_csv(paste0(root,"_results/hotspots/soc_eco_all_variables.csv")) %>%
   dplyr::mutate(Code = ifelse(grepl("\\{iso\\}", Code), gsub("\\{iso\\}", iso, Code), Code),
                 Code = tolower(Code))
 
-ip_vars <- list.files(paste0(root,"_results/hotspots/"), pattern = paste0("_", ip, ".xlsx"), full.names = T) %>%  
+ip_vars <- list.files(paste0(root,"_results/hotspots/"), pattern = paste0("_sorted_",unique(shp$NAME_0), '_', ip, ".xlsx"), full.names = T) %>%  
   readxl::read_excel(.) %>% 
   dplyr::mutate(Code = tolower(Code)) %>% 
   dplyr::left_join(., ip_var_list %>% 
