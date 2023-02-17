@@ -22,7 +22,8 @@ suppressMessages(pacman::p_load(tidyverse,terra,raster,sf,stars,motif,tmap,spdep
 suppressMessages(pacman::p_load(meteo,sp,spacetime,gstat,plyr,xts,snowfall,doParallel,CAST,ranger))
 suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr))
 
-
+yearRange <- 2012:2022#range of years to select in ACCLED data
+  
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
   
   r <- raster(rast_path)
@@ -83,6 +84,7 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask){
     # Filter African conflict to the specific country
     cnf <- readxl::read_excel(paste0(root,'/data/_global/conflict/Africa_1997-2022_Jul08.xlsx'), sheet = 1)
     cnf <- cnf %>% dplyr::filter(COUNTRY == country)
+    cnf <- cnf %>% dplyr::filter(YEAR %in% yearRange)
     readr::write_csv(cnf, out)
     conflict <- cnf; rm(cnf, out)
   } else {
