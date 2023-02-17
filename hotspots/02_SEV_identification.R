@@ -13,6 +13,12 @@
 # ----------------------------------------------------------------------------------- #
 
 # R options
+#' This script selects SEV based on NA and 
+#' categorize them based on lower or/and upper percentile depending on the variable.
+#' For instance, in migration 10th percentile indicates a problem as people are leaving
+#' and other hand 90th percentile indicates alot of people coming. In both cases it indicates
+#' a hotspot.
+#' 
 g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 .rs.restartR()                      # Restart R session
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
@@ -21,14 +27,15 @@ suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 
 root <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO"
 
-iso <- 'MLI'
+iso <- 'PHL'
 country <-  switch (iso,
                     "KEN" = "Kenya",
                     "SEN" = "Senegal",
                     "NGA" = "Nigeria",
                     "UGA" = "Uganda",
                     "ZMB" = "Zambia",
-                    "MLI" = "Mali"
+                    "MLI" = "Mali",
+                    "PHL" = "Philippines"
 )
 
 # Load and identify impact pathways
@@ -60,7 +67,7 @@ smm_df <- ip_id %>%
   purrr::map(.f = function(ip){
     # Filter full table by impact pathway
     cat(">>> Impact pathways: ", ip, "\n")
-    fl <- list.files(paste0(root, "/data/",iso,  "/_results/hotspots/"), pattern = paste0("_", ip, ".xlsx"), full.names = T)
+    fl <- list.files(paste0(root, "/data/",iso,  "/_results/hotspots/"), pattern = paste0("_sorted_",unique(shp$NAME_0), '_', ip, ".xlsx"), full.names = T)
     
     
     tb <- readxl::read_excel(fl) %>% 
