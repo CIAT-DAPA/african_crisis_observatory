@@ -37,5 +37,5 @@ isos %>%
     out <- paste0(root,'/data/',iso,'/pasture_area/pasture.tif')
     
     dir.create(dirname(out), showWarnings = F, recursive = T)
-    if(!file.exists(out)){ terra::writeRaster(x = smm, out) }
+    terra::writeRaster(x = smm, out, overwrite=TRUE)
   })
