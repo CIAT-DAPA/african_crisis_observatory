@@ -13,17 +13,25 @@
 # ----------------------------------------------------------------------------------- #
 
 # R options
-
-g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 .rs.restartR()                      # Restart R session
+g <- gc(reset = T); 
+rm(list = ls()) # Empty garbage collector
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse,terra,raster,sf,stars,motif,tmap,spdep))
 suppressMessages(pacman::p_load(meteo,sp,spacetime,gstat,plyr,xts,snowfall,doParallel,CAST,ranger))
 suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr))
 
+#' Reclassifies raster layers using quantiles and also resamples to the same spatial resultion. 
+#' @param root base directory path
+#' @param iso country ISO code
+#' @param country country name 
+#' @param world_mask world raster layer in 5 km spatial resolution 
+#' @param fconf filename of conflict excel file.
+
+fconf <- 'East-Asia-Pacific_2018-2022_Jul01.xlsx'
+
 yearRange <- 2012:2022#range of years to select in ACCLED data
-  
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
   
   r <- raster(rast_path)
@@ -76,13 +84,14 @@ reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimensi
   return(ret)
 }
 
-get_conflic_data <- function(root, iso, country = 'Senegal', world_mask){
+
+get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf){
   
   out <- paste0(root,'/data/',iso,'/conflict/',iso,'_conflict.csv')
   dir.create(path = dirname(out), F, T)
   if(!file.exists(out)){
     # Filter African conflict to the specific country
-    cnf <- readxl::read_excel(paste0(root,'/data/_global/conflict/Africa_1997-2022_Jul08.xlsx'), sheet = 1)
+    cnf <- readxl::read_excel(paste0(root,'/data/_global/conflict/', fconf), sheet = 1)
     cnf <- cnf %>% dplyr::filter(COUNTRY == country)
     cnf <- cnf %>% dplyr::filter(YEAR %in% yearRange)
     readr::write_csv(cnf, out)
@@ -95,18 +104,19 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask){
   # Load the country lowest administrative level shapefile
   if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
     dir.create(path = dirname(paste0(root,'/data/',iso,'/_shps/',iso,'.shp')), recursive = TRUE)
-    shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+    #shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
     adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
     shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
   } else {
     shp <- raster::shapefile(x = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+    
     adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
     shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
   }
   sft <- shp # Shapefile in terra format
   
   # Extract administrative names using reported conflict coordinates by ACLED
-  conflict  <- cbind(conflict,raster::extract(x = shp, y = conflict[,c('LONGITUDE','LATITUDE')]))
+  conflict  <- cbind(conflict, raster::extract(x = shp, y = conflict[,c('LONGITUDE','LATITUDE')]))
   
   # Get conflict summarization variables per coordinates
   cnf_summ <- conflict %>%
@@ -142,6 +152,11 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask){
   
   return(list(cnf_summ, sft))
 }
+
+
+#' Creates text lables for each cluster based on all variables in accled  
+#' @param df dataframe of conflict data of the corresponding country
+
 
 
 get_cluster_labels <- function(df){
@@ -216,6 +231,8 @@ get_cluster_labels <- function(df){
   return(ret)
 }
 
+#' Plot box plots of different clusters (high, median and  low) each conflict variable.
+#' @param df Dataframe for
 make_cluster_plots <- function(df){
   
   g <- df %>% 
@@ -232,6 +249,9 @@ make_cluster_plots <- function(df){
   return(g)
 }
 
+#' Compute statistics for 
+#' @param df 
+#' 
 get_cluster_statistics <- function(df){
   
   df <- df %>% 
@@ -271,211 +291,19 @@ get_cluster_statistics <- function(df){
   return(ret)    
 }
 
-
-get_sum_cl_mtrs <- function(rast_paths, eco_grid_sf,shp_ext, world_mask){
-  rs <- lapply(rast_paths, function(i){
-    
-    r <- raster(i) %>% 
-      raster::resample(., world_mask %>% raster::crop(., shp_ext)) %>% 
-      raster::crop(., shp_ext)
-    
-  }) %>% raster::stack(.)
-  
-  vals <- exactextractr::exact_extract(rs, eco_grid_sf, full_colnames = T)
-  
-  df_extracted <- eco_grid_sf %>% 
-    mutate(rast_vals = purrr::map(.x = vals , .f = function(.x){return(.x)})) %>% 
-    dplyr::select(clust, rast_vals) %>% 
-    sf::st_drop_geometry()
-  
-  df_extracted_final <- lapply(unique(df_extracted$clust), function(i){
-    ret <- df_extracted %>% 
-      dplyr::filter(clust == i) %>% 
-      dplyr::pull(rast_vals) %>% 
-      bind_rows() %>% 
-      dplyr::mutate(coverage_fraction = i) %>% 
-      dplyr::rename("clust" = coverage_fraction) 
-    
-    return(ret)
-  }) %>% 
-    bind_rows() %>% 
-    as_tibble
-  return(df_extracted_final)
-}
-
-clust_descriptives <- function(clust_sum){
-  
-  results <- list()
-  
-  normal_vars <- clust_sum[, !grepl("(cv)|(cvar)|(trnd)", tolower(names(clust_sum))) ]
-  cv_vars <- clust_sum[, grepl("(cv)|(cvar)", tolower(names(clust_sum)))]
-  nms_no_cv <- names(clust_sum)[!grepl("(cv)|(cvar)", tolower(names(clust_sum)))]
-  trnd_vars <- clust_sum[, nms_no_cv[grepl("trnd",nms_no_cv)]]
-  rm(nms_no_cv)
-  
-  global_median <- normal_vars %>% 
-    dplyr::select(-starts_with("clust")) %>% 
-    apply(., 2, function(i){
-      ret <- median(i, na.rm =T )
-      return(ret)
-    })
-  
-  
-  normal_median <- normal_vars %>% 
-    dplyr::group_by(clust) %>% 
-    dplyr::summarise(across(everything(), function(i){
-      ret <- median(i, na.rm = T)
-      return(ret)
-    }))%>%
-    ungroup()  
-  
-  results$median_rel_change <- cbind(clust =normal_median$clust, t((t(normal_median[,-1]) - (global_median))/global_median)*100) %>% 
-    as_tibble()
-  
-  results$cv_rel_change <- cv_vars %>% 
-    bind_cols(., clust = clust_sum$clust) %>% 
-    dplyr::group_by(clust) %>% 
-    dplyr::summarise(across(everything(), function(i){
-      ret <- ((median(i, na.rm = T) - 0.15)/0.15)*100
-      return(ret)
-    }))%>%
-    ungroup() 
-  
-  results$trnd_rel_change <- trnd_vars %>% 
-    bind_cols(., clust = clust_sum$clust) %>% 
-    dplyr::group_by(clust) %>% 
-    dplyr::summarise(across(everything(), function(i){
-      ret <- ((median(i, na.rm = T) - 0.1)/0.1)*100
-      return(ret)
-    }))%>%
-    ungroup() 
-  
-  ret <- purrr::reduce(results, left_join, by  = "clust")
-  ret$clust <- paste0("cluster_", ret$clust)
-  global_metrics <- c("global_metrics",global_median, rep(0.15, ncol(results$cv_rel_change)-1), rep(0.1, ncol(results$trnd_rel_change)-1))
-  
-  ret <- rbind(ret, global_metrics) %>% 
-    tidyr::pivot_longer(., cols = -c("clust"), names_to = "variable", values_to ="value") %>% 
-    tidyr::pivot_wider(names_from = "clust", values_from = "value")
-  
-  return(ret)
-}
-
-
-labeling_function <- function(db, n_vars){
-  
-  
-  res_pca <-  db %>% 
-    dplyr::select(-contains("flood")) %>% 
-    #dplyr::filter(clust == 1) %>% 
-    dplyr::select(-clust) %>% 
-    FactoMineR::PCA(., scale.unit = T, ncp = 3, graph = F)
-  
-  #plot(res_pca, choix = "varcor" )
-  
-  selected_vars <- res_pca$var$contrib %>% 
-    tibble::as_tibble( ., rownames = "var_name") %>%
-    dplyr::mutate(Dim.1_w = Dim.1*res_pca$eig[1,2]/100, 
-                  Dim.2_w = Dim.2*res_pca$eig[2,2]/100,
-                  idx = Dim.1_w + Dim.2_w,
-                  idx2 = idx/max(idx)) %>% 
-    dplyr::arrange(., desc(idx2))  %>% 
-    dplyr::slice(1:n_vars) %>% 
-    pull(var_name)
-  
-  
-  
-  glb_df <- read_csv(paste0(dest_dir, dimension, "_reg_cluster_statistics.csv"))%>% 
-    dplyr::filter(variable %in% selected_vars)
-  
-  
-  lbls <- readxl::read_excel(paste0(root, "Hostpots_data_dictionary.xlsx")) %>% 
-    dplyr::filter(Component == "Climate") %>% 
-    dplyr::select(definition = Variable, Code, Units) %>% 
-    dplyr::filter(Code %in% selected_vars)
-  
-  
-  
-  cats <- list( n_2 = c("High", "Low"),
-                n_3 = c("High", "Moderate","Low"),
-                n_4 = c("High", "High-Moderate", "Moderate-Low", "Low"),
-                n_5 = c("Very High", "High", "Moderate", "Low", "Very Low"),
-                n_6 = c("Very High", "High", "High-Moderate", "Moderate-Low", "Low", "Very Low"),
-                n_7 = c("Very High", "High", "High-Moderate", "Moderate", "Moderate-Low", "Low", "Very Low"))
-  
-  fr <- dplyr::left_join(glb_df, lbls, by = c('variable' = 'Code')) %>% 
-    dplyr::mutate(id = 1:nrow(.))
-  
-  n_clust <- length(unique(fr$clust))
-  
-  for(i in unique(fr$variable)){
-    
-    tmp <- fr %>% 
-      dplyr::filter(variable == i) %>% 
-      arrange(desc(median)) %>% 
-      dplyr::mutate(prefix = unlist(cats[paste0("n_", n_clust)])) %>% 
-      dplyr::select(id, prefix)
-    
-    
-    
-    fr[ tmp$id, "prefix"] <- tmp$prefix
-  }
-  
-  
-  
-  
-  gen_text <- function(df_clust){
-    
-    clust_num <- unique(df_clust$clust)
-    
-    
-    txt_start <- paste("Climate cluster ", clust_num, "is characterized by: ")
-    
-    ret <- df_clust %>% 
-      dplyr::mutate(text = purrr::pmap(.l = list(def = definition, un = Units, pr = prefix, me = median), .f= function(def, un, pr, me){
-        
-        paste( paste0("[", pr, "]"), "values of", def, paste0("(", round(me, 2), " ", un,")" ))
-      }) %>%  unlist) %>% 
-      pull(text) %>% 
-      paste(., collapse = ", ")
-    
-    ret <- paste(txt_start, ret)
-    return(ret)
-    
-  }
-  
-  text_output <- sapply(unique(fr$clust), function(i){
-    
-    fr %>% 
-      dplyr::filter(clust == i) %>% 
-      gen_text(.)
-  }, simplify = T)
-  
-  
-  ret <- tibble(clust = unique(fr$clust), text_output )
-  
-  return(list(text_output = ret, var_imp = selected_vars))
-}#end function
-
-
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 
 
-country_iso2 <- iso <- "NGA"
-
-
-# country <- switch (iso,
-#   "KEN" = "Kenya",
-#   "SEN" = "Senegal",
-#   "ETH" = "Ethiopia"
-# )
+country_iso2 <- iso <- "PHL"
 
 baseDir <- paste0(root, "data/",country_iso2)
 
+#' Read country shapefile
 shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>% 
   sf::st_as_sf(.) %>% 
   dplyr::mutate(id = 1:nrow(.))
-
+country <- unique(shp$NAME_0)
+#' Create a cluster to represent the megapixels
 grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>% 
   st_as_sf(.) %>%
   dplyr::mutate(id = 1:nrow(.))
@@ -485,9 +313,10 @@ grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>%
 ###### NEW CONFLICT CLUSTERING #######################
 #####################################################
 
+#' Output directory
 out_conflict_dir<- paste0(root, "/data/",iso, "/_results/cluster_results/conflict")
 if(!dir.exists(out_conflict_dir)){dir.create(out_conflict_dir, recursive = T)}
-
+#' Population density
 pop_dens <- raster::raster(paste0(root,"/data/",iso, "/population_density/medn_popd.tif"))
 
 shp <- raster::shapefile(paste0(root,"/data/", iso, "/_shps/",iso,".shp" )) %>% 
@@ -498,11 +327,16 @@ shp <- raster::shapefile(paste0(root,"/data/", iso, "/_shps/",iso,".shp" )) %>%
 world_mask <- raster::raster(paste0(root,"/data/_global/masks/mask_world_1km.tif")) %>% 
   raster::crop(., extent(shp))
 
-
+#' Filters country conflict data
+#' @param root
+#' @param iso
+#' @param country
+#' @param world_mask
+#' 
 conflict_raw <-  get_conflic_data(root = root,
                                   iso = iso,
                                   country = country,
-                                  world_mask = world_mask) %>% 
+                                  world_mask = world_mask, fconf) %>% 
   purrr::pluck(1)
 
 
@@ -524,13 +358,20 @@ grd <- grd %>%
   dplyr::mutate(id = 1:nrow(.))
 
 
+#' Dataframe of aggregated values per megapixels including the kernel density results
+conflict_sf <- conflict_sf %>% 
+  dplyr::mutate(NA_intersect = sapply(st_intersects(conflict_sf, shp), function(i){ifelse(length(i)==0,NA, i)})) %>%
+  dplyr::filter(!is.na(NA_intersect)) %>%
+  dplyr::select(-NA_intersect) 
 
-to_cluster <- conflict_sf %>% 
-  dplyr::mutate(ov = sapply(st_intersects(conflict_sf, grd), function(i){ifelse(length(i)==0,NA, i)}),
+to_cluster <- conflict_sf %>%
+  dplyr::mutate(ov = sapply(st_intersects(conflict_sf, grd), function(i){ifelse(length(i)==0,NA, i)}), 
                 pop_dens =raster::extract(pop_dens, st_as_sf(.) %>% st_cast("POINT")%>% st_coordinates()),
+                pop_dens = ifelse(is.na(pop_dens), 0, pop_dens),
                 EVENTS = ifelse(pop_dens == 0 , 1, EVENTS/pop_dens),
                 FATALITIES = ifelse(pop_dens == 0 , 1, FATALITIES/pop_dens),
                 knl = raster::extract(knl, st_as_sf(.) %>% st_cast("POINT")%>% st_coordinates())) %>%
+  dplyr::filter(!is.na(knl))%>%
   dplyr::group_by(ov) %>% 
   dplyr::summarise(EVENTS = median(EVENTS, na.rm = T),
                    TYPE_RICHNESS = max(TYPE_RICHNESS, na.rm = T),
@@ -553,6 +394,8 @@ x <- to_cluster %>%
   st_drop_geometry() %>%  
   FactoMineR::PCA(., scale.unit = T, ncp =2, graph = F )
 
+#' Identification of outloiters based on 1.5  times the IQR and assigning them a lower
+#' weight
 cords <- rbind(x$ind$coord) %>% 
   as_tibble() %>% 
   dplyr::mutate(dst = sqrt(( Dim.1 - 0)^2 + (Dim.2 - 0 )^2   ),
@@ -560,19 +403,20 @@ cords <- rbind(x$ind$coord) %>%
 
 thr <- cords %>% dplyr::filter(rng) %>% pull(dst) %>% quantile %>% .[4]
 
+#' Assigning weights based distance outside the IQR
 wh <- cords %>% 
   dplyr::mutate(wh = ifelse(dst > thr, 8, 1)) %>% 
   dplyr::pull(wh)
 
-
-x_wh <- to_cluster %>% 
+#' Recalculate PCA with new weights
+pca_w <- to_cluster %>% 
   dplyr::mutate(knl = ifelse(is.na(knl), 0, knl)) %>% 
   dplyr::select(-ov) %>% 
   st_drop_geometry() %>%  
   FactoMineR::PCA(., scale.unit = T, ncp =2, graph = F , row.w = wh)
 
 
-x_wh <- rbind(x_wh$ind$coord)%>% 
+x_wh <- rbind(pca_w$ind$coord)%>% 
   dist(., method = "euclidean")
 
 km <- stats::kmeans(x_wh, 3)
@@ -591,6 +435,7 @@ original_df <- conflict_sf %>%
                    FATALITIES = sum(FATALITIES, na.rm = T)
                    ,knl = median(knl, na.rm = T)
   ) %>% 
+  dplyr::filter(!is.na(knl)) %>% 
   dplyr::ungroup() %>% 
   dplyr::bind_cols(clust = as.character(km$cluster))
 
@@ -626,7 +471,7 @@ mainmap3<- tmap::tm_shape(shp)+
   tm_borders(col = "black")+
   tm_shape(to_plot)+
   tm_fill(col = "clust_km", palette = c("#d7191c", "#e5a03e", "#ffffbf"), alpha = 0.7, title = expression("Conflict clusters"))#+
-  #tm_borders(col ="black") 
+#tm_borders(col ="black") 
 
 
 x11();mainmap3
