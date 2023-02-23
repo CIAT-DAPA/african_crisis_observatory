@@ -11,6 +11,12 @@ suppressMessages(pacman::p_load(tidyverse,terra,raster,sf,stars,motif,tmap,spdep
 suppressMessages(pacman::p_load(meteo,sp,spacetime,gstat,plyr,xts,snowfall,doParallel,CAST,ranger))
 suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr, psych, FactoMineR))
 
+#' Reclassifies raster layers using quantiles and also resamples to the same spatial resultion. 
+#' @param rast_path path to 
+#' @param shp_ext 
+#' @param world_mask word 
+#' @shp_country shapefile of country boundary 
+
 
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
   
