@@ -31,6 +31,60 @@ suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr)
 
 fconf <- 'East-Asia-Pacific_2018-2022_Jul01.xlsx'
 
+yearRange <- 2012:2022#range of years to select in ACCLED data
+reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
+  
+  r <- raster(rast_path)
+  #r <- raster(file_paths$path[13] )
+  #if(as.character(res(r)[1]) != as.character(res(world_mask)[1])){
+  cat(paste("processign: ", rast_path, "\n"))
+  w_msk<- world_mask %>% 
+    raster::crop(., shp_ext) 
+  
+  #extent(world_mask) <- extent(world_mask)+5
+  
+  r <- r %>% 
+    raster::resample(., w_msk) 
+  
+  if(dimension == "conflict"){
+    c_area <- raster::shapefile(conflict_area)
+    r <- r %>% 
+      raster::crop(., extent(c_area)) %>% 
+      raster::mask(., c_area)
+    
+    # if(grepl("FATALITIES|EVENTS", names(r))){
+    #   pop_dens <- raster(paste0(baseDir, "/population_density/medn_popd.tif")) %>% 
+    #     raster::resample(., w_msk) %>% 
+    #     raster::crop(., extent(r))
+    #   
+    #   r <- r/pop_dens
+    #   r[is.infinite(r[])] <- 0
+    # }
+  }
+  
+  #}
+  
+  if(length(unique(r[])) > 10){
+    cat(rast_path, " reclassifying \n")
+    qtl <- raster::quantile(r[r[] !=0], seq(.2,1,.2))
+    rclmat <- data.frame(x1 = c(min(r[], na.rm = T),qtl[-length(qtl)]), x2 = qtl, y = 1:5) %>% as.matrix()
+    ret <- r %>% 
+      raster::reclassify(., rclmat) 
+    
+    
+    ret <- stars::st_as_stars(ret)
+    
+  }else{
+    cat(rast_path, " Not need for reclassify \n")
+    ret <- r %>% 
+      stars::st_as_stars()
+    
+  }
+  
+  return(ret)
+}
+
+
 get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf){
   
   out <- paste0(root,'/data/',iso,'/conflict/',iso,'_conflict.csv')
@@ -39,6 +93,7 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf){
     # Filter African conflict to the specific country
     cnf <- readxl::read_excel(paste0(root,'/data/_global/conflict/', fconf), sheet = 1)
     cnf <- cnf %>% dplyr::filter(COUNTRY == country)
+    cnf <- cnf %>% dplyr::filter(YEAR %in% yearRange)
     readr::write_csv(cnf, out)
     conflict <- cnf; rm(cnf, out)
   } else {
@@ -54,7 +109,7 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf){
     shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
   } else {
     shp <- raster::shapefile(x = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
- 
+    
     adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
     shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
   }
@@ -416,7 +471,7 @@ mainmap3<- tmap::tm_shape(shp)+
   tm_borders(col = "black")+
   tm_shape(to_plot)+
   tm_fill(col = "clust_km", palette = c("#d7191c", "#e5a03e", "#ffffbf"), alpha = 0.7, title = expression("Conflict clusters"))#+
-  #tm_borders(col ="black") 
+#tm_borders(col ="black") 
 
 
 x11();mainmap3
