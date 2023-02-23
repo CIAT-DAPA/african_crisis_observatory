@@ -38,5 +38,5 @@ isos %>%
     out <- paste0(root,'/data/',iso,'/irrigation/irrigation.tif')
     
     dir.create(dirname(out), showWarnings = F, recursive = T)
-    if(!file.exists(out)){ terra::writeRaster(x = irr, out) }
+    if(!file.exists(out)){ terra::writeRaster(x = irr, out, overwrite = T) }
   })

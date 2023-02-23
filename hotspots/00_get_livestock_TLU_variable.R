@@ -50,7 +50,7 @@ lvst_crp <- terra::app(x = lvst, fun = function(x){
 })
 out <- paste0(root,'/data/',iso,'/livestock/lvst_tlu.tif')
 dir.create(dirname(out), showWarnings = F, recursive = T)
-if(!file.exists(out)){ terra::writeRaster(x = lvst_crp, out) }
+if(!file.exists(out)){ terra::writeRaster(x = lvst_crp, out, overwrite = TRUE) }
 
 # TLU: tropical livestock units
 # TLU = Cattle * 0.7 + Sheep * 0.1 + Goat * 0.1 + Chicken * 0.01 + Pig * 0.2 + Horse * 0.8

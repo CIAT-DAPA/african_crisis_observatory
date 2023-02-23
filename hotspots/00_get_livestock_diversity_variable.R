@@ -51,4 +51,4 @@ lvst_crp <- terra::app(x = lvst, fun = function(x){
 })
 out <- paste0(root,'/data/',iso,'/livestock/lvst_diver.tif')
 dir.create(dirname(out), showWarnings = F, recursive = T)
-if(!file.exists(out)){ terra::writeRaster(x = lvst_crp, out) }
+if(!file.exists(out)){ terra::writeRaster(x = lvst_crp, out, overwrite=TRUE) }

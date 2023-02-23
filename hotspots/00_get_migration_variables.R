@@ -104,7 +104,7 @@ get_migr_vars <- function(iso = 'SDN'){
   tmgrt_crp <- terra::resample(x = tmgrt, y = ref) %>% terra::mask(x = ., mask = shpr)
   
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  terra::writeRaster(x = tmgrt_crp, out)
+  terra::writeRaster(x = tmgrt_crp, out, overwrite = TRUE)
   }
   
 }

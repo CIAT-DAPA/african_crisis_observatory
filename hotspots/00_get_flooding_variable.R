@@ -45,5 +45,5 @@ isos %>%
     out <- paste0(root,'/data/',iso,'/flooding/flood.tif')
     
     dir.create(dirname(out), showWarnings = F, recursive = T)
-    if(!file.exists(out)){ terra::writeRaster(x = rst, out) }
+    if(!file.exists(out)){ terra::writeRaster(x = rst, out, overwrite=T) }
   })

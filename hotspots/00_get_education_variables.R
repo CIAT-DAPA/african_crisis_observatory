@@ -34,9 +34,9 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 # Obtain education variables
 # ------------------------------------ #
 
-isos <- c('MLI', 'SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
+isos <- c('MLI', 'SDN','ZWE','SEN','MLI','NGA','KEN','UGA', 'PHL')
 
-get_edu_vars <- function(iso = 'SDN'){
+get_edu_vars <- function(iso = 'PHL'){
   
   # Load the country lowest administrative level shapefile
   if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){

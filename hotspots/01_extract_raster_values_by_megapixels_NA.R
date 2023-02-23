@@ -90,7 +90,7 @@ names(dfm)[1:9] <- c('id','EVENTS',
 
 to_compare <- read_csv("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data_extracted/KEN_stats.csv")
 
-
+#' Check if column names correspond: Note the last two will be different because of ISO code
 names(to_compare) == names(dfm)
 
 vroom::vroom_write(x = dfm, file = paste0(root,'/data_extracted/',iso,'_stats.csv'), delim = ',')
