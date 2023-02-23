@@ -102,38 +102,38 @@ get_chld_grwht_fail <- function(iso = 'SDN'){
   mstntg_crp <- terra::resample(x = mstntg_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/child_growth_failure/medn_stunting.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = mstntg_crp, out) }
+  terra::writeRaster(x = mstntg_crp, out, overwrite=TRUE)
   
   muwght_crp <- terra::crop(x = muwght, terra::ext(shp))
   muwght_crp <- terra::resample(x = muwght_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/child_growth_failure/medn_underweight.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = muwght_crp, out) }
+  terra::writeRaster(x = muwght_crp, out, overwrite=TRUE)
   
   mwstng_crp <- terra::crop(x = mwstng, terra::ext(shp))
   mwstng_crp <- terra::resample(x = mwstng_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/child_growth_failure/medn_wasting.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = mwstng_crp, out) }
+  terra::writeRaster(x = mwstng_crp, out, overwrite=TRUE)
   
   # 90th percentile
   p90stntg_crp <- terra::crop(x = p90stntg, terra::ext(shp))
   p90stntg_crp <- terra::resample(x = p90stntg_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/child_growth_failure/p90_stunting.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = p90stntg_crp, out) }
+  terra::writeRaster(x = p90stntg_crp, out, overwrite=TRUE)
   
   p90Avguwght_crp <- terra::crop(x = p90Avguwght, terra::ext(shp))
   p90Avguwght_crp <- terra::resample(x = p90Avguwght_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/child_growth_failure/p90_underweight.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = p90Avguwght_crp, out) }
+  terra::writeRaster(x = p90Avguwght_crp, out, overwrite=TRUE)
   
   p90wstng_crp <- terra::crop(x = p90wstng, terra::ext(shp))
   p90wstng_crp <- terra::resample(x = p90wstng_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/child_growth_failure/p90_wasting.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = p90wstng_crp, out) }
+  terra::writeRaster(x = p90wstng_crp, out, overwrite=TRUE) 
   
   
   # Crop Coefficient of variation
@@ -141,19 +141,19 @@ get_chld_grwht_fail <- function(iso = 'SDN'){
   vstntg_crp <- terra::resample(x = vstntg_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/child_growth_failure/cvar_stunting.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = vstntg_crp, out) }
+  terra::writeRaster(x = vstntg_crp, out, overwrite=TRUE) 
   
   vuwght_crp <- terra::crop(x = vuwght, terra::ext(shp))
   vuwght_crp <- terra::resample(x = vuwght_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/child_growth_failure/cvar_underweight.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = vuwght_crp, out) }
+  terra::writeRaster(x = vuwght_crp, out, overwrite=TRUE) 
   
   vwstng_crp <- terra::crop(x = vwstng, terra::ext(shp))
   vwstng_crp <- terra::resample(x = vwstng_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/child_growth_failure/cvar_wasting.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = vwstng_crp, out) }
+  terra::writeRaster(x = vwstng_crp, out, overwrite=TRUE) 
   
   # Crop Trend
   out <- paste0(root,'/data/',iso,'/child_growth_failure/trnd_stunting.tif')
@@ -171,7 +171,7 @@ get_chld_grwht_fail <- function(iso = 'SDN'){
     tstntg_crp <- terra::resample(x = tstntg_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
     
     dir.create(dirname(out), showWarnings = F, recursive = T)
-    terra::writeRaster(x = tstntg_crp, out) }
+    terra::writeRaster(x = tstntg_crp, out, overwrite=TRUE) }
   
   out <- paste0(root,'/data/',iso,'/child_growth_failure/trnd_underweight.tif')
   if(!file.exists(out)){
@@ -191,7 +191,7 @@ get_chld_grwht_fail <- function(iso = 'SDN'){
     terra::writeRaster(x = tuwght_crp, out) }
   
   out <- paste0(root,'/data/',iso,'/child_growth_failure/trnd_wasting.tif')
-  if(!file.exists(out)){ 
+  #if(!file.exists(out)){ 
     wstng_crp <- terra::crop(x = wstng, terra::ext(shp))
     twstng_crp <- terra::app(x = wstng_crp, fun = function(x){
       x <- as.numeric(na.omit(x))
@@ -205,7 +205,7 @@ get_chld_grwht_fail <- function(iso = 'SDN'){
     twstng_crp <- terra::resample(x = twstng_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
     
     dir.create(dirname(out), showWarnings = F, recursive = T)
-    terra::writeRaster(x = twstng_crp, out) }
+    terra::writeRaster(x = twstng_crp, out, overwrite=TRUE) #}
   
 }
 isos %>%
