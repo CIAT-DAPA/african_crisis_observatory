@@ -67,7 +67,8 @@ get_migr_vars <- function(iso = 'SDN'){
   mmgrt_crp <- terra::resample(x = mmgrt, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/migration/medn_migration.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = mmgrt_crp, out) }
+  names(mmgrt_crp) <- gsub('.tif','',basename(out))
+  terra::writeRaster(x = mmgrt_crp, out, overwrite=TRUE) 
   
   # ------------------------------------- #
   # 90th percentile
@@ -77,7 +78,8 @@ get_migr_vars <- function(iso = 'SDN'){
   vmgrt_crp <- terra::resample(x = p95mgrt, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/migration/p90_migration.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = vmgrt_crp, out) }
+  names(vmgrt_crp) <- gsub('.tif','',basename(out))
+  terra::writeRaster(x = vmgrt_crp, out, overwrite=T) 
   
   
   # ------------------------------------ #
@@ -88,11 +90,13 @@ get_migr_vars <- function(iso = 'SDN'){
   vmgrt_crp <- terra::resample(x = vmgrt, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/migration/cvar_migration.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = vmgrt_crp, out) }
+  names(vmgrt_crp) <- gsub('.tif','',basename(out))
+  terra::writeRaster(x = vmgrt_crp, out, overwrite=T) 
   
   # Crop Trend
   out <- paste0(root,'/data/',iso,'/migration/trnd_migration.tif')
-  if(!file.exists(out)){ tmgrt <- terra::app(x = mgrt, fun = function(x){
+  #if(!file.exists(out)){ 
+    tmgrt <- terra::app(x = mgrt, fun = function(x){
     x <- as.numeric(na.omit(x))
     if(length(x) > 1){
       y <- trend::sens.slope(x)$estimates
@@ -104,8 +108,9 @@ get_migr_vars <- function(iso = 'SDN'){
   tmgrt_crp <- terra::resample(x = tmgrt, y = ref) %>% terra::mask(x = ., mask = shpr)
   
   dir.create(dirname(out), showWarnings = F, recursive = T)
+  names(tmgrt_crp) <- gsub('.tif','',basename(out))
   terra::writeRaster(x = tmgrt_crp, out, overwrite = TRUE)
-  }
+  #}
   
 }
 
