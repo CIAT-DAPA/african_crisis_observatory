@@ -25,7 +25,7 @@ pas <- terra::rast(paste0(root,'/data/_global/cropland/Pasture2000_5m.tif'))  # 
 
 smm <- crp + pas # Compute cropland and pasture area raster
 
-isos <- 'PHL' #c('KEN','MLI','NGA','SDN','SEN','UGA','ZWE', 'PHL')
+isos <- 'PHL' #c('KEN','MLI','NGA','SDN','SEN','UGA','ZWE', 'PHL', 'GTM')
 
 isos %>%
   purrr::map(.f = function(iso){
@@ -43,3 +43,4 @@ isos %>%
     dir.create(dirname(out), showWarnings = F, recursive = T)
     if(!file.exists(out)){ terra::writeRaster(x = smm, out, overwrite=TRUE) }
   })
+
