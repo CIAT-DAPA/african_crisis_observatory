@@ -179,7 +179,7 @@ ip_text_description <- function(shp_object ,ip, df, n_vars = 10){
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 w_mask <- raster::raster(paste0(baseDir, "_global/masks/mask_world_1km.tif"))
 
-iso <- "NGA"
+iso <- "ZWE"
 
 root <- paste0(baseDir, iso, "/")
 
@@ -534,7 +534,7 @@ for(i in get_ip_names){
   
   long_labels_tbl <- apply(labs_tbl , 2, create_labels, type = "long") %>% 
     as_tibble() %>% 
-    dplyr::select(long_labs = V1) %>% 
+    dplyr::select(long_labs = value) %>% 
     dplyr::bind_cols(., vals_tbl %>% dplyr::select(rast_values)) %>% 
     dplyr::slice(1:length(unique(ip_codes$category)))
   
@@ -839,7 +839,12 @@ for(i in get_ip_names){
 livelihood_pth <-  switch (iso,
                            "KEN" =  "livelihood/KE_LHZ_2011.shp",
                            "SEN" =  "livelihood/SN_LHZ_2021.shp",
-                           "NGA" =  "livelihood/NG_LHZ_2018.shp"
+                           "NGA" =  "livelihood/NG_LHZ_2018.shp",
+                           "SDN" =  "livelihood/SD_LHZ_2014.shp",
+                           "ZWE" =  "livelihood/ZW_LHZ_2011.shp",
+                           "UGA" =  "livelihood/UG_LHZ_2013.shp",
+                           "ZMB" =  "livelihood/ZM_LHZ_2014.shp",
+                           "MLI" =  "livelihood/ML_LHZ_2014.shp"
 )
 
 mf_diff <- raster::raster(paste0(root, "education/medn_difference_edu.tif"))
@@ -1002,7 +1007,7 @@ ip_rasts <- all_rasts %>%
       
     }
     
-    to_ret <- data.frame(vr = exact_extract(r, sf::st_as_sf(clusts_to_share), fun = "median") )
+    to_ret <- data.frame(vr = exactextractr::exact_extract(r, sf::st_as_sf(clusts_to_share), fun = "median") )
     names(to_ret) <- final_name
     return(to_ret)
     
@@ -1013,7 +1018,7 @@ ip_rasts <- all_rasts %>%
 clusts_to_share@data <- clusts_to_share@data %>% 
   dplyr::mutate(NAME_1 = lapply(rs, function(df){df %>% pull(NAME_1) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
                 NAME_2 = lapply(rs, function(df){df %>% pull(NAME_2) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
-                NAME_3 = lapply(rs, function(df){df %>% pull(NAME_3) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
+                #NAME_3 = lapply(rs, function(df){df %>% pull(NAME_3) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
                 livelihoods = lapply(liveext, function(df){df %>% pull(LZNAMEEN) %>% unique(.) %>% paste(., collapse = ";") }) %>%  unlist,
                 median_male_female_edu_diff  = mf_diff_ext,
                 median_male_edu = m_edu_ext,
@@ -1070,7 +1075,7 @@ clusts_to_share@data <- clusts_to_share@data %>%
                   starts_with("ip"),
                   NAME_1,
                   NAME_2,
-                  NAME_3,
+                  #NAME_3,
                   clim_cluster_order,
                   starts_with("median"),
                   starts_with("ethnicity"),
