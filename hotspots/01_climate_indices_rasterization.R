@@ -1,4 +1,4 @@
-
+rm(list=ls(all=TRUE))
 pacman::p_load(tidyverse, terra, raster)
 
 iso <- "GTM"

@@ -34,9 +34,9 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 # Obtain education variables
 # ------------------------------------ #
 
-isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA')
+isos <- c('MLI', 'SDN','ZWE','SEN','MLI','NGA','KEN','UGA', 'PHL')
 
-get_edu_vars <- function(iso = 'SDN'){
+get_edu_vars <- function(iso = 'PHL'){
   
   # Load the country lowest administrative level shapefile
   if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
@@ -173,11 +173,12 @@ get_edu_vars <- function(iso = 'SDN'){
   tdff_crp <- terra::resample(x = tdff_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/education/trnd_difference_edu.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = tdff_crp, out) }
+  if(!file.exists(out)){ terra::writeRaster(x = tdff_crp, out, overwrite=T) }
   
   return(cat('Done\n'))
   
 }
+
 isos %>%
   purrr::map(.f = function(iso){
     get_edu_vars(iso = iso)

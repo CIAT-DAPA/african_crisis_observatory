@@ -11,11 +11,12 @@ var tmax   = ee.ImageCollection("IDAHO_EPSCOR/TERRACLIMATE").filter(ee.Filter.da
 var aet    = ee.ImageCollection("IDAHO_EPSCOR/TERRACLIMATE").filter(ee.Filter.date('1981-01-01','2020-12-01')).select('aet'); // Actual evapotranspiration
 
 // Countries list
-var cList = ['Kenya','Senegal','Uganda','Nigeria','Sudan','Mali','Zimbabwe']; // Countries list
+var cList = ['Kenya','Senegal','Uganda','Nigeria','Sudan','Mali','Zimbabwe', 'Philippines']; // Countries list
 // One specific country
-var country = countries.filter(ee.Filter.inList('COUNTRY_NA',['Zimbabwe']));
+var country = countries.filter(ee.Filter.inList('COUNTRY_NA',['Philippines']));
 // Map.addLayer(country, {}, 'Country shp');
 
+Map.centerObject(country, 5)
 //////////////////////////////////////////////
 // Median
 //////////////////////////////////////////////

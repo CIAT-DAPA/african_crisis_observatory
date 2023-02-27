@@ -20,7 +20,11 @@ suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
+<<<<<<< HEAD:hotspots/02_hotspots_identification.R
 iso <- 'SDN'
+=======
+iso <- 'GTM'
+>>>>>>> cd51984c600e751d181699138d24c4782033365d:hotspots/02_SEV_IP_rasters.R
 country <-  switch (iso,
                     "KEN" = "Kenya",
                     "SEN" = "Senegal",
@@ -28,9 +32,11 @@ country <-  switch (iso,
                     "UGA" = "Uganda",
                     "ZWE" = "Zimbabwe",
                     "MLI" = "Mali",
-                    "SDN"  = "Sudan"
+                    "SDN"  = "Sudan",
+                    "GTM"  = "Guatemala",
+                    "PHL" = "Philippines"
 )
-
+#' This scrips makes SEV maps
 # Load and identify impact pathways
 ip_var_list <- read_csv(paste0(root, "/data/", iso, "/_results/hotspots/soc_eco_all_variables.csv")) %>% 
   dplyr::mutate(Code = ifelse(grepl("\\{iso\\}", Code), gsub("\\{iso\\}", iso, Code), Code),
@@ -64,7 +70,7 @@ n_vars <- 10
 ip_id %>%
   purrr::map(.f = function(ip){
     
-    fl <- list.files(paste0(root, "/data/",iso,  "/_results/hotspots/"), pattern = paste0("_", ip, ".xlsx"), full.names = T)
+    fl <- list.files(paste0(root, "/data/",iso,  "/_results/hotspots/"), pattern = paste0("_sorted_",unique(shp$NAME_0), '_', ip, ".xlsx"), full.names = T)
     
     
     tb <- readxl::read_excel(fl) %>% 

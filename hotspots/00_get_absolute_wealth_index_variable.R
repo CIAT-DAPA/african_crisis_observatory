@@ -18,7 +18,12 @@ options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notat
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(raster, sp, sf, tidyverse, VGAM))
 
-
+#' Compute a PDF from  Pareto distribution.
+#' @param x is dataframe relative wealth index of a country
+#' @param theta is  
+#' @param gini 
+#' @param gdppc
+ 
 ICDF <- function(x, theta, gini, gdppc){
   
   alpha = (1+gini)/(2*gini)
@@ -89,8 +94,11 @@ r_f <- raster::resample(r_f, mask %>% raster::crop(., extent(shp_country)) )
 
 raster::writeRaster(r_f, paste0(rwi_out_dir,"/",ISO3,"_AWE.tif"), overwrite = T)
 
-## AWE for all Africa
+##======================================================
+## RWI for Africa ONLY!!!!!!!!!!!!!!.
 
+## AWE for all Africa
+##======================================================
 world_shp  <- raster::shapefile(paste0(root,'/data/_global/world_shapefile/all_country/all_countries.shp'))
 wealth_dir <- paste0(root,'/data/_global/wealth_index')
 mask       <- raster::raster(paste0(root,'/data/_global/masks/mask_world_1km.tif'))

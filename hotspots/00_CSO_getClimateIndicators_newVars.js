@@ -9,7 +9,7 @@ var aet    = ee.ImageCollection("IDAHO_EPSCOR/TERRACLIMATE").filter(ee.Filter.da
 // Countries list
 var cList = ['Kenya','Senegal','Uganda','Nigeria','Sudan','Mali','Zimbabwe', "Ethiopia", "Guatemala", "Philippines"]; // Countries list
 // One specific country
-var country = countries.filter(ee.Filter.inList('COUNTRY_NA',['Kenya']));
+var country = countries.filter(ee.Filter.inList('COUNTRY_NA',['Philippines']));
 
 //population density avg
 var avgPopD = ppdensity.mean();
@@ -74,9 +74,7 @@ var yCWDf = ee.ImageCollection(years.map(yearlyCWDf));
 var avgCWDf = yCWDf.mean();
 var avgCWDfClipped = avgCWDf.clip(country);
 
-
-
-
+Map.centerObject(country, 4)
 
 // Access variables
 // Image to GDrive: accessibility

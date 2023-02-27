@@ -9,11 +9,12 @@ var wcover    = ee.ImageCollection("ESA/WorldCover/v100").first().select('Map');
 var aux       = ee.ImageCollection("CIESIN/GPWv411/GPW_Population_Density").first().select('population_density');
 
 // Countries list
-var cList = ['Kenya','Senegal','Uganda','Nigeria','Sudan','Mali','Zimbabwe','Guatemala']; // Countries list
+var cList = ['Kenya','Senegal','Uganda','Nigeria','Sudan','Mali','Zimbabwe','Guatemala', 'Philippines']; // Countries list
 // One specific country
-var country = countries.filter(ee.Filter.inList('COUNTRY_NA',['Guatemala']));
+var country = countries.filter(ee.Filter.inList('COUNTRY_NA',['Philippines']));
 // Map.addLayer(country, {}, 'Country shp');
 
+Map.centerObject(country, 6)
 // WorldCover map
 var prj = aux.projection();
 

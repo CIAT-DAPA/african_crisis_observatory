@@ -42,7 +42,7 @@ get_soil <- function(shp_fl = shp_fl, root_depth = 60, outfiles = c(soil_cp,
     # Silt content
     slt <- terra::rast(list.files(paste0(soils_root,'/Physical soil properties/Silt content'), pattern = '.tif$', full.names = T) %>% sort())
     # Clay content
-    cly <- terra::rast(list.files(paste0(soils_root,'/Physical soil properties/Clay content (0-2 micro meter) mass fraction'), pattern = '.tif$', full.names = T) %>% sort())
+    cly <- terra::rast(list.files(paste0(soils_root,'/Physical soil properties/Clay content (0-2 micro meter) mass fraction'), pattern = 'sl[1-7]_250m_ll.tif$', full.names = T) %>% sort())
     # Bulk density
     bld <- terra::rast(list.files(paste0(soils_root,'/Physical soil properties/Bulk density (fine earth)'), pattern = '.tif$', full.names = T) %>% sort())
     
@@ -140,8 +140,11 @@ get_soil <- function(shp_fl = shp_fl, root_depth = 60, outfiles = c(soil_cp,
 
 
 
-
+library(future)
+library(furrr)
+library(tidyverse)
 future::plan(multisession, workers = 11)
+
 isos <- c('SDN','ZWE','SEN','MLI','NGA','KEN','UGA', "ETH", "GTM", "PHL", "ZMB")
 
 isos %>% 

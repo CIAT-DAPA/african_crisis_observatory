@@ -29,7 +29,7 @@ root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/base__lowest_gadm.R') # Get lowest administrative level per country
 
 pth <- paste0(root,'/data/_global/livestock')
-iso <- 'KEN'
+iso <- 'GTM'
 shp <- terra::vect(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
 ref  <- terra::rast(extent = terra::ext(shp), crs = terra::crs(shp), resolution = c(0.008333334, 0.008333334))
 shpr <- terra::rasterize(x = shp, y = ref, field = 'NAME_0')
@@ -50,7 +50,7 @@ lvst_crp <- terra::app(x = lvst, fun = function(x){
 })
 out <- paste0(root,'/data/',iso,'/livestock/lvst_tlu.tif')
 dir.create(dirname(out), showWarnings = F, recursive = T)
-if(!file.exists(out)){ terra::writeRaster(x = lvst_crp, out) }
+terra::writeRaster(x = lvst_crp, out, overwrite = TRUE) 
 
 # TLU: tropical livestock units
 # TLU = Cattle * 0.7 + Sheep * 0.1 + Goat * 0.1 + Chicken * 0.01 + Pig * 0.2 + Horse * 0.8
