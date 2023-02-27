@@ -14,13 +14,13 @@ suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColor
                                 latticeExtra, RColorBrewer,cowplot, grid,tmap, tmaptools, geojson, geojsonio, MetBrewer, paletteer, exactextractr))
 
 #' Variable definition
-#'
+#' PLEASE ADD ORDER and LABEL FIELDS TO climate_reg_cluster_text_description.csv FILE IN CLIMATE FOLDER BEFORE RUNNNING THE SCRIPT
 
-iso <- "PHL"
+iso <- "GTM"
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 root <- paste0(baseDir, iso, "/")
-scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right")
-scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom", 'PHL'="top")
+scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right", 'GTM'="right")
+scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom", 'PHL'="top", 'GTM'="bottom")
 
 
 create_labels <- function(text, type = c("short", "long")){
@@ -844,6 +844,7 @@ livelihood_pth <-  switch (iso,
                            "SEN" =  "livelihood/SN_LHZ_2021.shp",
                            "NGA" =  "livelihood/NG_LHZ_2018.shp",
                            "MLI" =  "livelihood/ML_LHZ_2014.shp",
+                           "GTM" =  "livelihood/GT_LHZ_2016.shp",
                            "PHL" =  "livelihood/ML_LHZ_2014.shp"
 )
 

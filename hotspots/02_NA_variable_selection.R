@@ -1,3 +1,4 @@
+#' NOTE: Run this code after excecuting 01_link_IPinfo_hotspots.R script
 rm(list=ls())
 #install.packages("rJava",dependencies = TRUE)
 # install.packages('rJava', type = 'source', INSTALL_opts='--merge-multiarch')
@@ -9,7 +10,7 @@ suppressMessages(pacman::p_load(rJava,readr, readxl, corrplot, matrixcalc, qgrap
 
 #install.packages("jsonlite")
 # install.packages("D:/OneDrive - CGIAR/African_Crisis_Observatory/CSO_0.9.0.tar.gz", repos=NULL) 
-library(CSO)
+#library(CSO)
 #library(readr)
 
 #install.packages("pacman",dependencies = TRUE)
@@ -23,8 +24,8 @@ library(CSO)
 #install.packages("vroom",dependencies = TRUE)
 
 root <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/"
-iso <- 'PHL'
-country_name<-'Philippines'
+iso <- 'GTM'
+country_name<-'Guatemala'
 
 data_file <- vroom::vroom(paste0(root,"data_extracted/",iso,"_stats.csv"))
 head(data_file, n=5)

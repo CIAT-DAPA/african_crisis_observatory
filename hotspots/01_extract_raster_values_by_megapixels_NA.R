@@ -4,6 +4,8 @@
 # Alliance Bioversity-CIAT, 2021
 
 # R options
+#' NOTE!!!!!: please run this script after 01_Conflict_clustering_analysis.R script.
+#' 
 g <- gc(reset = T); rm(list = ls()) # Emptying the garbage collector
 .rs.restartR()                      # Restart R session
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
@@ -14,7 +16,7 @@ root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
 #primero correr la creaci'on de los cluster de conflicto
 
-iso <- 'MLI'
+iso <- 'GTM'
 # Country shapefile
 shp <- terra::vect(paste0(root,'/data/', iso,'/_shps/', iso,'.shp'))
 # Conflict clusters

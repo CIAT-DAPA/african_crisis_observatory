@@ -20,7 +20,7 @@ suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
-iso <- 'PHL'
+iso <- 'GTM'
 country <-  switch (iso,
                     "KEN" = "Kenya",
                     "SEN" = "Senegal",
@@ -29,6 +29,7 @@ country <-  switch (iso,
                     "ZWE" = "Zimbabwe",
                     "MLI" = "Mali",
                     "SDN"  = "Sudan",
+                    "GTM"  = "Guatemala",
                     "PHL" = "Philippines"
 )
 #' This scrips makes SEV maps
