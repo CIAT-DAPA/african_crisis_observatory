@@ -1,4 +1,5 @@
 ##kmeans
+rm(list=ls(all=TRUE))
 set.seed(2000)
 xx=kmncluster <- kmeans(na.omit(aa), centers = 3, iter.max = 500, nstart = 5, algorithm="Lloyd")
 ##========================
@@ -115,3 +116,7 @@ GrowPolygon <- function(x, y = NULL, buffer = 0) {
   
   xy
 }
+
+zscore <- function(x){return((x-mean(x, na.rm=T))/(sd(x, na.rm=T)))}
+aa=terra::app(tt, zscore, cores = 15)
+
