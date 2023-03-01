@@ -14,13 +14,13 @@ suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColor
                                 latticeExtra, RColorBrewer,cowplot, grid,tmap, tmaptools, geojson, geojsonio, MetBrewer, paletteer, exactextractr))
 
 #' Variable definition
-#' PLEASE ADD ORDER and LABEL FIELDS TO climate_reg_cluster_text_description.csv FILE IN CLIMATE FOLDER BEFORE RUNNNING THE SCRIPT
+#'
 
-iso <- "GTM"
+iso <- "PHL"
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 root <- paste0(baseDir, iso, "/")
-scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right", 'GTM'="right")
-scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom", 'PHL'="top", 'GTM'="bottom")
+scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right")
+scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom", 'PHL'="top")
 
 
 create_labels <- function(text, type = c("short", "long")){
@@ -187,10 +187,6 @@ ip_text_description <- function(shp_object ,ip, df, n_vars = 10){
 
 w_mask <- raster::raster(paste0(baseDir, "_global/masks/mask_world_1km.tif"))
 
-<<<<<<< HEAD
-iso <- "ZWE"
-=======
->>>>>>> cd51984c600e751d181699138d24c4782033365d
 
 
 to_share_dir <- paste0(root, "_results/", iso, "_to_share")
@@ -541,7 +537,7 @@ for(i in get_ip_names){
   
   long_labels_tbl <- apply(labs_tbl , 2, create_labels, type = "long") %>% 
     as_tibble() %>% 
-    dplyr::select(long_labs = value) %>% 
+    dplyr::select(long_labs = V1) %>% 
     dplyr::bind_cols(., vals_tbl %>% dplyr::select(rast_values)) %>% 
     dplyr::slice(1:length(unique(ip_codes$category)))
   
@@ -847,17 +843,8 @@ livelihood_pth <-  switch (iso,
                            "KEN" =  "livelihood/KE_LHZ_2011.shp",
                            "SEN" =  "livelihood/SN_LHZ_2021.shp",
                            "NGA" =  "livelihood/NG_LHZ_2018.shp",
-<<<<<<< HEAD
-                           "SDN" =  "livelihood/SD_LHZ_2014.shp",
-                           "ZWE" =  "livelihood/ZW_LHZ_2011.shp",
-                           "UGA" =  "livelihood/UG_LHZ_2013.shp",
-                           "ZMB" =  "livelihood/ZM_LHZ_2014.shp",
-                           "MLI" =  "livelihood/ML_LHZ_2014.shp"
-=======
                            "MLI" =  "livelihood/ML_LHZ_2014.shp",
-                           "GTM" =  "livelihood/GT_LHZ_2016.shp",
                            "PHL" =  "livelihood/ML_LHZ_2014.shp"
->>>>>>> cd51984c600e751d181699138d24c4782033365d
 )
 
 mf_diff <- raster::raster(paste0(root, "education/medn_difference_edu.tif"))
@@ -1026,7 +1013,7 @@ ip_rasts <- all_rasts %>%
       
     }
     
-    to_ret <- data.frame(vr = exactextractr::exact_extract(r, sf::st_as_sf(clusts_to_share), fun = "median") )
+    to_ret <- data.frame(vr = exact_extract(r, sf::st_as_sf(clusts_to_share), fun = "median") )
     names(to_ret) <- final_name
     return(to_ret)
     
@@ -1037,7 +1024,7 @@ ip_rasts <- all_rasts %>%
 clusts_to_share@data <- clusts_to_share@data %>% 
   dplyr::mutate(NAME_1 = lapply(rs, function(df){df %>% pull(NAME_1) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
                 NAME_2 = lapply(rs, function(df){df %>% pull(NAME_2) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
-                #NAME_3 = lapply(rs, function(df){df %>% pull(NAME_3) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
+                NAME_3 = lapply(rs, function(df){df %>% pull(NAME_3) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
                 livelihoods = lapply(liveext, function(df){df %>% pull(LZNAMEEN) %>% unique(.) %>% paste(., collapse = ";") }) %>%  unlist,
                 median_male_female_edu_diff  = mf_diff_ext,
                 median_male_edu = m_edu_ext,
@@ -1094,7 +1081,7 @@ clusts_to_share@data <- clusts_to_share@data %>%
                   starts_with("ip"),
                   NAME_1,
                   NAME_2,
-                  #NAME_3,
+                  NAME_3,
                   clim_cluster_order,
                   starts_with("median"),
                   starts_with("ethnicity"),

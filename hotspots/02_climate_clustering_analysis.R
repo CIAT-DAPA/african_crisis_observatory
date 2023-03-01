@@ -247,7 +247,7 @@ labeling_function <- function(db, n_vars){
     dplyr::filter(variable %in% selected_vars)
   
   
-  lbls <- readxl::read_excel(paste0(root, "/Hostpots_data_dictionary.xlsx")) %>% 
+  lbls <- readxl::read_excel(paste0(root, "Hostpots_data_dictionary.xlsx")) %>% 
     dplyr::filter(Component == "Climate") %>% 
     dplyr::select(definition = Variable, Code, Units) %>% 
     dplyr::filter(Code %in% selected_vars)
@@ -322,7 +322,7 @@ labeling_function <- function(db, n_vars){
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 
 
-country_iso2 <- iso <- "GTM"
+country_iso2 <- iso <- "PHL"
 
 baseDir <- paste0(root, "data/",country_iso2)
 
@@ -343,14 +343,12 @@ st_crs(grd) <- st_crs(shp)
 
 country <- unique(shp$NAME_0)
 
-#' FUnction that select climate variables for different countries
 source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/hotspots/01_link_IPinfo_climate_clusters.R') # Link IP text to identify climate variables
 
 out_clim_dir_pth <- paste0(root, "/data/",iso, "/_results/cluster_results/climate")
 if(!dir.exists(out_clim_dir_pth)){dir.create(out_clim_dir_pth, recursive = T)}
 
 #clm <- select_clim_vars(root = substr(root, start = 1, stop = nchar(root)-1 ),
-#' FUnction that select climate variables for different countries
 clm <- select_clim_vars(root,
                         iso  = iso, 
                         cntr = country) %>% 
@@ -437,7 +435,7 @@ clusters <- cutree(eco_hclust, k = c_optim_num)
 ext <- c(xmin = extent(shp)[1], ymin = extent(shp)[3], xmax = extent(shp)[2], ymax = extent(shp)[4] )
 
 eco_grid_sf <- motif::lsp_add_clusters(eco_signature, clusters, window = grd["id"])
-plot(eco_grid_sf['clust'])
+
 
 #sf::st_write(eco_grid_sf, "D:/OneDrive - CGIAR/Attachments/Desktop/mapas/motfi_tr_conf_x.shp", delete_dsn = T)
 

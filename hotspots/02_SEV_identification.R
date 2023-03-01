@@ -27,24 +27,15 @@ suppressMessages(pacman::p_load(tidyverse, terra, raster, trend))
 
 root <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO"
 
-<<<<<<< HEAD:hotspots/02_hotspots_identification_category.R
-iso <- 'SDN'
-=======
-iso <- 'GTM'
->>>>>>> cd51984c600e751d181699138d24c4782033365d:hotspots/02_SEV_identification.R
+iso <- 'PHL'
 country <-  switch (iso,
                     "KEN" = "Kenya",
                     "SEN" = "Senegal",
                     "NGA" = "Nigeria",
                     "UGA" = "Uganda",
                     "ZMB" = "Zambia",
-<<<<<<< HEAD:hotspots/02_hotspots_identification_category.R
-                    "SDN" = "Sudan"
-=======
                     "MLI" = "Mali",
-                    'GTM' = 'Guatemala',
                     "PHL" = "Philippines"
->>>>>>> cd51984c600e751d181699138d24c4782033365d:hotspots/02_SEV_identification.R
 )
 
 # Load and identify impact pathways

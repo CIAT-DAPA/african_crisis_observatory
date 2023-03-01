@@ -40,5 +40,5 @@ isos %>%
     out <- paste0(root,'/data/',iso,'/migration/rcnt_migration.tif')
     
     dir.create(dirname(out), showWarnings = F, recursive = T)
-    terra::writeRaster(x = smm, out, overwrite=T) 
+    if(!file.exists(out)){ terra::writeRaster(x = smm, out) }
   })

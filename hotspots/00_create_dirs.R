@@ -9,7 +9,7 @@ source_folders <- data.frame(folders =  list.dirs("//alliancedfs.alliance.cgiar.
 source_folders <- base::subset(source_folders,!grepl("old|season_type",source_folders$folders) )
 source_folders$folders <- gsub("KEN", "iso3", source_folders$folders) 
 
-ISO <- "GTM"
+ISO <- "TZA"
 
 for(i in source_folders$folders){
   i <- gsub("iso3", ISO, i)

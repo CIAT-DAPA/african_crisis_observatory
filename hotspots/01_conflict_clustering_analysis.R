@@ -29,9 +29,9 @@ suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr)
 #' @param world_mask world raster layer in 5 km spatial resolution 
 #' @param fconf filename of conflict excel file.
 
-fconf <- 'LatinAmerica_2018-2022_Jul08.xlsx'
+fconf <- 'East-Asia-Pacific_2018-2022_Jul01.xlsx'
 
-yearRange <- 2018:2022#range of years to select in ACCLED data
+yearRange <- 2012:2022#range of years to select in ACCLED data
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
   
   r <- raster(rast_path)
@@ -156,6 +156,7 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf){
 
 #' Creates text lables for each cluster based on all variables in accled  
 #' @param df dataframe of conflict data of the corresponding country
+
 
 
 get_cluster_labels <- function(df){
@@ -293,7 +294,7 @@ get_cluster_statistics <- function(df){
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 
 
-country_iso2 <- iso <- "GTM"
+country_iso2 <- iso <- "PHL"
 
 baseDir <- paste0(root, "data/",country_iso2)
 
@@ -421,7 +422,6 @@ x_wh <- rbind(pca_w$ind$coord)%>%
 km <- stats::kmeans(x_wh, 3)
 table(km$cluster)
 
-plot(grd)
 
 original_df <- conflict_sf %>% 
   dplyr::mutate(ov = sapply(st_intersects(conflict_sf, grd), function(i){ifelse(length(i)==0,NA, i)}),
@@ -439,8 +439,6 @@ original_df <- conflict_sf %>%
   dplyr::ungroup() %>% 
   dplyr::bind_cols(clust = as.character(km$cluster))
 
-x11()
-plot(original_df["clust"])
 
 cluster_labels <- original_df %>% 
   sf::st_drop_geometry() %>% 
@@ -504,4 +502,3 @@ ggsave(g, filename= paste0(root,"/data/", iso, "/_results/cluster_results/confli
 
 get_cluster_statistics(df = to_boxplot) %>% 
   write.csv(., paste0(root, "/data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust_rel_change.csv"), row.names = F)
-

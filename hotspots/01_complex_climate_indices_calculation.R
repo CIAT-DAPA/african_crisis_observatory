@@ -1,4 +1,3 @@
-rm(list = ls())
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, gtools, sf, furrr, future))
 
@@ -175,7 +174,7 @@ calc_AgrClm_cmplx <- function(season = season, shp_fl = shp_fl,
 
 
 
-iso <- "GTM"
+iso <- "MLI"
 
 seasons <- switch(iso, "KEN" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "SEN" = list(season_type_1 = 6:12),

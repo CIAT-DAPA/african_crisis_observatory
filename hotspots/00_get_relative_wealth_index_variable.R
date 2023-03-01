@@ -19,7 +19,7 @@ suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(raster,tidyverse,readxl,sf,sp))
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
-ISO3 <- 'GTM'
+ISO3 <- 'UGA'
 
 wealth_dir  <- paste0(root,'/data/_global/wealth_index')
 rwi_out_dir <- paste0(root,'/data/',ISO3,'/wealth_index' )

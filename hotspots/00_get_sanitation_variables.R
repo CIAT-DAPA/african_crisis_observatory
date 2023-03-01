@@ -91,26 +91,26 @@ get_sanit_vars <- function(iso = 'PHL'){
   mpp_wtr_crp <- terra::resample(x = mpp_wtr_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/sanitation/medn_piped_water.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  terra::writeRaster(x = mpp_wtr_crp, out, overwrite=T) 
-
+  if(!file.exists(out)){ terra::writeRaster(x = mpp_wtr_crp, out) }
+  
   mst_flt_crp <- terra::crop(x = mst_flt, terra::ext(shp))
   mst_flt_crp <- terra::resample(x = mst_flt_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/sanitation/medn_sanitation_facilities.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  terra::writeRaster(x = mst_flt_crp, out, overwrite=T) 
+  if(!file.exists(out)){ terra::writeRaster(x = mst_flt_crp, out) }
   
   # Crop average
   avgpp_wtr_crp <- terra::crop(x = avgpp_wtr, terra::ext(shp))
   avgpp_wtr_crp <- terra::resample(x = avgpp_wtr_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/sanitation/avg_piped_water.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  terra::writeRaster(x = mpp_wtr_crp, out, overwrite=T) 
+  if(!file.exists(out)){ terra::writeRaster(x = mpp_wtr_crp, out) }
   
   avgst_flt_crp <- terra::crop(x = avgst_flt, terra::ext(shp))
   avgst_flt_crp <- terra::resample(x = avgst_flt_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/sanitation/avg_sanitation_facilities.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  terra::writeRaster(x = mst_flt_crp, out, overwrite=T) 
+  if(!file.exists(out)){ terra::writeRaster(x = mst_flt_crp, out) }
   
   
   # Crop Coefficient of variation
@@ -118,17 +118,17 @@ get_sanit_vars <- function(iso = 'PHL'){
   vpp_wtr_crp <- terra::resample(x = vpp_wtr_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/sanitation/cvar_piped_water.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  terra::writeRaster(x = vpp_wtr_crp, out, overwrite=T) 
+  if(!file.exists(out)){ terra::writeRaster(x = vpp_wtr_crp, out) }
   
   vst_flt_crp <- terra::crop(x = vst_flt, terra::ext(shp))
   vst_flt_crp <- terra::resample(x = vst_flt_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/sanitation/cvar_sanitation_facilities.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  terra::writeRaster(x = vst_flt_crp, out, overwrite=T) 
+  if(!file.exists(out)){ terra::writeRaster(x = vst_flt_crp, out) }
   
   # Crop Trend
   out <- paste0(root,'/data/',iso,'/sanitation/trnd_piped_water.tif')
-  #if(!file.exists(out)){ 
+  if(!file.exists(out)){ 
     pp_wtr_crp <- terra::crop(x = pp_wtr, terra::ext(shp))
     tpp_wtr_crp <- terra::app(x = pp_wtr_crp, fun = function(x){
       x <- as.numeric(na.omit(x))
@@ -143,13 +143,13 @@ get_sanit_vars <- function(iso = 'PHL'){
     
     dir.create(dirname(out), showWarnings = F, recursive = T)
     
-    terra::writeRaster(x = tpp_wtr_crp, out, overwrite=T) #}
+    terra::writeRaster(x = tpp_wtr_crp, out) }
   
   
   
   
   out <- paste0(root,'/data/',iso,'/sanitation/trnd_sanitation_facilities.tif')
-  #if(!file.exists(out)){
+  if(!file.exists(out)){
     st_flt_crp <- terra::crop(x = st_flt, terra::ext(shp))
     tst_flt_crp <- terra::app(x = st_flt_crp, fun = function(x){
       x <- as.numeric(na.omit(x))
@@ -163,7 +163,7 @@ get_sanit_vars <- function(iso = 'PHL'){
     tst_flt_crp <- terra::resample(x = tst_flt_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
    
     dir.create(dirname(out), showWarnings = F, recursive = T)
-    terra::writeRaster(x = tst_flt_crp, out, overwrite = TRUE) #}
+    terra::writeRaster(x = tst_flt_crp, out, overwrite = TRUEs) }
   
 }
 

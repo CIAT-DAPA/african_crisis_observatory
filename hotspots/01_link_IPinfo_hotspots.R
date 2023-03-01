@@ -6,16 +6,15 @@
 # ----------------------------------------------------------------------------------- #
 
 # R options
-g <- gc(reset = T); 
+g <- gc(reset = T); rm(list = ls()) # Emptying the garbage collector
 .rs.restartR()                      # Restart R session
-rm(list = ls()) # Emptying the garbage collector
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))   # Loading R-packages
 suppressMessages(pacman::p_load(tidyverse,readxl))
 
 
 
-#' NOTE: This script should excecuted before running  02_NA_variable_selection.R script.
+
 
 select_eco_vars <- function(root, iso, cntr, ip){
   
@@ -115,8 +114,7 @@ cntr <- switch (iso,
                    "ZWE" = "Zimbabwe",
                    "SDN" = "Sudan",
                    "MLI" = "Mali",
-                   'PHL' = 'Philippines',
-                   'GTM' = 'Guatemala'
+                   'PHL' = 'Philippines'
 )
 
 
@@ -126,7 +124,6 @@ dest_dir <- paste0(root ,"/data/",iso,"/_results/hotspots/soc_eco_all_variables.
 
 write_csv(to_save, dest_dir)
 }
-
 # if(!file.exists(dest_dir)){
 #   ip_tbl <- readxl::read_excel(path = paste0(root,'/Africa Climate Security_Country Pathways.xlsx'), sheet = 2)
 #   ip_tbl <- ip_tbl %>% dplyr::filter(Country == cntr)

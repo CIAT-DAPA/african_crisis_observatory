@@ -50,7 +50,7 @@ gdp  <- readr::read_csv(paste0(root,'/data/_global/wealth_index/API_NY.GDP.PCAP.
 gini <- readr::read_csv(paste0(root,'/data/_global/wealth_index/API_SI.POV.GINI_DS2_en_csv_v2_2445276/API_SI.POV.GINI_DS2_en_csv_v2_2445276.csv'))
 mask <- raster::raster(paste0(root,'/data/_global/masks/mask_world_1km.tif'))
 
-ISO3 <- "GTM"
+ISO3 <- "PHL"
 
 wealth_dir <- paste0(root,'/data/_global/wealth_index')
 rwi_out_dir <-  paste0(root,'/data/', ISO3,'/wealth_index')

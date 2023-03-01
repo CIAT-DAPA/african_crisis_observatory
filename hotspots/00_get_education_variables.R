@@ -173,12 +173,11 @@ get_edu_vars <- function(iso = 'PHL'){
   tdff_crp <- terra::resample(x = tdff_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
   out <- paste0(root,'/data/',iso,'/education/trnd_difference_edu.tif')
   dir.create(dirname(out), showWarnings = F, recursive = T)
-  if(!file.exists(out)){ terra::writeRaster(x = tdff_crp, out, overwrite=T) }
+  if(!file.exists(out)){ terra::writeRaster(x = tdff_crp, out) }
   
   return(cat('Done\n'))
   
 }
-
 isos %>%
   purrr::map(.f = function(iso){
     get_edu_vars(iso = iso)
