@@ -6,21 +6,8 @@ rm(list=ls())
 system("java -version")
 suppressMessages(pacman::p_load(rJava,readr, readxl, corrplot, matrixcalc, qgraph, Matrix, 
                                 colorspace, xlsx, vroom, jsonlite))
-
-#install.packages("jsonlite")
 # install.packages("D:/OneDrive - CGIAR/African_Crisis_Observatory/CSO_0.9.0.tar.gz", repos=NULL) 
-library(CSO)
-#library(readr)
-
-#install.packages("pacman",dependencies = TRUE)
-#install.packages("readxl",dependencies = TRUE)
-#install.packages("corrplot",dependencies = TRUE)
-#install.packages("matrixcalc",dependencies = TRUE)
-#install.packages("qgraph",dependencies = TRUE)
-#install.packages("Matrix",dependencies = TRUE)
-#install.packages("colorspace",dependencies = TRUE)
-#install.packages("xlsx",dependencies = TRUE)
-#install.packages("vroom",dependencies = TRUE)
+#library(CSO)
 
 root <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/"
 iso <- 'PHL'
@@ -183,7 +170,7 @@ for (each_ip in all_ips){
   for (i in 1:length(categories)){
     node_color<-c(node_color,rep(My_color_palette[i],sum(categories[i]==Group_names)))
   }
-  tiff(paste0(root, 'data/', iso, '/_results/hotspots/',iso,"_pathway_",each_ip,'_final.tiff'), units="in", width=20, height=12,res=600,compression = "lzw")
+  tiff(paste0(root, 'data/', iso, '/_results/hotspots/Network_Analysis/',iso,"_pathway_",each_ip,'_final.tiff'), units="in", width=20, height=12,res=600,compression = "lzw")
   the_network_bis<-qgraph(MatCor_bis,layout='spring',color=node_color,label.cex=1.4,labels=1:length(the_names),layoutOffset=c(-0.5,0),layoutScale=c(0.6,1.1),GLratio=0.3,vsize=4,edge.color='black',legend=FALSE,curve=0.5,curveAll=TRUE,curveShape=-1,curveScale=FALSE)
   title(paste0(ip_name,' impact pathway'),font=2,cex.main=1.5)
   
@@ -220,7 +207,7 @@ for (each_ip in all_ips){
   important_var<-used_var[match(names(ranked_var),used_var$variable),]
   important_var$description<-My_Lab[match(names(ranked_var),used_var$variable)]
   names(important_var)<-c('Code','Variable','Classification')
-  write.xlsx(important_var,file=paste0(root, 'data/', iso, '/_results/hotspots/','socio-eco_variable_sorted_',country_name,'_',each_ip,'.xlsx'),row.names=FALSE)
+  write.xlsx(important_var,file=paste0(root, 'data/', iso, '/_results/hotspots/Network_Analysis/','socio-eco_variable_sorted_',country_name,'_',each_ip,'.xlsx'),row.names=FALSE)
   
   ##socio-eco variables sorted according to conflict induction (positive correlation)
   ##################################################3
@@ -229,9 +216,10 @@ for (each_ip in all_ips){
   important_var<-used_var[match(names(ranked_var),used_var$variable),]
   important_var$description<-My_Lab[match(names(ranked_var),used_var$variable)]
   names(important_var)<-c('Code','Variable','Classification')
-  write.xlsx(important_var,file=paste0(root, 'data/', iso, '/_results/hotspots/','socio-eco_variable_with_signs_',country_name,'_',each_ip,'.xlsx'),row.names=FALSE)
+  write.xlsx(important_var,file=paste0(root, 'data/', iso, '/_results/hotspots/Network_Analysis/','socio-eco_variable_with_signs_',country_name,'_',each_ip,'.xlsx'),row.names=FALSE)
 }
 
-write.xlsx(MatCor_bis,file=paste0(root, 'data/', iso, '/_results/hotspots/','Matcor_',country_name,'.xlsx'),row.names=FALSE) 
+write.xlsx(MatCor_bis,file=paste0(root, 'data/', iso, '/_results/hotspots/Network_Analysis/','Matcor_',country_name,'.xlsx'),row.names=FALSE) 
+write.xlsx(used_var,file=paste0(root, 'data/', iso, '/_results/hotspots/Network_Analysis/','Used_variable_names_',iso,'.xlsx'),row.names=FALSE) 
 
  
