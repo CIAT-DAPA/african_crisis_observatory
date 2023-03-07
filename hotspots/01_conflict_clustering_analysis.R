@@ -294,7 +294,7 @@ get_cluster_statistics <- function(df){
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 
 
-country_iso2 <- iso <- "PHL"
+country_iso2 <- iso <- "KEN"
 
 baseDir <- paste0(root, "data/",country_iso2)
 
@@ -466,6 +466,7 @@ to_plot <- grd %>%
   left_join(., original_df %>% st_drop_geometry(), by = c("id" = "ov")) %>% 
   dplyr::filter(!is.na(clust_km))
 
+plot(to_plot['clust'])
 
 mainmap3<- tmap::tm_shape(shp)+
   tm_borders(col = "black")+
