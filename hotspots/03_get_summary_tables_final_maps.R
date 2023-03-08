@@ -16,7 +16,7 @@ suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColor
 #' Variable definition
 #'
 
-iso <- "PHL"
+iso <- "KEN"
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 root <- paste0(baseDir, iso, "/")
 scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right")

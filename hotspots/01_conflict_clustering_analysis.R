@@ -29,9 +29,9 @@ suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr)
 #' @param world_mask world raster layer in 5 km spatial resolution 
 #' @param fconf filename of conflict excel file.
 
-fconf <- 'East-Asia-Pacific_2018-2022_Jul01.xlsx'
+fconf <- 'Africa_1997-2022_Jul08.xlsx' #Name of conflict file
 
-yearRange <- 2012:2022#range of years to select in ACCLED data
+yearRange <- 2017:2022#range of years to select in ACCLED data
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
   
   r <- raster(rast_path)
