@@ -31,7 +31,7 @@ suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr)
 
 fconf <- 'Africa_1997-2022_Jul08.xlsx' #Name of conflict file
 
-yearRange <- 2017:2022#range of years to select in ACCLED data
+yearRange <- 1997:2022#range of years to select in ACCLED data
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
   
   r <- raster(rast_path)
