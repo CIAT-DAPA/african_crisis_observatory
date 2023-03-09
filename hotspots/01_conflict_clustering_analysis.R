@@ -32,6 +32,9 @@ suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr)
 fconf <- 'Africa_1997-2022_Jul08.xlsx' #Name of conflict file
 
 yearRange <- 1997:2022#range of years to select in ACCLED data
+country_iso2 <- iso <- "KEN"
+
+
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
   
   r <- raster(rast_path)
@@ -130,7 +133,7 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf){
     dplyr::ungroup() %>% 
     dplyr::select(x= LONGITUDE, y = LATITUDE, everything(.))
   
-  if(!file.exists(paste0(root,'/data/',iso,'/conflict/conflict_kernel_density.tif'))){
+  #if(!file.exists(paste0(root,'/data/',iso,'/conflict/conflict_kernel_density.tif'))){
     cat("Calculating conflict kernel density \n")
     
     ext <- extent(shp)
@@ -148,7 +151,7 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf){
       raster::resample(., raster(resolution = c(0.008983153, 0.008983153)))
     
     raster::writeRaster(knl, paste0(root,'/data/',iso,'/conflict/conflict_kernel_density.tif'), overwrite = T)
-  }
+  #}
   
   return(list(cnf_summ, sft))
 }
@@ -293,8 +296,6 @@ get_cluster_statistics <- function(df){
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 
-
-country_iso2 <- iso <- "KEN"
 
 baseDir <- paste0(root, "data/",country_iso2)
 
