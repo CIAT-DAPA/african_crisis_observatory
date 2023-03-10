@@ -21,6 +21,7 @@ suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse,terra,raster,sf,stars,motif,tmap,spdep))
 suppressMessages(pacman::p_load(meteo,sp,spacetime,gstat,plyr,xts,snowfall,doParallel,CAST,ranger))
 suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr))
+set.seed(1000)
 
 #' Reclassifies raster layers using quantiles and also resamples to the same spatial resultion. 
 #' @param root base directory path
@@ -344,8 +345,6 @@ conflict_raw <-  get_conflic_data(root = root,
 knl <- raster::raster(paste0(root, "/data/", iso, "/conflict/conflict_kernel_density.tif"))
 crs(knl) <- crs(world_mask)
 
-
-
 coordinates(conflict_raw) <- ~x+y
 crs(conflict_raw) <- crs(world_mask)
 conflict_sf <- sf::st_as_sf(conflict_raw)
@@ -385,8 +384,6 @@ to_cluster <- conflict_sf %>%
   dplyr::ungroup()
 
 
-
-
 #                knl = raster::extract(knl, st_as_sf(to_cluster) %>% st_cast("POINT")%>% st_coordinates())
 
 x <- to_cluster %>% 
@@ -395,7 +392,7 @@ x <- to_cluster %>%
   st_drop_geometry() %>%  
   FactoMineR::PCA(., scale.unit = T, ncp =2, graph = F )
 
-#' Identification of outloiters based on 1.5  times the IQR and assigning them a lower
+#' Identification of outliers based on 1.5  times the IQR and assigning them a lower
 #' weight
 cords <- rbind(x$ind$coord) %>% 
   as_tibble() %>% 
@@ -405,8 +402,10 @@ cords <- rbind(x$ind$coord) %>%
 thr <- cords %>% dplyr::filter(rng) %>% pull(dst) %>% quantile %>% .[4]
 
 #' Assigning weights based distance outside the IQR
+#' wparam weighting parameter
+wparam <- 10
 wh <- cords %>% 
-  dplyr::mutate(wh = ifelse(dst > thr, 8, 1)) %>% 
+  dplyr::mutate(wh = ifelse(dst > thr, wparam, 1)) %>% 
   dplyr::pull(wh)
 
 #' Recalculate PCA with new weights
@@ -419,10 +418,9 @@ pca_w <- to_cluster %>%
 
 x_wh <- rbind(pca_w$ind$coord)%>% 
   dist(., method = "euclidean")
-
-km <- stats::kmeans(x_wh, 3)
+set.seed(1000) #https://towardsdatascience.com/three-versions-of-k-means-cf939b65f4ea
+km <- kmeans(x_wh, centers = 3, iter.max = 1000, nstart = 20, algorithm="MacQueen")#stats::kmeans(x_wh, 3)
 table(km$cluster)
-
 
 original_df <- conflict_sf %>% 
   dplyr::mutate(ov = sapply(st_intersects(conflict_sf, grd), function(i){ifelse(length(i)==0,NA, i)}),
