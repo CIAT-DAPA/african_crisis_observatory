@@ -32,7 +32,8 @@ set.seed(1000)
 
 fconf <- 'Africa_1997-2022_Jul08.xlsx' #Name of conflict file
 
-yearRange <- 1997:2022#range of years to select in ACCLED data
+yearRange <- 2017:2022#range of years to select in ACCLED data
+recompute <- TRUE #Recompute Kernel densities?
 country_iso2 <- iso <- "KEN"
 
 
@@ -89,18 +90,19 @@ reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimensi
 }
 
 
-get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf){
+get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf, recompute){
   
   out <- paste0(root,'/data/',iso,'/conflict/',iso,'_conflict.csv')
   dir.create(path = dirname(out), F, T)
-  if(!file.exists(out)){
+  
+  if(recompute){
     # Filter African conflict to the specific country
     cnf <- readxl::read_excel(paste0(root,'/data/_global/conflict/', fconf), sheet = 1)
     cnf <- cnf %>% dplyr::filter(COUNTRY == country)
     cnf <- cnf %>% dplyr::filter(YEAR %in% yearRange)
     readr::write_csv(cnf, out)
     conflict <- cnf; rm(cnf, out)
-  } else {
+ } else {
     # Load country conflict
     conflict <- readr::read_csv(out); rm(out)
   }
@@ -134,7 +136,7 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf){
     dplyr::ungroup() %>% 
     dplyr::select(x= LONGITUDE, y = LATITUDE, everything(.))
   
-  #if(!file.exists(paste0(root,'/data/',iso,'/conflict/conflict_kernel_density.tif'))){
+  if(recompute){
     cat("Calculating conflict kernel density \n")
     
     ext <- extent(shp)
@@ -152,7 +154,7 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf){
       raster::resample(., raster(resolution = c(0.008983153, 0.008983153)))
     
     raster::writeRaster(knl, paste0(root,'/data/',iso,'/conflict/conflict_kernel_density.tif'), overwrite = T)
-  #}
+  }
   
   return(list(cnf_summ, sft))
 }
@@ -338,7 +340,7 @@ world_mask <- raster::raster(paste0(root,"/data/_global/masks/mask_world_1km.tif
 conflict_raw <-  get_conflic_data(root = root,
                                   iso = iso,
                                   country = country,
-                                  world_mask = world_mask, fconf) %>% 
+                                  world_mask = world_mask, fconf, recompute) %>% 
   purrr::pluck(1)
 
 
