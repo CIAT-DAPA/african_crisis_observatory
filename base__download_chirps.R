@@ -1,91 +1,59 @@
-# download CHIRPS tiles
+# Download global CHIRPS
+# By: H. Achicanoy
+# December, 2022
 
-chirpsTable <- function(){
-  
-  region <- c(rep("africa", 7), rep("global", 7))
-  intervals <- c("daily", "pentad", "dekad", "monthly", "2-monthly", "3-monthly")
-  interval <- c("6-hourly", intervals, intervals, "annual")
-  format <- c(NA, rep("tifs", 13))
-  # add start and end dates (for something like chirps use last date of previous month considering CHC update schedule)
-  
-  dd <- data.frame(region, interval, format)
-  dd$res <- ifelse(dd$interval == "6-hourly", "0.1", NA)
-  dd$res <- ifelse(dd$interval == "daily", "0.05,0.25", dd$res)
-  
-  # https://data.chc.ucsb.edu/products/CHIRPS-2.0/moving_01pentad/tifs/Anomaly_01PentAccum_Current.tif
-  # movingpentad <- data.frame(var = "moving", interval = c("01","02","06","12","18"), suffix = "pentad", format = "tifs")
-  return(dd)
-}
+# R options
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
+suppressMessages(library(pacman))
+suppressMessages(pacman::p_load(tidyverse,terra,lubridate,R.utils))
 
-rain_chirps <- function(region = 'global', interval = 'daily', startdate, enddate, res, path, asRaster = FALSE,...) {
-  # check directory
-  stopifnot(dir.exists(path))
+# Time frame
+ini <- as.Date('1981-01-01')
+end <- as.Date('2023-12-31')
+dts <- seq(from = ini, to = end, by = 'day'); rm(ini, end)
+
+# Output directory
+Out  <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr/1.Data/Chirps'
+dir.create(Out,F,T)
+
+# Main function
+getChirps <- function(date = dts[1]){
+  # CHIRPS base URL
+  chrps <- 'https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/tifs/p05'
+  # Get day and year
+  Day  <- date
+  Year <- lubridate::year(Day)
+  # Target file
+  tfile <- paste0(chrps,'/',Year,'/chirps-v2.0.',gsub('-','.',Day,fixed=T),'.tif.gz')
+  # Destination file
+  dfile <- paste0(Out,'/',basename(tfile))
+  # Raster file
+  rfile <- gsub('.gz','',dfile,fixed = T)
   
-  # check arguments
-  dd <- chirpsTable()
-  if(!region %in% c(unique(dd$region))){ stop("region name not avaiable; see chirpsTable()") }
-  
-  # check for resolution
-  res <- as.character(res)
-  reso <- dd$res[dd$region == region & dd$interval == interval]
-  if(!is.na(reso)){
-    reso <- unlist(strsplit(reso, ","))
-    if(!res %in% reso){
-      stop("region/interval/resolution combination not avaiable; see chirpsTable()")
-    }
-    resolution <- gsub("p0.", "p", paste0("p", res))
-  }
-  
-  # check format
-  format <- dd$format[dd$region == region & dd$interval == interval]
-  
-  # directory structure
-  folder <- file.path(path, "chirps", paste0(region,"_",interval), format, resolution)
-  
-  # file urls
-  baseurl <- "https://data.chc.ucsb.edu/products/CHIRPS-2.0"
-  u <- file.path(baseurl, paste0(region, "_", interval), format, resolution)
-  
-  # setup file names
-  if(interval == "daily"){
-    by <- "day"
-    seqdate <- seq.Date(as.Date(startdate), as.Date(enddate), by = by)
-    years <- format(seqdate, format="%Y")
-    dates <- gsub("-","\\.",seqdate)
-    if(format == "tifs"){fnames <- file.path(years, paste0("chirps-v2.0.", dates, ".tif.gz"))}
-  } else if (interval == ""){
+  if(!file.exists(rfile)){
     
+    # Downloading
+    if(!file.exists(dfile)){
+      tryCatch(expr = {
+        utils::download.file(url = tfile, destfile = dfile)
+      },
+      error = function(e){
+        cat(paste0(basename(tfile),' failed.\n'))
+      })
+    }
+    
+    # Unzip
+    R.utils::gunzip(dfile)
+    return(cat(paste0('Image ',basename(rfile),' processed correctly!!!\n')))
+  } else {
+    return(cat(paste0('Image ',basename(rfile),' already exists!\n')))
   }
-  # download urls
-  ff <- lapply(fnames, getGZfile, u, folder)
   
-  if(asRaster){
-    rr <- terra::rast(unlist(ff))
-  }
-}
-getGZfile <- function(fname, u, folder){
-  fgz <- file.path(folder, fname)
-  dir.create(dirname(fgz), FALSE, TRUE)
-  
-  if (!file.exists(fgz)) {
-    utils::download.file(file.path(u, fname),fgz, mode="wb")
-    if (!file.exists(fgz)) {stop("download failed")}
-    fz <- try(R.utils::gunzip(fgz, remove = FALSE))
-    if (class(fz) == "try-error") {stop("download failed")}
-  }
-  tfile <- gsub(".gz$", "", fgz)
-  return(tfile)
 }
 
-setwd('/cluster01/Workspace/ACO/1.Data')
-rain_chirps(region = 'global', interval = 'daily', startdate = '1981-01-01', enddate = '2020-12-31', res = 0.05, path = getwd())
-
-# library(RCurl)
-# library(xml2)
-# library(rvest)
-# 
-# doc <- rvest::read_html(u)
-# hr <- html_attr(html_nodes(doc, "a"), "href")
-# # all trailing / are folders, except products 
-# hr <- grep("/$", hr, value = T)
-# hr <- grep("^/", hr, value = T, invert = TRUE)
+# Loop through the dates
+#dts %>% purrr::map(.f = getChirps)
+for(i in 1:length(dts)){
+  getChirps(date=dts[i])
+}
