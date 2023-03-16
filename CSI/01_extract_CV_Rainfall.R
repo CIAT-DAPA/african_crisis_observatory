@@ -5,6 +5,7 @@
 g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 list.of.packages <- c('terra', 'geodata', 'doParallel', 'tictoc')
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages, dependencies = T)
 #' Set up libraries
 library(terra)
@@ -18,7 +19,7 @@ library(tictoc)
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSI/' 
 data_path <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/'
 iso <- 'KEN'
-season <- 'season_type_1'
+season <- 'season_type_2'
 img <- terra::rast(paste0(data_path,iso, "/climatic_indexes/temp/season_type_1/CV.tif"))
 
 bdy1 <- gadm(country=iso, level=1, path=paste0(root,'_global/countries/'))
