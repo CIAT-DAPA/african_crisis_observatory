@@ -14,12 +14,12 @@ library(tictoc)
 #' variable declarations
 #' @param iso is the country name ISO code.
 #' @root root base directory for saving the results
-#' @season season type
+#' @season season typed
 #'@data_path directory path for chirps data
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSI/' 
 data_path <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/'
-iso <- 'KEN'
-season <- 'season_type_2'
+iso <- 'UGA'
+season <- 'season_type_1'
 img <- terra::rast(paste0(data_path,iso, "/climatic_indexes/temp/season_type_1/CV.tif"))
 
 bdy1 <- gadm(country=iso, level=1, path=paste0(root,'_global/countries/'))
