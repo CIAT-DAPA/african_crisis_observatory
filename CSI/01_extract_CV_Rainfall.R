@@ -14,8 +14,9 @@ library(tictoc)
 #' variable declarations
 #' @param iso is the country name ISO code.
 #' @root root base directory for saving the results
-#' @season season typed
+#' @season season type
 #'@data_path directory path for chirps data
+
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSI/' 
 data_path <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/'
 iso <- 'UGA'
