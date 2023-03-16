@@ -15,7 +15,7 @@ library(tictoc)
 #' @param iso is the country name ISO code.
 #' @root root base directory for saving the results
 #' @data_path directory path for chirps data
-iso <- 'KEN'
+iso <- 'UGA'
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSI/'
 data_path  <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr/1.Data/Chirps/'
 
@@ -32,7 +32,7 @@ tic("Load files..")
 img <- terra::rast(files, win=ext(bdy1))
 toc()
 
-x11()
+#x11()
 plot(img[[1]])
 plot(bdy1, add=T, type='l') 
 
@@ -53,6 +53,6 @@ write.csv(df, filename)
 #temp <- aggregate(df[,"chirps_rainfall"], df[,c("NAME_1","year"), drop=FALSE], mean, na.rm=T)
 temp <- aggregate(chirps_rainfall~NAME_1+year, data=df, mean, na.rm=T)
 filename <- paste0(root,"chirps/",iso,"/",iso,"_annual_chirps_rainfall.csv")
-write.csv(df, filename)
+write.csv(temp, filename)
 
 
