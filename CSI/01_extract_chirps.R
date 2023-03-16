@@ -15,7 +15,7 @@ library(tictoc)
 #' @param iso is the country name ISO code.
 #' @root root base directory for saving the results
 #' @data_path directory path for chirps data
-iso <- 'UGA'
+iso <- 'SOM'
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSI/'
 data_path  <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr/1.Data/Chirps/'
 
