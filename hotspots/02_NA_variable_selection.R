@@ -8,8 +8,8 @@ suppressMessages(pacman::p_load(rJava,readr, readxl, corrplot, matrixcalc, qgrap
 #library(CSO)
 
 root <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/"
-iso <- 'GTM'
-country_name<-'Guatemala'
+iso <- 'PHL'
+country_name<-'Philippines'
 
 data_file <- vroom::vroom(paste0(root,"data_extracted/",iso,"_stats.csv"))
 head(data_file, n=5)
@@ -55,7 +55,7 @@ all_used_var
 
 country_IP<-IP
 all_ips<-unique(country_IP$IP_id)
-summary(all_var)
+summary(all_data)
 names(all_data)
 #all_var
 #all_var<-all_var[c(1:3,5:9,12,15,19,22,24,27,30,33:46)]
