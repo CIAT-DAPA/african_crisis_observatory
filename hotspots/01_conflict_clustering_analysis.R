@@ -31,13 +31,16 @@ source("./base__lowest_gadm.R")
 #' @param world_mask world raster layer in 5 km spatial resolution 
 #' @param fconf filename of conflict excel file.
 
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
+baseDir <- paste0(root, "data/",country_iso2)
+
 
 fconf <- 'Africa_1997-2022_Jul08.xlsx' #Name of conflict file
 
 yearRange <- 1997:2022#range of years to select in ACCLED data
 recompute <- TRUE #Recompute Kernel densities?
-country_iso2 <- iso <- "SOM"
-country <- 'Somalia'
+country_iso2 <- iso <- "SSD"
+country <- 'South Sudan'
 
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
   
@@ -299,10 +302,6 @@ get_cluster_statistics <- function(df){
   return(ret)    
 }
 
-root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
-
-
-baseDir <- paste0(root, "data/",country_iso2)
 
 #' Read country shapefile
 shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>% 
@@ -325,7 +324,7 @@ if(!dir.exists(out_conflict_dir)){dir.create(out_conflict_dir, recursive = T)}
 #' Population density
 pop_dens <- raster::raster(paste0(root,"data/",iso, "/population_density/medn_popd.tif"))
 
-shp <- raster::shapefile(paste0(root,"/data/", iso, "/_shps/",iso,".shp" )) %>% 
+shp <- raster::shapefile(paste0(root,"data/", iso, "/_shps/",iso,".shp" )) %>% 
   sf::st_as_sf() %>% 
   dplyr::mutate(id = 1:nrow(.))
 
