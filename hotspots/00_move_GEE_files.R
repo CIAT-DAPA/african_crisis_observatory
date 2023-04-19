@@ -7,11 +7,11 @@
 ### 4. Run and wait
 
 
-ISO <- "TZA"
-GEE_data_path <- "C:/Users/acmendez/Downloads/TZA" #path to unzipped folder downloaded from GEE google drive folder
+ISO <- "SOM"
+GEE_data_path <-  "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/GEE data"
 
 
-source_folders <- data.frame(folders =  list.dirs("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/KEN/", recursive = T))
+source_folders <- data.frame(folders =  list.dirs("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/KEN", recursive = T))
 source_folders <- base::subset(source_folders,!grepl("old|season_type|_results|_shps|climatic_indexes|KEN/$|conflict|mask|livelihood|wealth_index",source_folders$folders) )
 source_files <- lapply(source_folders$folders, function(i){
   unlist(list.files(i, pattern = ".tif$", full.names = T))
