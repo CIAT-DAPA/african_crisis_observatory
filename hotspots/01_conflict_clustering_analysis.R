@@ -22,8 +22,8 @@ suppressMessages(pacman::p_load(tidyverse,terra,raster,sf,stars,motif,tmap,spdep
 suppressMessages(pacman::p_load(meteo,sp,spacetime,gstat,plyr,xts,snowfall,doParallel,CAST,ranger))
 suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr))
 set.seed(1000)
-source("./base__lowest_gadm.R")
 
+source('./base__lowest_gadm.R')
 #' Reclassifies raster layers using quantiles and also resamples to the same spatial resultion. 
 #' @param root base directory path
 #' @param iso country ISO code
@@ -31,16 +31,22 @@ source("./base__lowest_gadm.R")
 #' @param world_mask world raster layer in 5 km spatial resolution 
 #' @param fconf filename of conflict excel file.
 
-
 fconf <- 'Africa_1997-2022_Jul08.xlsx' #Name of conflict file
 
 yearRange <- 1997:2022#range of years to select in ACCLED data
 recompute <- TRUE #Recompute Kernel densities?
-country_iso2 <- iso <- "SSD"
-country <- 'South Sudan'
-root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
-baseDir <- paste0(root, "data/",country_iso2)
+country_iso2 <- iso <- "DJI"
+country <- 'Djibouti'
 
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'#dir path to folder data storage
+baseDir <- paste0(root, "/data/",country_iso2)
+#' Get country shaoefile if not present
+#' 
+
+if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
+  dir.create(path = dirname(paste0(root,'/data/',iso,'/_shps/',iso,'.shp')), recursive = TRUE)
+  shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+} 
 
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
   
@@ -95,7 +101,7 @@ reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimensi
 }
 
 
-get_conflic_data <- function(root, iso, country = country, world_mask, fconf, recompute){
+get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf, recompute){
   
   out <- paste0(root,'/data/',iso,'/conflict/',iso,'_conflict.csv')
   dir.create(path = dirname(out), F, T)
@@ -107,7 +113,7 @@ get_conflic_data <- function(root, iso, country = country, world_mask, fconf, re
     cnf <- cnf %>% dplyr::filter(YEAR %in% yearRange)
     readr::write_csv(cnf, out)
     conflict <- cnf; rm(cnf, out)
- } else {
+  } else {
     # Load country conflict
     conflict <- readr::read_csv(out); rm(out)
   }
@@ -115,7 +121,7 @@ get_conflic_data <- function(root, iso, country = country, world_mask, fconf, re
   # Load the country lowest administrative level shapefile
   if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
     dir.create(path = dirname(paste0(root,'/data/',iso,'/_shps/',iso,'.shp')), recursive = TRUE)
-    shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+    #shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
     adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
     shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
   } else {
@@ -183,7 +189,7 @@ get_cluster_labels <- function(df){
                   label = factor(label, levels = c("High conflict","Moderate conflict",  "Limited conflict")))
   
   
-  lbls <- readxl::read_excel(paste0(root, "Hostpots_data_dictionary.xlsx")) %>% 
+  lbls <- readxl::read_excel(paste0(root, "/Hostpots_data_dictionary.xlsx")) %>% 
     dplyr::filter(Component == "Conflict") %>% 
     dplyr::select(definition = Variable, Code, Units) %>% 
     dplyr::mutate(Code = toupper(Code))
@@ -303,27 +309,13 @@ get_cluster_statistics <- function(df){
 }
 
 
-world_mask <- raster::raster(paste0(root,"/data/_global/masks/mask_world_1km.tif")) %>% 
-  raster::crop(., extent(shp))
-
-#' Gets country conflict data
-#' @param root
-#' @param iso
-#' @param country#
-#'@param world_mask
-#' 
-conflict_raw <-  get_conflic_data(root = root,
-                                  iso = iso,
-                                  country = country,
-                                  world_mask = world_mask, fconf, recompute) %>% 
-  purrr::pluck(1)
-
 
 #' Read country shapefile
 shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>% 
   sf::st_as_sf(.) %>% 
   dplyr::mutate(id = 1:nrow(.))
 #country <- unique(shp$NAME_0)
+
 #' Create a cluster to represent the megapixels
 grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>% 
   st_as_sf(.) %>%
@@ -338,11 +330,27 @@ grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>%
 out_conflict_dir<- paste0(root, "/data/",iso, "/_results/cluster_results/conflict")
 if(!dir.exists(out_conflict_dir)){dir.create(out_conflict_dir, recursive = T)}
 #' Population density
-pop_dens <- raster::raster(paste0(root,"data/",iso, "/population_density/medn_popd.tif"))
+pop_dens <- raster::raster(paste0(root,"/data/",iso, "/population_density/medn_popd.tif"))
 
-shp <- raster::shapefile(paste0(root,"data/", iso, "/_shps/",iso,".shp" )) %>% 
+shp <- raster::shapefile(paste0(root,"/data/", iso, "/_shps/",iso,".shp" )) %>% 
   sf::st_as_sf() %>% 
   dplyr::mutate(id = 1:nrow(.))
+
+
+world_mask <- raster::raster(paste0(root,"/data/_global/masks/mask_world_1km.tif")) %>% 
+  raster::crop(., extent(shp))
+
+#' Filters country conflict data
+#' @param root
+#' @param iso
+#' @param country
+#' @param world_mask
+#' 
+conflict_raw <-  get_conflic_data(root = root,
+                                  iso = iso,
+                                  country = country,
+                                  world_mask = world_mask, fconf, recompute) %>% 
+  purrr::pluck(1)
 
 
 knl <- raster::raster(paste0(root, "/data/", iso, "/conflict/conflict_kernel_density.tif"))
@@ -446,8 +454,6 @@ cluster_labels <- original_df %>%
   sf::st_drop_geometry() %>% 
   dplyr::select(EVENTS:FATALITIES, contains("clust")) %>% 
   get_cluster_labels()
-
-plot(original_df['clust'])
 
 write_csv(cluster_labels, paste0(root,"/data/", iso, "/_results/cluster_results/conflict/conflict_cluster_text_description.csv"))
 
