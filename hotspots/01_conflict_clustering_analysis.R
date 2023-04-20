@@ -31,9 +31,6 @@ source("./base__lowest_gadm.R")
 #' @param world_mask world raster layer in 5 km spatial resolution 
 #' @param fconf filename of conflict excel file.
 
-root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
-baseDir <- paste0(root, "data/",country_iso2)
-
 
 fconf <- 'Africa_1997-2022_Jul08.xlsx' #Name of conflict file
 
@@ -41,6 +38,9 @@ yearRange <- 1997:2022#range of years to select in ACCLED data
 recompute <- TRUE #Recompute Kernel densities?
 country_iso2 <- iso <- "SSD"
 country <- 'South Sudan'
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
+baseDir <- paste0(root, "data/",country_iso2)
+
 
 reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimension, conflict_area){
   
@@ -303,11 +303,27 @@ get_cluster_statistics <- function(df){
 }
 
 
+world_mask <- raster::raster(paste0(root,"/data/_global/masks/mask_world_1km.tif")) %>% 
+  raster::crop(., extent(shp))
+
+#' Gets country conflict data
+#' @param root
+#' @param iso
+#' @param country#
+#'@param world_mask
+#' 
+conflict_raw <-  get_conflic_data(root = root,
+                                  iso = iso,
+                                  country = country,
+                                  world_mask = world_mask, fconf, recompute) %>% 
+  purrr::pluck(1)
+
+
 #' Read country shapefile
 shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>% 
   sf::st_as_sf(.) %>% 
   dplyr::mutate(id = 1:nrow(.))
-country <- unique(shp$NAME_0)
+#country <- unique(shp$NAME_0)
 #' Create a cluster to represent the megapixels
 grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>% 
   st_as_sf(.) %>%
@@ -327,21 +343,6 @@ pop_dens <- raster::raster(paste0(root,"data/",iso, "/population_density/medn_po
 shp <- raster::shapefile(paste0(root,"data/", iso, "/_shps/",iso,".shp" )) %>% 
   sf::st_as_sf() %>% 
   dplyr::mutate(id = 1:nrow(.))
-
-
-world_mask <- raster::raster(paste0(root,"/data/_global/masks/mask_world_1km.tif")) %>% 
-  raster::crop(., extent(shp))
-
-#' Filters country conflict data
-#' @param root
-#' @param iso
-#' @param country#' @param world_mask
-#' 
-conflict_raw <-  get_conflic_data(root = root,
-                                  iso = iso,
-                                  country = country,
-                                  world_mask = world_mask, fconf, recompute) %>% 
-  purrr::pluck(1)
 
 
 knl <- raster::raster(paste0(root, "/data/", iso, "/conflict/conflict_kernel_density.tif"))
