@@ -11,10 +11,10 @@
 # options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 # suppressMessages(library(pacman))   # Loading R-packages
 # suppressMessages(pacman::p_load(tidyverse,readxl))
-rm(list = ls()) 
+#rm(list = ls()) 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
-iso <- "GTM"
-cntr <- "Guatemala"
+iso <- "ETH"
+cntr <- "Ethiopia"
 
 select_clim_vars <- function(root, iso, cntr){
   # Data dictionary

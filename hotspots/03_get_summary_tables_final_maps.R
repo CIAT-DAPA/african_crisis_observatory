@@ -1023,9 +1023,9 @@ ip_rasts <- all_rasts %>%
 
 
 clusts_to_share@data <- clusts_to_share@data %>% 
-  dplyr::mutate(NAME_1 = lapply(rs, function(df){df %>% pull(NAME_1) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
-                NAME_2 = lapply(rs, function(df){df %>% pull(NAME_2) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
-                NAME_3 = lapply(rs, function(df){df %>% pull(NAME_3) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
+  dplyr::mutate(NAME_1 = lapply(rs, function(df){df %>% pull(NAME_1) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist %>% stringi::stri_encode(., "latin-1") ,
+                NAME_2 = lapply(rs, function(df){df %>% pull(NAME_2) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist %>% stringi::stri_encode(., "latin-1"),
+                NAME_3 = lapply(rs, function(df){df %>% pull(NAME_3) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist %>% stringi::stri_encode(., "latin-1"),
                 livelihoods = lapply(liveext, function(df){df %>% pull(LZNAMEEN) %>% unique(.) %>% paste(., collapse = ";") }) %>%  unlist,
                 median_male_female_edu_diff  = mf_diff_ext,
                 median_male_edu = m_edu_ext,
