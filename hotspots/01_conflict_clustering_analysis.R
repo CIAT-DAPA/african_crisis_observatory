@@ -35,8 +35,8 @@ fconf <- 'Africa_1997-2022_Jul08.xlsx' #Name of conflict file
 
 yearRange <- 1997:2022#range of years to select in ACCLED data
 recompute <- TRUE #Recompute Kernel densities?
-country_iso2 <- iso <- "DJI"
-country <- 'Djibouti'
+country_iso2 <- iso <- "ERI"
+country <- 'Eritrea'
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'#dir path to folder data storage
 baseDir <- paste0(root, "/data/",country_iso2)
