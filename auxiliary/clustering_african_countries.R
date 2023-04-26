@@ -1,10 +1,11 @@
 ######################################################################
 ### Script to generate conflict cluster for Africa continent
-#' @author: Andres Menez
+#' @author: Andres Mendez and Benson Kenduiywo
 #' year: 2023
 #' 
 
 #'importar paquetes
+rm(list=ls(all=TRUE))
 require(pacman)
 pacman::p_load(terra, sf, exactextractr, tidyverse, FactoMineR)
 
@@ -42,16 +43,31 @@ grd<- grd[!is.na(sapply(st_intersects(grd, conflict_sf) , function(i){if(length(
 #' Add to conflict sf the grid id
 conflict_sf$grd_id <- sapply(st_intersects(conflict_sf, grd), function(i){ifelse(length(i)==0,NA, unlist(grd[i, "id"]))})
 
+#' min Max normalization
+minMax <- function(x){
+  n <- x-min(x, na.rm = T)
+  d <- max(x, na.rm=T)-min(x, na.rm=T)
+  return(n/d)
+}
+
+#' Z normalization
+
+zscore <- function(y, log=FALSE){
+  # +.05 to avoid NA from log(x) where x <= 0
+  if (log) y <- log(y+.05)
+  return((y - mean(y, na.rm=TRUE) ) / (sd(y, na.rm=TRUE)))
+}
 
 #' by grid id, aggregate variables  and joint in a data.frame
 aa <- data.frame(id = sort(unique(conflict_sf$grd_id)),
-           EVENTS =  as.vector(by(conflict_sf$EVENT_TYPE, conflict_sf$grd_id, length)),#median(EVENTS, na.rm = T),
-           TYPE_RICHNESS = as.vector(by(conflict_sf$EVENT_TYPE, conflict_sf$grd_id, function(i){length(unique(i))})),#max(TYPE_RICHNESS, na.rm = T),
-           SUBTYPE_RICHNESS = as.vector(by(conflict_sf$SUB_EVENT_TYPE, conflict_sf$grd_id, function(i){length(unique(i))})),#max(SUBTYPE_RICHNESS, na.rm = T),
-           ACTOR1_RICHNESS = as.vector(by(conflict_sf$ACTOR1, conflict_sf$grd_id, function(i){length(unique(na.omit(i)))})),#max(ACTOR1_RICHNESS, na.rm = T),
-           ACTOR2_RICHNESS = as.vector(by(conflict_sf$ACTOR2, conflict_sf$grd_id, function(i){length(unique(na.omit(i)))})),#,
-           FATALITIES = as.vector(by(conflict_sf$FATALITIES, conflict_sf$grd_id, sum))
+           EVENTS =  zscore(as.vector(by(conflict_sf$EVENT_TYPE, conflict_sf$grd_id, length))),#median(EVENTS, na.rm = T),
+           TYPE_RICHNESS = zscore(as.vector(by(conflict_sf$EVENT_TYPE, conflict_sf$grd_id, function(i){length(unique(i))}))),#max(TYPE_RICHNESS, na.rm = T),
+           SUBTYPE_RICHNESS = zscore(as.vector(by(conflict_sf$SUB_EVENT_TYPE, conflict_sf$grd_id, function(i){length(unique(i))}))),#max(SUBTYPE_RICHNESS, na.rm = T),
+           ACTOR1_RICHNESS = zscore(as.vector(by(conflict_sf$ACTOR1, conflict_sf$grd_id, function(i){length(unique(na.omit(i)))}))),#max(ACTOR1_RICHNESS, na.rm = T),
+           ACTOR2_RICHNESS = zscore(as.vector(by(conflict_sf$ACTOR2, conflict_sf$grd_id, function(i){length(unique(na.omit(i)))}))),#,
+           FATALITIES = zscore(as.vector(by(conflict_sf$FATALITIES, conflict_sf$grd_id, sum)))
 )
+
 
 #' merge grid sf with conflict megapixel aggregated variables to consolidate the to_cluster data.frame
 grd_conflict <- base::merge(grd, aa , by = "id", all.x = T ) 
