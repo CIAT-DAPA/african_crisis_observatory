@@ -18,7 +18,7 @@ wrld_shp <- terra::vect(paste0(root, "/_global/world_shapefile/all_country/all_c
 af_shp <- wrld_shp[wrld_shp$CONTINENT == "Africa"] 
 
 countries_lst <- c('Burundi','Djibouti', 'Eritrea', 'Ethiopia', 'Kenya','Rwanda','Sudan','Somalia', 'South Sudan', 'Tanzania', 'Uganda')
-
+#' consider downloading lowest level because the world shapefile is missing some countries like SSD
 conflic_raw <- readxl::read_excel(paste0(root, "/_global/conflict/Africa_1997-2022_Jul08.xlsx"))
 cols <- c("EVENT_DATE", "YEAR", "EVENT_TYPE","SUB_EVENT_TYPE", "ACTOR1", "ACTOR2","FATALITIES", "LATITUDE", "LONGITUDE", "COUNTRY" ) 
 
