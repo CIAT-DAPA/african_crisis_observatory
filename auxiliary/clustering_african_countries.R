@@ -179,6 +179,45 @@ grd_conflict <- base::merge(grd, aa , by = "id", all.x = T )
 #sf::st_write(grd_conflict, paste0(root, "/conflict_clusters_af.geojson"))
 writeVector(vect(grd_conflict), filename = paste0(out,region,'.shp'))
 
+labs <- c('High', 'Moderate', 'Limited')
+
+for( i in 1:length(labs)){
+  grd_conflict$km_cluster[grd_conflict$short_label==labs[i]] <- i
+}
+
+
+regionShp <- wrld_shp[wrld_shp$ISO3 %in% countries_iso,]
+regionShp <- sf::st_as_sf(regionShp)
+
+library(tmap)
+library(mapview)
+tmap_mode("view")
+map <- tm_shape(regionShp)+
+  tm_borders()+
+  tm_shape(grd_conflict)+
+  tm_fill(col= "km_cluster", palette="-YlOrRd", title='Conflict', labels = labs) +
+  tm_compass(type = "8star", position = c("right", "top")) +#c('red','yellow','orange')
+  tm_scale_bar(breaks = c(0, 50, 100), text.size = 1, width=1,
+               position = c("left", "bottom"))+
+  tm_layout(legend.outside=F, 
+            legend.text.size = 1.1,
+            legend.title.size= 1.3,
+            legend.frame=F,
+            legend.just = c("right", "bottom"), 
+            #legend.width= 1,
+            #legend.height= -0.2 
+  )#+ 
+#tm_add_legend(type = "text", text = "labels")
+
+#tm_format("World")
+map
+
+tmap_save(map,  dpi= 600,  height=8, width=10, units="in",
+          filename=paste0(out,'/', region,'.png'))
+
+to_save <- grd_conflict[,  c("label", "short_label", "km_cluster")]
+writeVector(vect(to_save), filename = paste0(out,region,'.shp'), overwrite=TRUE)
+
 
 
 
