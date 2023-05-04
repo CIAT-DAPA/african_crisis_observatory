@@ -294,6 +294,7 @@ seasons <- switch(iso, "KEN" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "PHL" = list(season_type_1 = 6:12),
                   "SDN" = list(season_type_1 = 6:10),
                   "UGA" = list(season_type_1 = 3:10),
+                  "SOM" = list(season_type_1 = 3:10),
                   "ZMB" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "ZWE" = list(season_type_1 = 1:6, season_type_2 = 7:12)
                   )

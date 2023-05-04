@@ -15,7 +15,7 @@ library(tictoc)
 #' @param iso is the country name ISO code.
 #' @root root base directory for saving the results
 #' @data_path directory path for chirps data
-iso <- 'SOM'
+iso <- 'KEN'
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSI/'
 data_path  <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr/1.Data/Chirps/'
 
@@ -30,6 +30,7 @@ knitr::kable(head(files), caption = 'CHIRPS raster files')
 
 tic("Load files..")
 img <- terra::rast(files, win=ext(bdy1))
+NAflag(img) <- -9999
 toc()
 
 #x11()
@@ -51,7 +52,7 @@ dir.create(paste0(root,"chirps/",iso))
 write.csv(df, filename)
 #' Aggregate rainfall per admin level 1 by year
 #temp <- aggregate(df[,"chirps_rainfall"], df[,c("NAME_1","year"), drop=FALSE], mean, na.rm=T)
-temp <- aggregate(chirps_rainfall~NAME_1+year, data=df, mean, na.rm=T)
+temp <- aggregate(chirps_rainfall~NAME_1+year, data=df, sum, na.rm=T)
 filename <- paste0(root,"chirps/",iso,"/",iso,"_annual_chirps_rainfall.csv")
 write.csv(temp, filename)
 
