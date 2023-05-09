@@ -1,7 +1,7 @@
 ### Script to donwload ACLED data
 #' @author: Ewaut and Benson Kenduiywo
 rm(list=ls(all=TRUE))
-out <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/UNCHR/"
+out <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/_global/conflict/"
 
 require(httr)
 
@@ -106,11 +106,59 @@ events = function(region = NULL, iso = NULL, updatedSince = NULL, field = NULL)
 dtRegion = regions() 
 head(dtRegion)
 
-# ACLED region codes for Africa
-regionName <- 'East Asia'
-regionCodes = dtRegion[grep(regionName, dtRegion$region_name), 'region']
-#' Donwload  All events for region
-data2 = events(region = regionCodes) # Will take a long time
+#' Download several countries in a region
+#' Note this may take some time  donwload
+donwloadRegion <- function(regionName){
+  regionCodes <- dtRegion[grep(regionName, dtRegion$region_name), 'region']
+  #' Donwload  All events for region
+  return(events(region = regionCodes)) # Will take a long time
+}
+
+regionName <- 'East-Asia-Pacific'
+eastAsia  <- donwloadRegion('East Asia')
+centralAsia <- donwloadRegion("Caucasus and Central Asia")
+southAsia <- donwloadRegion("South Asia")
+southEastAsia <- donwloadRegion("Southeast Asia")
+oceania <- donwloadRegion("Oceania")
+asiaPacific <- do.call(rbind, list(eastAsia, centralAsia, southAsia, southEastAsia, oceania))
+names(asiaPacific) <- toupper(names(asiaPacific))
+library("writexl")
+write_xlsx(asiaPacific, paste0(out, regionName, '_', Sys.Date(),'.xlsx'))
+#data.table::fwrite faster for csv
+
+regionName <- 'Africa'
+WA  <- donwloadRegion('Western Africa')
+SA <- donwloadRegion("Southern Africa")
+MA <- donwloadRegion("Middle Africa")
+Na <- donwloadRegion("Northern Africa")
+EA <- donwloadRegion("Eastern Africa")
+africa <- do.call(rbind, list(WA, SA, MA, Na, EA))
+names(africa) <- toupper(names(africa))
+write_xlsx(africa, paste0(out, regionName, '_', Sys.Date(),'.xlsx'))
+
+regionName <- 'MENA'
+ME  <- donwloadRegion('Middle East')
+
+mena <- do.call(rbind, list(Na, ME))
+names(mena) <- toupper(names(mena))
+write_xlsx(mena, paste0(out, regionName, '_', Sys.Date(),'.xlsx'))
+
+regionName <- 'Americas'
+cAmer  <- donwloadRegion('Central America')
+sAmer  <- donwloadRegion('South America')
+nAmer  <- donwloadRegion('North America')
+
+americas <- do.call(rbind, list(cAmer, sAmer, nAmer))
+names(americas) <- toupper(names(americas))
+write_xlsx(americas, paste0(out, regionName, '_', Sys.Date(),'.xlsx'))
+
+regionName <- 'Europe'
+EU  <- donwloadRegion('Europe')
+
+names(EU) <- toupper(names(EU))
+write_xlsx(EU, paste0(out, regionName, '_', Sys.Date(),'.xlsx'))
+
+
 
 
 
