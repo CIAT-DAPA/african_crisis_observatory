@@ -20,9 +20,9 @@ library(tictoc)
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSI/' 
 data_path <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/'
-iso <- 'UGA'
+iso <- 'SOM'
 season <- 'season_type_1'
-variab <- 'THI'
+variab <- 'NWLD'
 img <- terra::rast(paste0(data_path,iso, '/climatic_indexes/temp/season_type_1/',variab,'.tif'))
 
 bdy1 <- gadm(country=iso, level=1, path=paste0(root,'_global/countries/'))
