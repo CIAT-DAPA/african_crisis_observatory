@@ -12,8 +12,6 @@ pacman::p_load(terra, sf, exactextractr, tidyverse, FactoMineR, fpc, dbscan)
 #' ===================================================================================
 #' 1). define global variables 
 #' ===================================================================================
-region        <- 'MENA'
-ACLEDFilename  <- "MENA_2023-05-09.xlsx"
 root <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 out <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/UNCHR/"
 
@@ -32,8 +30,15 @@ eastAsiaPacific <- c("KAZ", "KGZ", "TJK", "TKM", "UZB", "AUS", "CHN",	"HKG", "MA
                      "MHL",	"FSM", "MNG", "NRU", "NCL", "NIU", "MNP", "PLW", "WSM", "SGP",
                      "SLB",	"TLS", "TKL",	"TON", "TUV",	"UMI", "VUT",	"WLF")
 
-countries_iso <-  menaISO
-countries_lst <- MENA
+Americas_ISO <- c("BLZ", "BRA", "CHL", "COL",	"CRI", "CUB", "ECU", "SLV",	"GTM", "HND",	"MEX", "PAN",	"PRY", "PER",	"URY", "VEN", "ABW", "CAN",	"DOM", "GUY",	"HTI", "TTO", "USA", "AIA",	"ATG",	"BHS",	"BRB",	"BMU",	"BOL",	"VGB",	"CYM",	"DMA", "FLK",	"PYF", "GRD",	"GLP",	"JAM",	"MTQ",	"NIC",	"PRI",	"KNA",	"LCA",	"SPM",	"VCT",	"SGS",	"SUR",	"TCA",	"VIR")
+Americas_lst <- c("Argentina", "Belize", "Brazil",	"Chile",	"Colombia",	"Costa Rica",	"Cuba",	"Ecuador",	"El Salvador", "Guatemala",	"Honduras",	"Mexico",	"Panama",	"Paraguay",	"Peru",	"Uruguay",	"Venezuela",	"Aruba",	"Canada",	"Dominican Republic",	"Guyana",	"Haiti",	"Trinidad and Tobago",	"United States",	"Anguilla",	"Antigua and Barbuda",	"Bahamas",	"Barbados",	"Bermuda",	"Bolivia",	"British Virgin Islands",	"Cayman Islands",	"Dominica",	"Falkland Islands",	"French Polynesia",	"Grenada",	"Guadeloupe",	"Jamaica",	"Martinique",	"Nicaragua",	"Puerto Rico",	"Saint Kitts and Nevis",	"Saint Lucia",	"Saint Pierre and Miquelon",	"Saint Vincent and Grenadines",	"South Georgia and the South Sandwich Islands",	"Suriname",	"Turks and Caicos Islands",	"Virgin Islands, US")
+
+## DEFINE REGION< ACLED FILE AND ASIGN VAR to corresponding iso and conuntry names
+region        <- 'Americas'
+ACLEDFilename  <- "Americas_2023-05-09.xlsx"
+
+countries_iso <-  Americas_ISO
+countries_lst <- Americas_lst
 
 #' ===================================================================================
 #' 2. Load data
