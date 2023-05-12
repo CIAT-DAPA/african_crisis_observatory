@@ -16,6 +16,15 @@ root <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/
 out <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/UNCHR/"
 
 #' Define regions and corresponding ISO3 codes
+
+Asia_lst <- c("Afghanistan",	"American", "Samoa",	"Australia",	"Bangladesh",	"Bhutan",	"Brunei",	"Cambodia",	"China",	"Christmas Island",	"Cook Islands",	"Fiji",	"Guam",	"India",	"Indonesia",
+  "Japan",	"Kazakhstan",	"Kiribati",	"Kyrgyzstan",	"Laos",	"Malaysia",	"Maldives",	"Micronesia",	"Mongolia",	"Myanmar",	"Nauru",	"Nepal",	"New Caledonia",	"New Zealand",	"Northern Mariana Islands",	"Pakistan",	"Papua New Guinea",	"Philippines",	"Samoa",	"Singapore",	"Solomon Islands",	"Sri Lanka",	"Taiwan",	"Tajikistan",	"Thailand",	"Tokelau",	"Tonga",	"Turkmenistan",	"Uzbekistan",	"Vanuatu",	"Vietnam",	"Wallis and Futuna")
+Asia_ISO <- c("AFG", "ASM",	"AUS",	"BGD",	"BTN",	"BRN",	"KHM",	"CHN",	"CXR",	"COK",	"FJI",	"GUM",	"IND",	"IDN",	"JPN",	"KAZ",	"KIR",	"KGZ",	"LAO",	"MYS",	"MDV",	"FSM",	"MNG",	"MMR",	"NRU",	"NPL",	"NCL",	"NZL",	"MNP",	"PAK",	"PNG",	"PHL",	"WSM",	"SGP",	"SLB",	"LKA", "TWN",	"TJK",	"THA",	"TKL",	"TON",	"TKM",	"UZB",	"VUT",	"VNM",	"WLF")
+
+SA_iso <- c("AGO", "BWA", "COM", "COG", "COD", "LSO", "MDG", "MWI",	"MUS", "MOZ",	"NAM", "SYC",	"ZAF",	"ZMB",	"ZWE",	"SHN",	"SWZ")
+SA_lis <- c("Angola",	"Botswana",	"Comoros",	"Congo (Brazzaville)",	"Democratic Republic of Congo",	"Lesotho",	"Madagascar",	"Malawi",	"Mauritius", "Mozambique", "Namibia",	"Seychelles",	"South Africa",	"Zambia",	"Zimbabwe",
+            "Saint Helena, Ascension and Tristan da Cunha",	"Swaziland")
+
 MENA <- c("Iraq", "Israel", "Jordan", "Kuwait",	"Lebanon", "Saudi Arabia", "Syria",
           "United Arab Emirates",	"Yemen", "Algeria", "Egypt", "Libya", "Mauritania",
           "Morocco", "Tunisia",	"Western Sahara",	"Bahrain", "Oman", "Palestinian Territory",	"Qatar")
@@ -33,12 +42,15 @@ eastAsiaPacific <- c("KAZ", "KGZ", "TJK", "TKM", "UZB", "AUS", "CHN",	"HKG", "MA
 Americas_ISO <- c("BLZ", "BRA", "CHL", "COL",	"CRI", "CUB", "ECU", "SLV",	"GTM", "HND",	"MEX", "PAN",	"PRY", "PER",	"URY", "VEN", "ABW", "CAN",	"DOM", "GUY",	"HTI", "TTO", "USA", "AIA",	"ATG",	"BHS",	"BRB",	"BMU",	"BOL",	"VGB",	"CYM",	"DMA", "FLK",	"PYF", "GRD",	"GLP",	"JAM",	"MTQ",	"NIC",	"PRI",	"KNA",	"LCA",	"SPM",	"VCT",	"SGS",	"SUR",	"TCA",	"VIR")
 Americas_lst <- c("Argentina", "Belize", "Brazil",	"Chile",	"Colombia",	"Costa Rica",	"Cuba",	"Ecuador",	"El Salvador", "Guatemala",	"Honduras",	"Mexico",	"Panama",	"Paraguay",	"Peru",	"Uruguay",	"Venezuela",	"Aruba",	"Canada",	"Dominican Republic",	"Guyana",	"Haiti",	"Trinidad and Tobago",	"United States",	"Anguilla",	"Antigua and Barbuda",	"Bahamas",	"Barbados",	"Bermuda",	"Bolivia",	"British Virgin Islands",	"Cayman Islands",	"Dominica",	"Falkland Islands",	"French Polynesia",	"Grenada",	"Guadeloupe",	"Jamaica",	"Martinique",	"Nicaragua",	"Puerto Rico",	"Saint Kitts and Nevis",	"Saint Lucia",	"Saint Pierre and Miquelon",	"Saint Vincent and Grenadines",	"South Georgia and the South Sandwich Islands",	"Suriname",	"Turks and Caicos Islands",	"Virgin Islands, US")
 
-## DEFINE REGION< ACLED FILE AND ASIGN VAR to corresponding iso and conuntry names
-region        <- 'Americas'
-ACLEDFilename  <- "Americas_2023-05-09.xlsx"
+WA_CEN_iso <- c("BEN", "BFA",	"CMR", "CPV",	"CAF", "TCD",	"CIV", "GNQ",	"GAB", "GMB",	"GHA", "GIN", "GNB", "LBR",	"MLI", "NER", "NGA", "STP", "SEN", "SLE",	"TGO")
+WA_CEN_lst <- c("Benin", "Burkina Faso",	"Cameroon",	"Cape Verde", "Central African Republic",	"Chad",	"Ivory Coast",	"Equatorial Guinea",	"Gabon", "Gambia", "Ghana",	"Guinea", "Guinea-Bissau", "Liberia",	"Mali",	"Niger",	"Nigeria",	"Sao Tome and Principe",	"Senegal",	"Sierra Leone",	"Togo")
 
-countries_iso <-  Americas_ISO
-countries_lst <- Americas_lst
+## DEFINE REGION< ACLED FILE AND ASIGN VAR to corresponding iso and conuntry names
+region        <- 'East Asia and the Pacific'
+ACLEDFilename  <- "East-Asia-Pacific_2023-05-09.xlsx"
+
+countries_iso <-  Asia_ISO
+countries_lst <- Asia_lst
 
 #' ===================================================================================
 #' 2. Load data
