@@ -283,7 +283,7 @@ calc_AgrClm <- function(season = season, shp_fl = shp_fl){
   
 }
 
-iso <- "MLI"
+iso <- "NER"
 
 seasons <- switch(iso, "KEN" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "SEN" = list(season_type_1 = 6:12),
@@ -296,7 +296,9 @@ seasons <- switch(iso, "KEN" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "UGA" = list(season_type_1 = 3:10),
                   "SOM" = list(season_type_1 = 3:10),
                   "ZMB" = list(season_type_1 = 1:6, season_type_2 = 7:12),
-                  "ZWE" = list(season_type_1 = 1:6, season_type_2 = 7:12)
+                  "ZWE" = list(season_type_1 = 1:6, season_type_2 = 7:12),
+                  "NER" = list(season_type_1 = 5:10),
+                  "BFA" = list(seanon_type_1 = 4:10)
                   )
 
 shp_fl <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/_shps/", iso, ".shp")
