@@ -322,7 +322,7 @@ labeling_function <- function(db, n_vars){
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 
 
-country_iso2 <- iso <- "PHL"
+country_iso2 <- iso <- "KEN"
 
 baseDir <- paste0(root, "data/",country_iso2)
 
@@ -336,10 +336,12 @@ grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>%
   st_as_sf(.) %>%
   dplyr::mutate(id = 1:nrow(.))
 
-
-
 st_crs(grd) <- st_crs(shp)
 
+# Save the grid as a shapefile
+
+
+st_write(grd, paste0(baseDir, "/_shps/climate_megapixels.shp"))
 
 country <- unique(shp$NAME_0)
 
