@@ -16,7 +16,7 @@ root <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/
 out <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/UNCHR/"
 
 #' Define regions and corresponding ISO3 codes
-
+EU_iso <- c("BGR", "HRV",	"CZE", "HUN",	"MDA", "POL",	"ROU", "SVK",	"SVN", "ARM",	"AZE",	"BLR",	"GEO",	"RUS",	"TUR",	"UKR",	"DNK",	"EST", "FIN", "ISL", "LVA", "LTU", "NOR",	"SWE",	"ALB",	"BIH", "MKD",	"MNE",	"SRB",	"CYP",	"GRC",	"VAT",	"ITA",	"MLT",	"PRT",	"ESP",	"AUT",	"BEL",	"FRA", "DEU",	"IRL", "LUX", "NLD", "CHE",	"GBR",	"FRO",	"GUF",	"IMN")
 Asia_lst <- c("Afghanistan",	"American", "Samoa",	"Australia",	"Bangladesh",	"Bhutan",	"Brunei",	"Cambodia",	"China",	"Christmas Island",	"Cook Islands",	"Fiji",	"Guam",	"India",	"Indonesia",
   "Japan",	"Kazakhstan",	"Kiribati",	"Kyrgyzstan",	"Laos",	"Malaysia",	"Maldives",	"Micronesia",	"Mongolia",	"Myanmar",	"Nauru",	"Nepal",	"New Caledonia",	"New Zealand",	"Northern Mariana Islands",	"Pakistan",	"Papua New Guinea",	"Philippines",	"Samoa",	"Singapore",	"Solomon Islands",	"Sri Lanka",	"Taiwan",	"Tajikistan",	"Thailand",	"Tokelau",	"Tonga",	"Turkmenistan",	"Uzbekistan",	"Vanuatu",	"Vietnam",	"Wallis and Futuna")
 Asia_ISO <- c("AFG", "ASM",	"AUS",	"BGD",	"BTN",	"BRN",	"KHM",	"CHN",	"CXR",	"COK",	"FJI",	"GUM",	"IND",	"IDN",	"JPN",	"KAZ",	"KIR",	"KGZ",	"LAO",	"MYS",	"MDV",	"FSM",	"MNG",	"MMR",	"NRU",	"NPL",	"NCL",	"NZL",	"MNP",	"PAK",	"PNG",	"PHL",	"WSM",	"SGP",	"SLB",	"LKA", "TWN",	"TJK",	"THA",	"TKL",	"TON",	"TKM",	"UZB",	"VUT",	"VNM",	"WLF")
@@ -32,6 +32,8 @@ menaISO <- c("IRQ", "ISR", "JOR", "KWT", "LBN", "SAU", "SYR", "ARE", "YEM",	"DZA
              "EGY",	"LBY", "MRT",	"MAR", "TUN", "ESH", "BHR",	"OMN", "PSE",	"QAT")
 
 EHorn <- c('Burundi','Djibouti', 'Eritrea', 'Ethiopia', 'Kenya','Rwanda','Sudan','Somalia', 'South Sudan', 'Tanzania', 'Uganda')
+EHornISO <- c('BDI','DJI', 'ERI', 'ETH', 'KEN','RWA','SDN','SOM', 'SSD', 'TZA', 'UGA')
+
 eastAsiaPacific <- c("KAZ", "KGZ", "TJK", "TKM", "UZB", "AUS", "CHN",	"HKG", "MAC",	"JPN",	
                      "KOR",	"NZL", "PNG",	"TWN", "IND",	"NPL", "LKA",	"BGD", "KHM", "IDN",
                      "LAO", "MYS", "MMR",	"PHL", "THA",	"VNM", "AFG",	"IRN", "PAK",	"ASM",	
@@ -46,11 +48,11 @@ WA_CEN_iso <- c("BEN", "BFA",	"CMR", "CPV",	"CAF", "TCD",	"CIV", "GNQ",	"GAB", "
 WA_CEN_lst <- c("Benin", "Burkina Faso",	"Cameroon",	"Cape Verde", "Central African Republic",	"Chad",	"Ivory Coast",	"Equatorial Guinea",	"Gabon", "Gambia", "Ghana",	"Guinea", "Guinea-Bissau", "Liberia",	"Mali",	"Niger",	"Nigeria",	"Sao Tome and Principe",	"Senegal",	"Sierra Leone",	"Togo")
 
 ## DEFINE REGION< ACLED FILE AND ASIGN VAR to corresponding iso and conuntry names
-region        <- 'East Asia and the Pacific'
-ACLEDFilename  <- "East-Asia-Pacific_2023-05-09.xlsx"
+region        <- 'East and Horn of Africa'
+ACLEDFilename  <- "Europe_2023-05-09.xlsx"
 
-countries_iso <-  Asia_ISO
-countries_lst <- Asia_lst
+countries_iso <-  EHornISO
+countries_lst <- EHorn
 
 #' ===================================================================================
 #' 2. Load data
