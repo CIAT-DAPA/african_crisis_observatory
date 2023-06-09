@@ -22,8 +22,8 @@ stk <- list.files(paste0(root_dir, "/", iso, "/gender_population"), pattern = "_
   purrr::map(., raster)
 
 sum_r <- sum(raster::stack(stk), na.rm = T)
-
-writeRaster(sum_r,paste0(root_dir, "/", iso, "/gender_population/female_population.tif"), overwirte = T)
+sum_r[sum_r[] <= 1] <- NA
+writeRaster(sum_r,paste0(root_dir, "/", iso, "/gender_population/", iso, "female_population.tif"), overwirte = T)
 
 
 #####################################
@@ -48,8 +48,8 @@ stk <- list.files(paste0(root_dir, "/", iso, "/gender_population"), pattern = "_
   purrr::map(., raster)
 
 sum_r <- sum(raster::stack(stk), na.rm = T)
-
-writeRaster(sum_r,paste0(root_dir, "/", iso, "/gender_population/male_population.tif"), overwirte = T)
+sum_r[sum_r[] <= 1] <- NA
+writeRaster(sum_r,paste0(root_dir, "/", iso, "/gender_population/",iso , "_male_population.tif"), overwirte = T)
 
 
 
