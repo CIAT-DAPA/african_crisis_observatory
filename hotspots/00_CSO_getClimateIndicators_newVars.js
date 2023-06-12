@@ -10,6 +10,8 @@ var aet    = ee.ImageCollection("IDAHO_EPSCOR/TERRACLIMATE").filter(ee.Filter.da
 var cList = ['Kenya','Senegal','Uganda','Nigeria','Sudan','Mali','Zimbabwe', "Ethiopia", "Guatemala", "Philippines"]; // Countries list
 // One specific country
 var country = countries.filter(ee.Filter.inList('COUNTRY_NA',['Philippines']));
+Map.centerObject(country, 5);
+Map.addLayer(ee.Image().paint(country, 0, 2), {}, 'Country');
 
 //population density avg
 var avgPopD = ppdensity.mean();
