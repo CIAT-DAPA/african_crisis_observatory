@@ -58,13 +58,11 @@ reclass_raster <- function(rast_path , shp_ext, world_mask, shp_country, dimensi
       raster::reclassify(., rclmat) 
     
     
-    ret <- stars::st_as_stars(ret)
+    #ret <- stars::st_as_stars(ret)
     
   }else{
     cat(rast_path, " Not need for reclassify \n")
-    ret <- r %>% 
-      stars::st_as_stars()
-    
+    ret <- r 
   }
   
   return(ret)
@@ -321,87 +319,100 @@ labeling_function <- function(db, n_vars){
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 
+# WEA - west Africa countries
+country_iso2 <- iso  <- "WEA"
+  
 
-country_iso2 <- iso <- "KEN"
+dimension <- "climate"
 
 baseDir <- paste0(root, "data/",country_iso2)
+
+#grd2 <- st_read(paste0(root, "data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust.shp"))
+
+grd <- sf::st_read("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/conflict_clusters_af.geojson")
+st_crs(grd) <- st_crs(shp)
+
+#get west africa shaefile
+Ehorn <- c('Burundi','Djibouti', 'Eritrea', 'Ethiopia', 'Kenya','Rwanda','Sudan','Somalia', 'South Sudan', 'Tanzania', 'Uganda')
+EHornISO <- c('BDI','DJI', 'ERI', 'ETH', 'KEN','RWA','SDN','SOM', 'SSD', 'TZA', 'UGA')
+shps <- terra::vect(paste0(root, "data/_global/world_shapefile/all_country/all_countries.shp"))
+writeVector(shps[shps$ISO3 %in% EHornISO], paste0(root, "data/", iso, "/_shps/", iso, ".shp" ), overwrite = T) 
+
+#get climatic vars for all west africa
+w_mask <- raster("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/_global/masks/mask_world.tif")
+clim_vars_names <- lapply(EHornISO, function(i){
+ nms <- tryCatch({
+  clim_path <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", i,"/_results/cluster_results/climate/climate_reg_cluster_values_extracted.csv")
+  x <-  unique(c(unlist(read.table(clim_path, header = F, sep= ",", nrows =1)), "medn_aet" , "cvar_aet", "trnd_aet" ))
+   x <- x[x != "clust"]
+   
+   rt_dir <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", i )
+   fls <- list.files(rt_dir, pattern  = '.tif$', recursive = T, full.names = T) 
+   fls <- fls[grepl(paste0(x, collapse = "|"), fls)]
+   fls <- fls[!grepl("old", fls)]
+   fls <- data.frame(full_pth = fls, id = basename(fls), iso = i)
+return(fls)
+ }, error = function(e){
+   cat("Error when reading file \n")
+   
+  return(NA)
+ })
+  
+ 
+return(nms) 
+})
+#match climatic variables
+
+
 
 shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>% 
   sf::st_as_sf(.) %>% 
   dplyr::mutate(id = 1:nrow(.))
 
-#grd2 <- st_read(paste0(root, "data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust.shp"))
 
-grd <- st_make_grid(st_bbox(extent(shp)+2), cellsize = 0.2, square =  T) %>% 
-  st_as_sf(.) %>%
-  dplyr::mutate(id = 1:nrow(.))
+clim_vars_info <- Reduce(function(x,y){merge(x,y, by = "id", all = F)}, clim_vars_names[!sapply(clim_vars_names, function(l){all(is.na(l))})])#, by = id, all = T)
 
-st_crs(grd) <- st_crs(shp)
+clim_rasts_merged <- apply(clim_vars_info[, grepl("full_pth", names(clim_vars_info))], 1, function(i){
+  rs <- lapply(i, function(r){
+    
+    tmpr <-  reclass_raster(
+      rast_path = r,
+      shp_ext = extent(grd), 
+      world_mask= w_mask,
+      dimension  = dimension,
+      conflict_area = paste0(baseDir, "/conflict/conflict_area.shp"))
+    
+    
+    return(tmpr)
+    })
+  
+  rsts <- Reduce(function(x,y){raster::mosaic(x, y, fun =mean)}, rs)
+  rsts <- stars::st_as_stars(rsts)
+return(rsts)
+})
+names(clim_rasts_merged)<-clim_vars_info$id
+
+
 
 # Save the grid as a shapefile
 
 
-st_write(grd, paste0(baseDir, "/_shps/climate_megapixels.shp"))
+#st_write(grd, paste0(baseDir, "/_shps/climate_megapixels.shp"))
 
-country <- unique(shp$NAME_0)
-
-source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/hotspots/01_link_IPinfo_climate_clusters.R') # Link IP text to identify climate variables
 
 out_clim_dir_pth <- paste0(root, "/data/",iso, "/_results/cluster_results/climate")
 if(!dir.exists(out_clim_dir_pth)){dir.create(out_clim_dir_pth, recursive = T)}
+## load and reclassify all rasters
 
-#clm <- select_clim_vars(root = substr(root, start = 1, stop = nchar(root)-1 ),
-clm <- select_clim_vars(root,
-                        iso  = iso, 
-                        cntr = country) %>% 
-  dplyr::pull(Code) %>% 
-  unique() %>% 
-  .[!grepl("p90|avg|CV_cv", .)]
-
-
-fls <- list.files(path = paste0(root,'/data/',country_iso2), pattern = 'tif$', full.names = T, recursive = T)
-grep2 <- Vectorize(FUN = grep, vectorize.args = 'pattern')
-fls <- fls[unlist(grep2(pattern = clm, x = fls))]; rm(clm)
-fls <- unique(fls)
-fls <- as.character(na.omit(fls))
-
-
-
-file_paths <- tibble(path = fls,
-                     type = "climate" ) %>% 
-  add_row(path = c(list.files(paste0(baseDir, '/conflict'), pattern = ".tif$", full.names = T)), type = "conflict") %>% 
-  dplyr::filter(!grepl("old|temp|tmp", path))
-
-
-check_files <- lapply(file_paths$path, file.exists) %>% unlist()
-
-world_mask <- raster(paste0(root, "/data/_global/masks/mask_world_1km.tif"))
-
-
-stopifnot("File not found in paths. " = all(check_files))
-
-### load and reclassify all rasters
-
-dimension <- "climate"
 
 cat(">>> starting process for: ", dimension, "\n")
 
 
 dest_dir <- paste0(baseDir, "/_results/cluster_results/", dimension, "/")
-
-
 if(!dir.exists(dest_dir)){dir.create(dest_dir, recursive = T)}
 
 #file_paths %>% filter(type == dimension)  %>% pull(path)
-r_files <- lapply(file_paths %>% filter(type == dimension)  %>% pull(path),
-                  reclass_raster, 
-                  shp_ext = extent(grd), 
-                  world_mask= world_mask,
-                  dimension  = dimension,
-                  conflict_area = paste0(baseDir, "/conflict/conflict_area.shp"))
-
-r_names <- lapply(file_paths %>% filter(type == dimension)  %>% pull(path), function(i){names(raster(i))})
-names(r_files) <- unlist(r_names)
+r_files <- clim_rasts_merged
 
 # =========================================================== #
 # Spatial patterns clustering
@@ -424,9 +435,9 @@ eco_hclust <- hclust(eco_dist, method = "ward.D2")
 if(dimension == "conflict"){
   c_optim_num <- 3
 }else{
-  optcl2 <- maptree::kgs(cluster = eco_hclust, diss = eco_dist, maxclust = 10)
+ # optcl2 <- maptree::kgs(cluster = eco_hclust, diss = eco_dist, maxclust = 10)
   
-  c_optim_num <- as.numeric(names(optcl2[which(optcl2 == min(optcl2))]))
+  c_optim_num <- 3 #as.numeric(names(optcl2[which(optcl2 == min(optcl2))]))
   
 }
 
