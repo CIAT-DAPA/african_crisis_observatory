@@ -600,7 +600,7 @@ clim_clust_map<- tmap::tm_shape(shp)+
 
 
 x11();clim_clust_map
-
+## SAVE THIS AS A GEOJSON ALSO
 tmap_save(clim_clust_map,
           filename= paste0(root, "/data/", iso, "/_results/cluster_results/climate/climate_regular_clust_map.png"),
           dpi=300, 
@@ -610,3 +610,4 @@ tmap_save(clim_clust_map,
           width=15,
           units="in")
 
+#CREATE ANOTHER GEOJSON with climate conflict cluster's intersection 
