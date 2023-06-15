@@ -1,3 +1,4 @@
+rm(list=ls(all=TRUE))
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, gtools, sf, furrr, future))
 
@@ -174,7 +175,7 @@ calc_AgrClm_cmplx <- function(season = season, shp_fl = shp_fl,
 
 
 
-iso <- "MLI"
+iso <- "SOM"
 
 seasons <- switch(iso, "KEN" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "SEN" = list(season_type_1 = 6:12),
@@ -185,6 +186,8 @@ seasons <- switch(iso, "KEN" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "PHL" = list(season_type_1 = 6:12),
                   "SDN" = list(season_type_1 = 6:10),
                   "UGA" = list(season_type_1 = 3:10),
+                  "SSD" = list(season_type_1 = 4:11),
+                  "SOM" = list(season_type_1 = 3:10),
                   "ZMB" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "ZWE" = list(season_type_1 = 1:6, season_type_2 = 7:12)
 )

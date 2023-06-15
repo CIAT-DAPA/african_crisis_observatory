@@ -7,7 +7,7 @@
 ### 4. Run and wait
 
 
-ISO <- "SSD"
+ISO <- "SOM"
 GEE_data_path <-  "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/GEE data"
 
 

@@ -283,7 +283,7 @@ calc_AgrClm <- function(season = season, shp_fl = shp_fl){
   
 }
 
-iso <- "SSD"
+iso <- "SOM"
 
 seasons <- switch(iso, "KEN" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "SEN" = list(season_type_1 = 6:12),
