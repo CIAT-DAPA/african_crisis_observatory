@@ -335,8 +335,8 @@ plot(st_geometry(grd))
 plot(grd["km_cluster"])
 
 #get west africa shaefile
-Ehorn <- c('Burundi','Djibouti', 'Eritrea', 'Ethiopia', 'Kenya','Rwanda','Sudan','Somalia', 'South Sudan', 'Tanzania', 'Uganda')
-EHornISO <- c('BDI','DJI', 'ERI', 'ETH', 'KEN','RWA','SDN','SOM', 'SSD', 'TZA', 'UGA')
+Ehorn <- c('Ethiopia', 'Kenya','Sudan','Somalia', 'South Sudan',  'Uganda')
+EHornISO <- c('ETH', 'KEN','SDN','SOM', 'SSD', 'UGA')
 shps <- terra::vect(paste0(root, "data/_global/world_shapefile/all_country/all_countries.shp"))
 st_crs(grd) <- st_crs(shps)
 dirName <- paste0(root, "data/", iso, "/_shps" )
