@@ -11,9 +11,9 @@
 # options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 # suppressMessages(library(pacman))   # Loading R-packages
 # suppressMessages(pacman::p_load(tidyverse,readxl))
-
+rm(list=ls(all=TRUE))
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
-iso <- "PHL"
+iso <- "SOM"
 cntr <- "Philippines"
 
 select_clim_vars <- function(root, iso, cntr){
