@@ -163,7 +163,7 @@ get_sanit_vars <- function(iso = 'PHL'){
     tst_flt_crp <- terra::resample(x = tst_flt_crp, y = ref) %>% terra::mask(x = ., mask = shpr)
    
     dir.create(dirname(out), showWarnings = F, recursive = T)
-    terra::writeRaster(x = tst_flt_crp, out, overwrite = TRUEs) }
+    terra::writeRaster(x = tst_flt_crp, out, overwrite = TRUE) }
   
 }
 

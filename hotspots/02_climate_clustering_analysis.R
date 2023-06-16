@@ -356,7 +356,7 @@ clm <- select_clim_vars(root,
                         cntr = country) %>% 
   dplyr::pull(Code) %>% 
   unique() %>% 
-  .[!grepl("p90|avg|CV_cv", .)]
+  .[!grepl("p90|avg|CV_cv|CV_median|CV_trnd", .)]
 
 
 fls <- list.files(path = paste0(root,'/data/',country_iso2), pattern = 'tif$', full.names = T, recursive = T)

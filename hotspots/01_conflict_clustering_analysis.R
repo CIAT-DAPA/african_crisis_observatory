@@ -33,10 +33,10 @@ source('./base__lowest_gadm.R')
 
 fconf <- 'Africa_1997-2022_Jul08.xlsx' #Name of conflict file
 
-yearRange <- 2012:2022#range of years to select in ACCLED data
+yearRange <- 1997:2022#range of years to select in ACCLED data
 recompute <- TRUE #Recompute Kernel densities?
-country_iso2 <- iso <- "UGA"
-country <- 'Uganda'
+country_iso2 <- iso <- "NER"
+country <- 'Niger'
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'#dir path to folder data storage
 baseDir <- paste0(root, "/data/",country_iso2)
@@ -121,19 +121,27 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf, 
   # Load the country lowest administrative level shapefile
   if(!file.exists(paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))){
     dir.create(path = dirname(paste0(root,'/data/',iso,'/_shps/',iso,'.shp')), recursive = TRUE)
-    #shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
-    adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
-    shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
+    shp <- lowest_gadm(iso = iso, out = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
+     
+    
   } else {
     shp <- raster::shapefile(x = paste0(root,'/data/',iso,'/_shps/',iso,'.shp'))
     
-    adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
-    shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
   }
+  adm <- grep(pattern = '^NAME_', x = names(shp), value = T)
+  if(length(adm) == 1){
+    shp@data$key <- as.vector(shp@data[,adm])
+    
+  }else{
+    shp@data$key <- tolower(do.call(paste, c(shp@data[,adm], sep="-")))
+    # Extract administrative names using reported conflict coordinates by ACLED
+    conflict  <- cbind(conflict, raster::extract(x = shp, y = conflict[,c('LONGITUDE','LATITUDE')]))
+    
+  }
+  
   sft <- shp # Shapefile in terra format
   
-  # Extract administrative names using reported conflict coordinates by ACLED
-  conflict  <- cbind(conflict, raster::extract(x = shp, y = conflict[,c('LONGITUDE','LATITUDE')]))
+ 
   
   # Get conflict summarization variables per coordinates
   cnf_summ <- conflict %>%
