@@ -18,6 +18,10 @@ coef_var_index <- function(prec){
 }
 
 
+zscore <- function(x){
+  return((x-mean(x, na.rm=T))/(sd(x, na.rm=T)))
+  }
+
 calc_SHIMP <- function(TMAX, RH){SHI <- ifelse(TMAX >= 29 & RH > 50, 1, 0); return(SHI)}; calc_SHIMP <- compiler::cmpfun(calc_SHIMP)
 calc_THIMP <- function(TMAX, RH){THI <- (1.8 * TMAX + 32) - ((0.55 - 0.0055 * RH) * (1.8 * TMAX - 26.8)); THI_n <- ifelse(test = THI >= 79 & THI < 89 | THI >= 89, yes = 1, no = 0); return(THI_n)}; calc_THIMP <- compiler::cmpfun(calc_THIMP)
 calc_HSIMP <- function(TMAX, RH){
@@ -34,6 +38,42 @@ calc_HSIMP <- function(TMAX, RH){
                      TMAX > 30), 1, 0)
   return(HSI_n)
 }; calc_HSIMP <- compiler::cmpfun(calc_HSIMP)
+
+iso <- 'KEN'
+
+shp_fl <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/_shps/", iso, ".shp")
+tmp_path <- "//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/chirps-v2.0.2020.01.01.tif"
+out_root_dir <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/temp/")
+
+variable <- '2m_temperature-24_hour_mean'
+annualIndices <- function(variable){
+  era5Dir <- '//CATALOGUE/Workspace14/WFP_ClimateRiskPr/1.Data/ERA5'
+  cat('..... Computing: AT. Average temperature.\n')
+  # Tmean
+  tav_pth <- paste0(era5Dir,'/', variable)
+  tav_fls <- list.files(tav_pth, pattern = '*.nc$', full.names = T)
+  tav_dts <- as.Date(gsub('.*glob-agric_AgERA5_|_final.*','',basename(tav_fls)), "%Y%m%d")
+  years <- unique(format(tav_dts,"%Y"))
+  for(y in years){
+    files <- tav_fls[format(tav_dts,"%Y") %in% y]
+    temp <- terra::rast(tav_dts[format(tav_dts,"%Y") %in% y])
+    temp <- crop(temp, ext(shp), mask=T)
+  }
+  
+  
+  cnd <- lubridate::month(tav_dts) %in% season # Days within the season
+  yrs_dts <- split(tav_dts[cnd],cumsum(c(1,diff(tav_dts[cnd])!=1)))
+  AT <- 1:length(yrs_dts) %>%
+    purrr::map(.f = function(i){
+      tav <- terra::rast(tav_fls[tav_dts %in% yrs_dts[[i]]])
+      tav <- tav %>% terra::crop(terra::ext(shp)) %>% terra::mask(shp)
+      tav <- tav - 273.15
+      AT <- terra::app(x = tav, fun = function(x){ y = mean(x, na.rm = T); return(y) })
+      names(AT) <- lubridate::year(yrs_dts[[i]]) %>% unique() %>% paste0(collapse = '-')
+      return(AT)
+    }) %>% terra::rast()
+  AT <- AT %>% terra::mask(shp)
+} 
 
 
 # Function to compute basic Agro-climatic indices
@@ -283,7 +323,7 @@ calc_AgrClm <- function(season = season, shp_fl = shp_fl){
   
 }
 
-iso <- "SOM"
+iso <- "NER"
 
 seasons <- switch(iso, "KEN" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "SEN" = list(season_type_1 = 6:12),
@@ -298,7 +338,6 @@ seasons <- switch(iso, "KEN" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "ZMB" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "ZWE" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "NER" = list(season_type_1 = 5:10),
-                  "SSD" = list(season_type_1 = 4:11),
                   "BFA" = list(seanon_type_1 = 4:10)
                   )
 

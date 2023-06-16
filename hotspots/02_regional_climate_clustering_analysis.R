@@ -319,8 +319,8 @@ labeling_function <- function(db, n_vars){
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/'#dir path to folder data storage
 
-# WEA - west Africa countries
-country_iso2 <- iso  <- "WEA"
+# EA - East Africa countries
+country_iso2 <- iso  <- "EA"
   
 
 dimension <- "climate"
@@ -330,15 +330,21 @@ baseDir <- paste0(root, "data/",country_iso2)
 #grd2 <- st_read(paste0(root, "data/", iso, "/_results/cluster_results/conflict/conflict_regular_clust.shp"))
 
 grd <- sf::st_read("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/conflict_clusters_af.geojson")
-st_crs(grd) <- st_crs(shp)
+
+plot(st_geometry(grd))
+plot(grd["km_cluster"])
 
 #get west africa shaefile
-Ehorn <- c('Burundi','Djibouti', 'Eritrea', 'Ethiopia', 'Kenya','Rwanda','Sudan','Somalia', 'South Sudan', 'Tanzania', 'Uganda')
-EHornISO <- c('BDI','DJI', 'ERI', 'ETH', 'KEN','RWA','SDN','SOM', 'SSD', 'TZA', 'UGA')
+Ehorn <- c('Ethiopia', 'Kenya','Sudan','Somalia', 'South Sudan',  'Uganda')
+EHornISO <- c('ETH', 'KEN','SDN','SOM', 'SSD', 'UGA')
 shps <- terra::vect(paste0(root, "data/_global/world_shapefile/all_country/all_countries.shp"))
-writeVector(shps[shps$ISO3 %in% EHornISO], paste0(root, "data/", iso, "/_shps/", iso, ".shp" ), overwrite = T) 
+st_crs(grd) <- st_crs(shps)
+dirName <- paste0(root, "data/", iso, "/_shps" )
+dir.create(dirName)
+temp <- shps[shps$ISO3 %in% EHornISO]
+terra::writeVector(temp, paste0(dirName,'/', iso, ".shp"), filetype ="ESRI Shapefile", overwrite = T) 
 
-#get climatic vars for all west africa
+#get climatic vars for all the region
 w_mask <- raster("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/_global/masks/mask_world.tif")
 clim_vars_names <- lapply(EHornISO, function(i){
  nms <- tryCatch({
@@ -594,7 +600,7 @@ clim_clust_map<- tmap::tm_shape(shp)+
 
 
 x11();clim_clust_map
-
+## SAVE THIS AS A GEOJSON ALSO
 tmap_save(clim_clust_map,
           filename= paste0(root, "/data/", iso, "/_results/cluster_results/climate/climate_regular_clust_map.png"),
           dpi=300, 
@@ -604,3 +610,4 @@ tmap_save(clim_clust_map,
           width=15,
           units="in")
 
+#CREATE ANOTHER GEOJSON with climate conflict cluster's intersection 

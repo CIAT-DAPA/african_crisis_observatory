@@ -1,3 +1,4 @@
+rm(list=ls(all=TRUE))
 source('https://raw.githubusercontent.com/CIAT-DAPA/agro-clim-indices/main/AWCPTF.R')
 
 # Input parameters:
