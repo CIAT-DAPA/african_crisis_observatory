@@ -378,7 +378,17 @@ shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>%
 
 clim_vars_info <- Reduce(function(x,y){merge(x,y, by = "id", all = F)}, clim_vars_names[!sapply(clim_vars_names, function(l){all(is.na(l))})])#, by = id, all = T)
 
-clim_rasts_merged <- apply(clim_vars_info[, grepl("full_pth", names(clim_vars_info))], 1, function(i){
+clim_vars_av <- lapply(EHornISO, function(iso){
+  path <- gsub("data/[A-Z]{3}", paste0("data/",iso),clim_vars_info$full_pth.x)
+  to_ret <- data.frame(iso  = path)
+  return(to_ret)
+})
+
+clim_vars_av <- do.call(cbind, clim_vars_av)
+names(clim_vars_av) <- EHornISO
+
+clim_rasts_merged <- apply(clim_vars_av, 1, function(i){
+  
   rs <- lapply(i, function(r){
     
     tmpr <-  reclass_raster(
@@ -393,10 +403,11 @@ clim_rasts_merged <- apply(clim_vars_info[, grepl("full_pth", names(clim_vars_in
     })
   
   rsts <- Reduce(function(x,y){raster::mosaic(x, y, fun =mean)}, rs)
+  raster::writeRaster(rsts, paste0(root, "/data/", iso, "/", basename(i[1])) )
   rsts <- stars::st_as_stars(rsts)
 return(rsts)
 })
-names(clim_rasts_merged)<-clim_vars_info$id
+names(clim_rasts_merged)<- clim_vars_info$id
 
 
 
