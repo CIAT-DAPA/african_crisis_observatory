@@ -16,11 +16,11 @@ suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColor
 #' Variable definition
 #'
 
-iso <- "GTM"
+iso <- "BFA"
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 root <- paste0(baseDir, iso, "/")
-scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right", 'GTM'="right")
-scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom", 'PHL'="top", 'GTM'="bottom")
+scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right", 'GTM'="right", "NER" = "right", "BFA" = "right")
+scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom", 'PHL'="top", 'GTM'="bottom", "NER" = "bottom", "BFA" = "bottom")
 
 
 create_labels <- function(text, type = c("short", "long")){
@@ -256,7 +256,7 @@ conf_occ <- conf_data %>%
 
 coordinates(conf_occ) <- ~LONGITUDE+LATITUDE
 crs(conf_occ) <- crs(w_mask)
-conf_occ@data$over <- conf_occ %over%  shp_c %>% dplyr::pull(GID_0)
+conf_occ@data$over <- conf_occ %over%  shp_c %>% dplyr::pull(NAME_0)
 conf_occ <- conf_occ[!is.na(conf_occ$over),]
 #x11()
 mainmap <- tmap::tm_shape(shp_c)+
@@ -264,7 +264,7 @@ mainmap <- tmap::tm_shape(shp_c)+
   tm_shape(conf_clust)+
   tm_fill(col = "label", palette = c("#d7191c", "#e5a03e", "#ffffbf"), alpha = 0.7, title = expression("Conflict clusters"))+
   #tm_borders(col ="black") + 
-  tm_compass(type = "8star", position = c("right", "top")) +
+  tm_compass(type = "8star", position = c("left", "top")) +
   tm_scale_bar(breaks = c(0, 100, 200), text.size = 1, position = c(scale_bar_pos, scale_bar_top))+
   tm_shape(conf_occ)+
   tm_symbols(col = "#31b225", border.col = "black", size = "FATALITIES", scale = 3, title.size = "Number of fatalities")+
@@ -388,7 +388,7 @@ clim_map <- tmap::tm_shape(shp)+
   tm_shape(clim_clust)+
   tm_fill(col = "label", palette = "-YlOrRd" , alpha = 0.7, title = "Climatic clusters")+
   #tm_borders(col ="black") + 
-  tm_compass(type = "8star", position = c("right", "top")) +
+  tm_compass(type = "8star", position = c("left", "top")) +
   tm_scale_bar(breaks = c(0, 100, 200), text.size = 1, position = c(scale_bar_pos, scale_bar_top))+
   tm_layout(legend.outside=T, 
             legend.text.size = 1,
@@ -845,7 +845,9 @@ livelihood_pth <-  switch (iso,
                            "NGA" =  "livelihood/NG_LHZ_2018.shp",
                            "MLI" =  "livelihood/ML_LHZ_2014.shp",
                            "GTM" =  "livelihood/GT_LHZ_2016.shp",
-                           "PHL" =  "livelihood/ML_LHZ_2014.shp"
+                           "PHL" =  "livelihood/ML_LHZ_2014.shp",
+                           "NER" =  "livelihood/NE_LHZ_2011.shp",
+                           "BFA" =  "livelihood/BF_LHZ_2014.shp"
 )
 
 mf_diff <- raster::raster(paste0(root, "education/medn_difference_edu.tif"))
@@ -878,7 +880,8 @@ fips_country <- switch (iso,
                         "ETH" = "ET",
                         "ZMB" = "ZA",
                         "ZWE" = "ZI",
-                        "PHL" = "PH"
+                        "PHL" = "PH",
+                        "NER" = "NE"
 )
 
 gwis_country <- switch (iso,

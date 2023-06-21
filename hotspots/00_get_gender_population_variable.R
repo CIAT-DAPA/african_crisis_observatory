@@ -1,4 +1,6 @@
 
+pacman::p_load(raster)
+
 root_dir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data"  
 iso <- "NER"
 
