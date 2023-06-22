@@ -51,7 +51,7 @@ stk <- list.files(paste0(root_dir, "/", iso, "/gender_population"), pattern = "_
 
 sum_r <- sum(raster::stack(stk), na.rm = T)
 sum_r[sum_r[] <= 1] <- NA
-writeRaster(sum_r,paste0(root_dir, "/", iso, "/gender_population/",iso , "_male_population.tif"), overwirte = T)
+writeRaster(sum_r,paste0(root_dir, "/", iso, "/_gender_population/",iso , "_male_population.tif"), overwirte = T)
 
 
 

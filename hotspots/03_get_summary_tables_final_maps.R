@@ -881,7 +881,8 @@ fips_country <- switch (iso,
                         "ZMB" = "ZA",
                         "ZWE" = "ZI",
                         "PHL" = "PH",
-                        "NER" = "NE"
+                        "NER" = "NE",
+                        "BFA" = "BF"
 )
 
 gwis_country <- switch (iso,
