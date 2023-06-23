@@ -6,9 +6,11 @@ pacman::p_load(tidyverse, terra, dplyr)
 
 root <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO"
 
-iso <- 'KEN'
+iso <- 'ETH'
+countryName <- 'Ethiopia'
+
+
 pth <- paste0(root, '/data/',iso)
-countryName <- 'Kenya'
 ip <- 'ip_all'
 n_vars <- 10
 #SEV in the selected country
@@ -70,11 +72,12 @@ htp <- 1:length(tb$Code) %>%
     
   })
 
-
 #' list with raster files 
 img <- rast(htp)
 names(img)
-summary(img)
+path <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/EA/SEV/'
+dir.create(path, recursive = T)
+terra::writeRaster(img, paste0(path, iso, '_SEV.tif'))
 
 ##Use for other variables
 minMax <- function(x){
@@ -103,7 +106,7 @@ for(i in 1:length(ivars)){
   }
 }
 
-#' Change direction of variables where high values indicate high vulnearbility
+#' Change direction of variables where high values indicate low vulnearbility
 vars  <- c("medn_male_edu", paste0(iso, "_AWE"), paste0(iso, "_rwi"), "medn_female_edu", "acess")
 for(i in 1:length(vars)){
     img[[vars[i]]] <- 1-img[[ivars[i]]]
