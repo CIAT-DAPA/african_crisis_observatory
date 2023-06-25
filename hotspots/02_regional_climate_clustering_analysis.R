@@ -4,7 +4,6 @@
 
 
 g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
-.rs.restartR()                      # Restart R session
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse,terra,raster,sf,stars,motif,tmap,spdep))
@@ -377,6 +376,8 @@ shp <- raster::shapefile(paste0(baseDir,"/_shps/",country_iso2,".shp" )) %>%
 
 
 clim_vars_info <- Reduce(function(x,y){merge(x,y, by = "id", all = F)}, clim_vars_names[!sapply(clim_vars_names, function(l){all(is.na(l))})])#, by = id, all = T)
+#Drop coefficient of Variation variables
+clim_vars_info <- clim_vars_info[!grepl("cvar_.*|*._cv", clim_vars_info$id),]
 
 clim_vars_av <- lapply(EHornISO, function(iso){
   path <- gsub("data/[A-Z]{3}", paste0("data/",iso),clim_vars_info$full_pth.x)
@@ -403,7 +404,7 @@ clim_rasts_merged <- apply(clim_vars_av, 1, function(i){
     })
   
   rsts <- Reduce(function(x,y){raster::mosaic(x, y, fun =mean)}, rs)
-  raster::writeRaster(rsts, paste0(root, "/data/", iso, "/", basename(i[1])) )
+  raster::writeRaster(rsts, paste0(root, "/data/", iso, "/", basename(i[1])), overwrite=TRUE)
   rsts <- stars::st_as_stars(rsts)
 return(rsts)
 })
