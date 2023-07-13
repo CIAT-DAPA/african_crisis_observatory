@@ -2,7 +2,7 @@
 pacman::p_load(raster)
 
 root_dir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data"  
-iso <- "NER"
+iso <- "SOM"
 
 ####################################################
 ######### female population #######################
@@ -25,7 +25,7 @@ stk <- list.files(paste0(root_dir, "/", iso, "/gender_population"), pattern = "_
 
 sum_r <- sum(raster::stack(stk), na.rm = T)
 sum_r[sum_r[] <= 1] <- NA
-writeRaster(sum_r,paste0(root_dir, "/", iso, "/gender_population/", iso, "female_population.tif"), overwirte = T)
+writeRaster(sum_r,paste0(root_dir, "/", iso, "/gender_population/", iso, "_female_population.tif"), overwirte = T)
 
 
 #####################################
@@ -51,7 +51,7 @@ stk <- list.files(paste0(root_dir, "/", iso, "/gender_population"), pattern = "_
 
 sum_r <- sum(raster::stack(stk), na.rm = T)
 sum_r[sum_r[] <= 1] <- NA
-writeRaster(sum_r,paste0(root_dir, "/", iso, "/_gender_population/",iso , "_male_population.tif"), overwirte = T)
+writeRaster(sum_r,paste0(root_dir, "/", iso, "/gender_population/",iso , "_male_population.tif"), overwirte = T)
 
 
 

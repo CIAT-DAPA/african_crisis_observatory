@@ -15,14 +15,12 @@ main_dir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/
 # Once you specify the directory paths, you can re-run this code, only changing the 3 letter country code.
 
 
-COUNTRY<- "GTM" #be sure to replace this with the 3 letter country code
+COUNTRY<- "SOM" #be sure to replace this with the 3 letter country code
 
 setwd(paste0(main_dir, "/", COUNTRY))
-list.files()
+
 megapixels<- sf::st_read("_results/clim_conflict_ips_overlays.geojson")
 megapixels$id<- 1:nrow(megapixels) # format megapixels
-
-setwd(paste0("PATH TO DATA DICTIONARY HERE",COUNTRY)) 
 
 #create AOI and a population mask- this will pull directly from the data dictionary
 aoi<-raster("population_density/medn_popd.tif")
@@ -54,8 +52,8 @@ rwi<- resample_aoi(raster(paste0("wealth_index/",COUNTRY,"_rwi.tif")))
 # aa <- st_read("D:/OneDrive - CGIAR/Desktop/ZWE_mpx.geojson")
 # 
 # #add non data dictionary layers here. these are outside of the data dictionary so you will need to specify their paths below
-# dep_ratio <- resample_aoi(raster("PATH HERE")) 
-# lhz <- resample_aoi(raster("PATH HERE"))
+dep_ratio <- resample_aoi(raster(paste0(main_dir, "/_global/dependency_ratio/AFR_2010_SubNat_DepRatio.tif"))) 
+lhz <- resample_aoi(raster(paste0(main_dir, "/_global/livelihood_africa/LHZ_AFRICA.tif")))
 # 
 # #Write all data into rasters masked by the megapixels
 # writeRaster(stack(masked_list), paste0("masked_rasters/",names(masked_list)), bylayer = TRUE, format='GTiff')
