@@ -15,7 +15,7 @@ main_dir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/
 # Once you specify the directory paths, you can re-run this code, only changing the 3 letter country code.
 
 
-COUNTRY<- "SOM" #be sure to replace this with the 3 letter country code
+COUNTRY<- "KEN" #be sure to replace this with the 3 letter country code
 
 setwd(paste0(main_dir, "/", COUNTRY))
 
@@ -163,13 +163,13 @@ megapixels<- subset(megapixels, select = -(dep_ratio_weighted))
 #write the megapixels as geojson
 ## you can change this to whichever format by altering the extension in file name and choosing a new driver
 #writeOGR(megapixels,paste0("/media/alex/LaCie/GIS/CSO/sample_data/",COUNTRY,"/",COUNTRY,"_megapixels1.geojson"),driver= "GeoJSON", layer='megapixels', overwrite_layer = TRUE)
-sf::st_write(megapixels, paste0(main_dir, "/", COUNTRY, "/_results/clim_conflict_ips_overlays_who_layers.geojson"))
+sf::st_write(megapixels, paste0(main_dir, "/", COUNTRY, "/_results/clim_conflict_ips_overlays_who_layers.geojson"), delete_dsn  = T)
 
 #calculate national averages- creates a function to calculate averages of all raster values.
 nat_avgs<-data.frame(COUNTRY)
 nat_avg<- function(x){cellStats((x*popd),sum)/cellStats(popd,sum)}
 
-
+nat_avgs$popd<-nat_avg(popd)
 nat_avgs$stunting<-nat_avg(stunting)
 nat_avgs$wasting<-nat_avg(wasting)
 nat_avgs$female_ed<-nat_avg(female_ed)
@@ -181,7 +181,7 @@ nat_avgs$sanitation <- nat_avg(sanitation)
 nat_avgs$migration <- nat_avg(migration)
 nat_avgs$awe<- nat_avg(awe)
 nat_avgs$rwi<- nat_avg(rwi)
-#nat_avgs$dep_ratio <- nat_avg(dep_ratio)
+nat_avgs$dep_ratio <- nat_avg(dep_ratio)
 nat_avgs$female_ed<-cellStats((female_ed*popd),sum)/cellStats(popd,sum)
 nat_avgs$male_ed<-cellStats((male_ed*popd),sum)/cellStats(popd,sum)
 
