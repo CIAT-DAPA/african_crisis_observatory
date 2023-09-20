@@ -74,9 +74,7 @@ mean_2032 <- terra::mean(model_mean["2032"])
 mean_2033 <- terra::mean(model_mean["2033"])
 mean_2034 <- terra::mean(model_mean["2034"])
 mean_2035 <- terra::mean(model_mean["2035"])
-means <- list(mean_2030, mean_2031, mean_2032, mean_2033, mean_2034, mean_2035)
-means
-
+plot(mean_2032)
 
 #write yearly means to files
 output <- paste0(dir,'results/kenya/ssp585/')
@@ -88,83 +86,95 @@ mean_2033_f <- terra::writeRaster(mean_2033,paste0(output, 'mean_2033.tif'))
 mean_2034_f <- terra::writeRaster(mean_2034,paste0(output, 'mean_2034.tif'))
 mean_2035_f <- terra::writeRaster(mean_2035,paste0(output, 'mean_2035.tif'))
 
-
-#cropping to kenya
+#resampling and cropping to kenya
 kenya <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr1/1.Data/shps/KEN_GIT/kenya.shp'
 ken <- read_sf(kenya)
 plot(ken)
-
-crop_fun <- function(img){
-  data <- raster(img)
-  masked <- raster::mask(data,ken)
+reference <- raster(ncol=83, nrow=89, xmn=-23.9, xmx=59.5, ymn=-37.4, ymx=40.2)
+reference
+res(reference) <- 0.5
+res(reference)
+reference
+resample_function <- function(img){
+  data <- raster::raster(img)
+  data
+  resampled <- raster::resample(data,reference, method="ngb")
+  masked <- raster::mask(resampled, ken)
   cropped <- raster::crop(masked,extent(c(31,44,-8,8)))
   return (cropped)
 }
-resample_fun <- function(img,res){
-  temp <- rast(xmin=ext(img)$xmin, xmax=ext(img)$xmax, ymin=ext(img)$ymin, ymax=ext(img)$ymax, res=res, crs=crs(img))
-  resampled_img <- terra::resample(img,temp)
-  return(resampled_img)
-}
-resample_kenya <- resample_fun(raster(paste0(output, 'mean_2030.tif')),0.1)
-kenya_2030 <- crop_fun(paste0(output, 'mean_2030.tif'))
-kenya_2031 <- crop_fun(paste0(output, 'mean_2031.tif'))
-kenya_2032 <- crop_fun(paste0(output, 'mean_2032.tif'))
-kenya_2033 <- crop_fun(paste0(output, 'mean_2033.tif'))
-kenya_2034 <- crop_fun(paste0(output, 'mean_2034.tif'))
-kenya_2035 <- crop_fun(paste0(output, 'mean_2035.tif'))
-plot(kenya_2030)
-kenya_2031
-#visualizing data
+ssp585_2030 <- resample_function(paste0(output, 'mean_2030.tif'))
+ssp585_2030
+plot(ssp585_2030)
+ssp585_2031 <- resample_function(paste0(output, 'mean_2031.tif'))
+plot(ssp585_2031)
+ssp585_2032 <- resample_function(paste0(output, 'mean_2032.tif'))
+plot(ssp585_2032)
+ssp585_2033 <- resample_function(paste0(output, 'mean_2033.tif'))
+ssp585_2033
+ssp585_2034 <- resample_function(paste0(output, 'mean_2034.tif'))
+ssp585_2034
+ssp585_2035 <- resample_function(paste0(output, 'mean_2035.tif'))
+ssp585_2035
+ssp585_2030
+st <- raster::stack(ssp585_2030,ssp585_2031)
+plot(st)
 
-map1 <- tm_shape(kenya_2031)+
+#visualizing data
+stack <- raster::stack(ssp585_2030,ssp585_2031,ssp585_2032,ssp585_2033,ssp585_2034,ssp585_2035)
+plot(stack)
+kenya_adm0 <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr1/1.Data/shps/KEN_GIT/Kenya_adm0.shp'
+kenya_adm0 <- read_sf(kenya_adm0)
+kenya_adm0
+plot(kenya_adm0)
+tmraster <- tm_shape(stack) + 
+  tm_raster(style='cont', palette=get_brewer_pal('RdYlGn',n=9), title='Precipitation 585') +
+  tm_shape(kenya_adm0) +
+  tm_borders(col="black", lwd=1)+
+  tm_compass(position = c("right", "top"))+
+  tm_scale_bar(position = c("right", "bottom"))+
+  tm_layout(legend.position = c('left','bottom')) +
+  tm_facets(nrow=1,ncol=1)
+tmraster
+# Create an animation using tm_animation
+animation <- tmap_animation(tmraster, dpi=400, 'ssp585_Precipitation.gif')
+# Display the animation
+animation
+# Calculate the maximum and minimum values from the raster 
+max_value <- max(stack)
+max_value
+min_value <- min(stack)
+min_value
+# Create a common legend
+legend <- tm_legend(title = "Common Legend",labels = c(min_value, max_value),at = c(min_value, max_value),
+          labels.labels = c("Min Value", "Max Value"), col = "viridis",auto.palette.mapping = FALSE)
+
+map1 <- tm_shape(kenya_2035)+
   tm_raster(style='cont', palette=get_brewer_pal("Blues", n=4), title = 'Precipitation')+
   tm_shape(ken) +
   tm_borders(col="black", lwd=1)+
   tm_compass(position = c("right", "top"))+
   tm_scale_bar(position = c("right", "bottom"))+
-  tm_layout(main.title = "2031 Precipitation SSP585", 
+  tm_layout(main.title = "2035 Precipitation SSP585", 
             title.size = 1.5, title.position = c("left", "top"),legend.position =  c('left','bottom'))
 map1
 tmap_save(map1, filename="kenya_2031.jpg", height=8.5, width=11, units="in", dpi=300)
 
-#animation
-raster_layers <- lapply(1:nlyr(ssp_kenya), function(i) ssp_kenya[[i]])
-tm_animation <- tm_shape(raster_layers[[1]]) +
-  tm_raster() +
-  tm_borders() +
-  tm_text("Layer {frame}", x = 0.1, y = 0.05) +
-  tmap_animation(frames = raster_layers, width = 800, height = 600)
-tmraster <- tm_shape(ssp_kenya) +
-  tm_raster()
-tmraster
-# Create an animation using tm_animation
-animation <- tmap_animation(tmraster, width = 400, height = 400, duration = 2)
-path <- paste0(dir,'results/kenya/')
-dir.create(path)
-dir.create(paste0(path,'ssp245/'))
-name <- names(ssp_kenya[[1]])
-name
-new <- image_read(path)
-writeRaster(ssp_245mean,paste0(path, 'real.tif'))
-no <- nlyr(ssp_245mean)
-for (x in 1:no){
-  name <- names(ssp_245mean[[x]])
-  name <- substr(name,1,10)
-  writeRaster(ssp_245mean[[x]],paste0(path, name,'.tiff'))
-}
-first <- image_read(paste0(dir,'new1.tif'))
-second <- image_read(paste0(dir,'new2.tif'))
+
+#animation using magick 
+first <- image_read(paste0(dir,'kenya_2030.jpeg'))
+second <- image_read(paste0(dir,'kenya_2031.jpeg'))
+third <- image_read(paste0(dir,'kenya_2032.jpeg'))
+fourth <- image_read(paste0(dir,'kenya_2033.jpeg'))
+fifth <- image_read(paste0(dir,'kenya_2034.jpeg'))
+sixth <- image_read(paste0(dir,'kenya_2035.jpeg'))
 plot(first)
-combined <- c(first,second)
+combined <- c(first,second, third, fourth, fifth,sixth)
 combined
 image_scale(combined,"500x500")
 image_info(combined)
-aniamtion <- image_animate(combined,fps=1)
-aniamtion
-output <- paste0(path,'animation.gif')
-image_write(aniamtion,output)
-tiff_files <- list.files(path, pattern = ".tiff$", full.names = TRUE)
-tiff_files
-images <- image_read(tiff_files)
+animation <- image_animate(combined,fps=1)
+animation
+output <- paste0(dir,'animation.gif')
+image_write(animation,output)
 
-image_animate(images)
