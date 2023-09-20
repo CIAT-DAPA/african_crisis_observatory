@@ -16,11 +16,11 @@ suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColor
 #' Variable definition
 #'
 
-iso <- "SOM"
+iso <- "RWA"
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 root <- paste0(baseDir, iso, "/")
-scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right", 'GTM'="right", "NER" = "right", "BFA" = "right", "SOM" = "right")
-scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom", 'PHL'="top", 'GTM'="bottom", "NER" = "bottom", "BFA" = "bottom","SOM" = "bottom")
+scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right", 'GTM'="right", "NER" = "right", "BFA" = "right", "SOM" = "right", "RWA" = "right")
+scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom", 'PHL'="top", 'GTM'="bottom", "NER" = "bottom", "BFA" = "bottom","SOM" = "bottom","RWA" = "bottom")
 
 
 create_labels <- function(text, type = c("short", "long")){
