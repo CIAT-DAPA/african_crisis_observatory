@@ -295,6 +295,11 @@ var mLCvrClipped = mLCvr.clip(country);
 
 var mPopD = ppdensity.median();
 var mPopDClipped = mPopD.clip(country);
+
+//population density avg
+var avgPopD = ppdensity.mean();
+var avgPopDClipped = avgPopD.clip(country);
+
 // var palette = ['red', 'white', 'blue'];
 // Map.addLayer(mPopDClipped, {palette: palette, min: 0, max: 1000, bands: ['population_density']}, 'Population density');
 
