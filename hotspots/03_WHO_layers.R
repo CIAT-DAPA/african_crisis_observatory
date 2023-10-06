@@ -2,7 +2,7 @@
 #' @author alex orestein
 #' 2023
 #' Script to get WHO layers for CSO
-#' 
+#' see https://github.com/oren-sa/cso_contextual
 require(pacman)
 pacman::p_load(raster, rgdal, sf, fasterize, dplyr, tidyr, tidyverse)
 
@@ -15,7 +15,7 @@ main_dir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/
 # Once you specify the directory paths, you can re-run this code, only changing the 3 letter country code.
 
 
-COUNTRY<- "KEN" #be sure to replace this with the 3 letter country code
+COUNTRY<- "ZMB" #be sure to replace this with the 3 letter country code
 
 setwd(paste0(main_dir, "/", COUNTRY))
 
@@ -164,7 +164,7 @@ megapixels<- subset(megapixels, select = -(dep_ratio_weighted))
 ## you can change this to whichever format by altering the extension in file name and choosing a new driver
 #writeOGR(megapixels,paste0("/media/alex/LaCie/GIS/CSO/sample_data/",COUNTRY,"/",COUNTRY,"_megapixels1.geojson"),driver= "GeoJSON", layer='megapixels', overwrite_layer = TRUE)
 sf::st_write(megapixels, paste0(main_dir, "/", COUNTRY, "/_results/clim_conflict_ips_overlays_who_layers.geojson"), delete_dsn  = T)
-
+writexl::write_xlsx(sf::st_drop_geometry(megapixels), paste0(main_dir, "/", COUNTRY, "/_results/clim_conflict_ips_overlays_who_layers.xlsx"))
 #calculate national averages- creates a function to calculate averages of all raster values.
 nat_avgs<-data.frame(COUNTRY)
 nat_avg<- function(x){cellStats((x*popd),sum)/cellStats(popd,sum)}
