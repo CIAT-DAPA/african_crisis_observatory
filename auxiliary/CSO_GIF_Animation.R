@@ -18,7 +18,8 @@ length(matching_files)
 
 #extract models
 model1 <- terra::rast(matching_files[[1]])
-model1
+model1[[2]]
+plot(model1[[2]])
 model2 <- terra::rast(matching_files[[2]])
 model2
 model3 <- terra::rast(matching_files[[3]])
@@ -75,7 +76,8 @@ mean_2033 <- terra::mean(model_mean["2033"])
 mean_2034 <- terra::mean(model_mean["2034"])
 mean_2035 <- terra::mean(model_mean["2035"])
 plot(mean_2032)
-
+names(mean_2030) <- "2030"
+mean_2030
 #write yearly means to files
 output <- paste0(dir,'results/kenya/ssp585/')
 output
@@ -104,13 +106,18 @@ resample_function <- function(img){
   return (cropped)
 }
 ssp585_2030 <- resample_function(paste0(output, 'mean_2030.tif'))
-ssp585_2030
+names(ssp585_2030) <- "2030 Precipitation"
 plot(ssp585_2030)
+ssp585_2030
 ssp585_2031 <- resample_function(paste0(output, 'mean_2031.tif'))
 plot(ssp585_2031)
+names(ssp585_2031) <- '2031'
 ssp585_2032 <- resample_function(paste0(output, 'mean_2032.tif'))
 plot(ssp585_2032)
+names(ssp585_2032) <- '2032'
+ssp585_2032
 ssp585_2033 <- resample_function(paste0(output, 'mean_2033.tif'))
+names(ssp585_2033) <- ' 2033'
 ssp585_2033
 ssp585_2034 <- resample_function(paste0(output, 'mean_2034.tif'))
 ssp585_2034
@@ -128,7 +135,7 @@ kenya_adm0 <- read_sf(kenya_adm0)
 kenya_adm0
 plot(kenya_adm0)
 tmraster <- tm_shape(stack) + 
-  tm_raster(style='cont', palette=get_brewer_pal('RdYlGn',n=9), title='Precipitation 585') +
+  tm_raster(style='cont', palette=get_brewer_pal('RdYlGn',n=9), title='Precipitation flux (mm/s)') +
   tm_shape(kenya_adm0) +
   tm_borders(col="black", lwd=1)+
   tm_compass(position = c("right", "top"))+
@@ -177,4 +184,7 @@ animation <- image_animate(combined,fps=1)
 animation
 output <- paste0(dir,'animation.gif')
 image_write(animation,output)
+
+
+#temperature animation
 
