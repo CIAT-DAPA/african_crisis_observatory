@@ -14,18 +14,21 @@ setwd(dir)
 
 #find matching files
 matching_files <- list.files(pattern=paste0(".*", 'ssp585', ".*", 'tas_', ".*"))
-
+matching_files <- list.files(pattern=paste0(".*", 'ssp585', ".*", 'tasmax', ".*"))
+matching_files <- list.files(pattern=paste0(".*", 'ssp585', ".*", 'tasmin', ".*"))
+matching_files
 #extract models
 model1 <- terra::rast(matching_files[[1]])
 model2 <- terra::rast(matching_files[[2]])
 model3 <- terra::rast(matching_files[[3]])
 model4 <- terra::rast(matching_files[[4]])
 plot(model4[[1]])
-model1
+model2
 #resample to fine resolution
 ref <- terra::rast(ncols=83, nrows=89, xmin=-23.9, xmax=59.5, ymin=-37.4, ymax=40.2, nlyrs=1, res=0.5)
 ref
 model1_resampled <- terra::resample(model1, ref, method="ngb")
+model1_resampled
 plot(model1_resampled[[1]])
 model2_resampled <- terra::resample(model2, ref)
 model3_resampled <- terra::resample(model3, ref)
@@ -42,9 +45,10 @@ model1_kenya <- crop(model1_resampled)
 model2_kenya <- crop(model2_resampled)
 model3_kenya <- crop(model3_resampled)
 model4_kenya <- crop(model4_resampled)
-
+plot(model1_kenya[[1]])
 #extract mean for each year
 mean_2030 <- terra::mean(terra::mean(model1_kenya["2030"],model2_kenya["2030"],model3_kenya["2030"],model4_kenya["2030"]))
+mean_2030
 names(mean_2030) <- "2030"
 mean_2031 <- terra::mean(terra::mean(model1_kenya["2031"],model2_kenya["2031"],model3_kenya["2031"],model4_kenya["2031"]))
 names(mean_2031) <- "2031"
@@ -96,7 +100,7 @@ kenya_adm0 <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr1/1.Data/shps/KEN_GIT/Ke
 kenya_adm0 <- read_sf(kenya_adm0)
 
 temp_plot <- tm_shape(means)+
-  tm_raster(style='cont', palette=get_brewer_pal('RdYlGn',n=9, plot=FALSE), title='Mean Daily Temperature (°C)')+
+  tm_raster(style='cont', palette=get_brewer_pal('-RdYlGn',n=9, plot=FALSE), title='Min Temperature(°C)')+
   tm_shape(kenya_adm0) +
   tm_borders(col="black", lwd=1)+
   tm_compass(position = c("right", "top"),size=4)+
@@ -105,7 +109,7 @@ temp_plot <- tm_shape(means)+
             legend.hist.width = 20, legend.title.size = 1.1, legend.title.fontface =2,title.size = 10,main.title.size = 5) +
   tm_facets(nrow=1,ncol=1)
 temp_plot
-animation <- tmap_animation(temp_plot, dpi=400, 'ssp585_Temperature.gif',asp = 0)
+animation <- tmap_animation(temp_plot, dpi=400, 'ssp585_Min_Temp.gif',asp = 0)
 
 
 
