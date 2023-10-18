@@ -15,7 +15,7 @@ main_dir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/
 # Once you specify the directory paths, you can re-run this code, only changing the 3 letter country code.
 
 
-COUNTRY<- "ZMB" #be sure to replace this with the 3 letter country code
+COUNTRY<- "NER" #be sure to replace this with the 3 letter country code
 
 setwd(paste0(main_dir, "/", COUNTRY))
 
