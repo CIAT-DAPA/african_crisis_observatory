@@ -6,8 +6,8 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 source('https://raw.githubusercontent.com/CIAT-DAPA/agro-clim-indices/main/AWCPTF.R')
 
 
-iso <- 'MOZ'
-
+iso <- 'MOZ' #ISO-3 code
+iso2 <- "MZ" #ISO-2 code
 
 #' Compute a PDF from  Pareto distribution.
 #' @param x (data.frame): dataframe for country relative wealth index
@@ -1137,4 +1137,37 @@ get_RWI_var <- function(iso, shp_country){
 #'Run
 get_RWI_var(iso = iso, shp_country = shp)
 
+#' Function to get Country mask
+#' @param iso (character): Conuntry ISO-3 code
+#' @return Raster file for country raster mask
+#' .../mask/{iso}_mask.tif
+get_contry_mask <- function(iso, root, shp){
+  
+  w_mask <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/_global/masks/mask_world.tif"
+  
+  c_mask <- terra::rast(w_mask) %>% 
+    terra::crop(., terra::ext(shp)) %>% 
+    terra::mask(., shp)
+  
+  writeRaster(c_mask, paste0(root, "/data/", iso, "/mask/",iso, "_mask.tif"))
+  return("ok")
+}
+#' Run
+get_contry_mask(iso = iso, root = root, shp = shp)
 
+#' Function to get livelihood zone shapefile
+#' @param iso3 (character): Conuntry ISO-3 code
+#' @param iso2 (character): COuntry ISO-2 code
+#' @return Shapefile for country livelihood zone
+#' .../livelihood/{iso2}_LHZ_2011.shp
+get_livelihood_zones <- function(iso3, iso2, root){
+  
+  lv_shp <- terra::vect(paste0(root, "/data/_global/livelihood_zones/FEWS_NET_LH_World.shp"))
+  lv_shp <- lv_shp[lv_shp$COUNTRY == iso2]
+  
+  terra::writeVector(lv_shp, paste0(root, "/data/",iso,"/livelihood/", iso2, "_LHZ_2011.shp"))
+  return("ok")
+  
+}
+#' RUN
+get_livelihood_zones(iso3 = iso, iso2 = iso2, root = root)
