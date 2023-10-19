@@ -35,8 +35,8 @@ fconf <- 'Africa_1997-2022_Jul08.xlsx' #Name of conflict file
 
 yearRange <- 1997:2022#range of years to select in ACCLED data
 recompute <- TRUE #Recompute Kernel densities?
-country_iso2 <- iso <- "NER"
-country <- 'Niger'
+country_iso2 <- iso <- "MOZ"
+country <- 'Mozambique'
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'#dir path to folder data storage
 baseDir <- paste0(root, "/data/",country_iso2)
@@ -166,7 +166,7 @@ get_conflic_data <- function(root, iso, country = 'Senegal', world_mask, fconf, 
     p_var <- spatstat.geom::ppp(cnf_summ$x, cnf_summ$y, 
                                 window = spatstat.geom::owin(c(ext[1], ext[2]), c(ext[3], ext[4]),
                                                              mask = matrix(TRUE,dim(msk)[1],dim(msk)[2]) ))
-    ds <- spatstat.core::density.ppp(p_var, at = "pixels", kernel = "epanechnikov")
+    ds <- spatstat.explore::density.ppp(p_var, at = "pixels", kernel = "epanechnikov")
     knl <- raster::raster(ds) %>% 
       raster::crop(., extent(shp)) %>% 
       raster::mask(., shp) %>% 
