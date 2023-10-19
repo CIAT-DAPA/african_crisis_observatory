@@ -38,7 +38,7 @@ kenya <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr1/1.Data/shps/KEN_GIT/kenya.s
 ken <- read_sf(kenya)
 crop <- function(x){
   model1_kenya <- terra::mask(x,ken)
-  model1_kenya <- terra::crop(model1_kenya,ext(c(31,44,-8,8)))
+  model1_kenya <- terra::crop(model1_kenya,ext(c(33,42.7,-6,6)))
   return(model1_kenya)
 }
 model1_kenya <- crop(model1_resampled)
@@ -90,7 +90,7 @@ mean_2049 <- terra::mean(terra::mean(model1_kenya["2049"],model2_kenya["2049"],m
 names(mean_2049) <- "2049"
 mean_2050 <- terra::mean(terra::mean(model1_kenya["2050"],model2_kenya["2050"],model3_kenya["2050"],model4_kenya["2050"]))
 names(mean_2050) <- "2050"
-
+plot(mean_2050)
 
 #animation
 means <- c(mean_2030,mean_2031,mean_2032,mean_2033,mean_2034,mean_2035,mean_2036,mean_2037,mean_2038,mean_2039,
@@ -98,20 +98,19 @@ means <- c(mean_2030,mean_2031,mean_2032,mean_2033,mean_2034,mean_2035,mean_2036
 means
 kenya_adm0 <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr1/1.Data/shps/KEN_GIT/Kenya_adm0.shp'
 kenya_adm0 <- read_sf(kenya_adm0)
-
+plot(kenya_adm0)
 temp_plot <- tm_shape(means)+
-  tm_raster(style='cont', palette=get_brewer_pal('-RdYlGn',n=9, plot=FALSE), title='Min Temperature(°C)')+
+  tm_raster(style='cont', palette=get_brewer_pal('-RdYlGn',n=9, plot=FALSE), 
+            title='Daily Temp (°C)')+
   tm_shape(kenya_adm0) +
   tm_borders(col="black", lwd=1)+
-  tm_compass(position = c("right", "top"),size=4)+
-  tm_scale_bar(position = c("right", "bottom"), text.size = 7)+
-  tm_layout(legend.position = c('left','bottom'), legend.text.size=1.1,
-            legend.hist.width = 20, legend.title.size = 1.1, legend.title.fontface =2,title.size = 10,main.title.size = 5) +
+  tm_layout(legend.position = c('left','bottom'),legend.text.size=1.3, 
+           legend.title.size = 1.1, legend.title.fontface =2,
+           legend.hist.width = 20,title.size = 10,main.title.size = 5,
+           legend.width = 1) +
   tm_facets(nrow=1,ncol=1)
 temp_plot
-animation <- tmap_animation(temp_plot, dpi=400, 'ssp585_Min_Temp.gif',asp = 0)
-
-
+animation <- tmap_animation(temp_plot, dpi=400, 'Daily_temp.gif',asp = 0)
 
 
 
