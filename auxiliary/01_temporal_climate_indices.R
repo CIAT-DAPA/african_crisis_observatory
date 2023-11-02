@@ -15,6 +15,7 @@ get_5_dry_spell <- function(prec){
 }
 
 
+
 coef_var_index <- function(prec){
   
   ret <- sd(prec, na.rm=T)/mean(prec, na.rm = T)
@@ -22,6 +23,11 @@ coef_var_index <- function(prec){
 }
 
 iso <- 'KEN'
+
+
+selectSeason <- function(dates, seasons){
+  
+}
 
 ## ROI: regions of interest
 shp <- geoda  
