@@ -3,10 +3,11 @@ suppressMessages(pacman::p_load(tidyverse, terra, raster, trend, vegan, VGAM))
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/base__lowest_gadm.R') # Get lowest administrative level per country
+source('https://raw.githubusercontent.com/CIAT-DAPA/agro-clim-indices/main/AWCPTF.R')
 
 
-iso <- 'KEN'
-
+iso <- 'MOZ' #ISO-3 code
+iso2 <- "MZ" #ISO-2 code
 
 #' Compute a PDF from  Pareto distribution.
 #' @param x (data.frame): dataframe for country relative wealth index
@@ -295,10 +296,11 @@ get_recent_migration(iso = iso)
 #'Function to download gender population data 
 #'@param iso (character): COuntry ISO-3 code
 #'@param root (character): path to CSO root folder '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
+#'@param method (character): method for downloading data one of 'wget', 'curl', 'libcurl' or 'auto'
 #'@return Rasters file of recent female and Male population
 #' .../gender_population/{iso}_female_population.tif
 #'.../gender_population/{iso}_male_population.tif
-get_gender_pop_var <- function(iso, root){
+get_gender_pop_var <- function(iso, root, method = 'auto'){
   
   root_dir <- paste0(root, "/data")
   ####################################################
@@ -310,9 +312,8 @@ get_gender_pop_var <- function(iso, root){
   for(i in file_names){
     
     download.file(paste0("https://data.worldpop.org/GIS/AgeSex_structures/Global_2000_2020_Constrained/2020/",toupper(iso),"//",i), 
-                  
                   paste0(root_dir, "/", iso, "/gender_population/", i),
-                  method = "wget"
+                  method = method
     )
     Sys.sleep(30)
   }
@@ -337,7 +338,7 @@ get_gender_pop_var <- function(iso, root){
     download.file(paste0("https://data.worldpop.org/GIS/AgeSex_structures/Global_2000_2020_Constrained/2020/",toupper(iso),"//",i), 
                   
                   paste0(root_dir, "/", iso, "/gender_population/", i),
-                  method = "wget"
+                  method = method
     )
     Sys.sleep(30)
   }
@@ -354,7 +355,7 @@ get_gender_pop_var <- function(iso, root){
   
 }
 #'run
-get_gender_pop_var(iso = iso)
+get_gender_pop_var(root = root, iso = iso, method = 'wget')
 
 #' Function to get Sanitation variables shuch as
 #' Piped water and sanitation facilities (median, Average and trend)
@@ -1051,7 +1052,7 @@ get_agricultural_area_var(iso = iso)
 #' @param iso (character): Conuntry ISO-3 code
 #' @return Raster file for Absolute wealth index
 #' .../wealth_index/{iso}_AWE.tif
-get_AWI_var <- function(iso){
+get_AWI_var <- function(iso, shp_country){
   ISO3 <- iso
   gdp  <- readr::read_csv(paste0(root,'/data/_global/wealth_index/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_2531488/API_NY.GDP.PCAP.CD_DS2_en_csv_v2_2531488.csv'))
   gini <- readr::read_csv(paste0(root,'/data/_global/wealth_index/API_SI.POV.GINI_DS2_en_csv_v2_2445276/API_SI.POV.GINI_DS2_en_csv_v2_2445276.csv'))
@@ -1072,7 +1073,7 @@ get_AWI_var <- function(iso){
     filter(`Country Code` == ISO3) %>% 
     dplyr::pull(`2009`)
   
-  shp_country <- shp#raster::shapefile(paste0(root,'/data/',ISO3,'/_shps/',ISO3,'.shp'))
+  shp_country <- as(shp, "Spatial")#raster::shapefile(paste0(root,'/data/',ISO3,'/_shps/',ISO3,'.shp'))
   
   country_rwi <- read_csv(paste0(wealth_dir,'/',ISO3,'_relative_wealth_index.csv')) %>% 
     dplyr::select(rwi, longitude, latitude)
@@ -1102,14 +1103,14 @@ get_AWI_var <- function(iso){
   
 }
 #' run
-get_AWI_var(iso = iso)
+get_AWI_var(iso = iso, shp_country = shp)
 
 
 #' Function to get Relative Wealth index
 #' @param iso (character): Conuntry ISO-3 code
 #' @return Raster file for Relative wealth index
 #' .../wealth_index/{iso}_rwi.tif
-get_RWI_var <- function(iso){
+get_RWI_var <- function(iso, shp_country){
   ISO3 <- iso
   wealth_dir  <- paste0(root,'/data/_global/wealth_index')
   rwi_out_dir <- paste0(root,'/data/',ISO3,'/wealth_index' )
@@ -1118,7 +1119,7 @@ get_RWI_var <- function(iso){
   
   wealth_df   <- readr::read_csv(list.files(wealth_dir, pattern = paste0("^",ISO3), full.names = T))
   mask        <- raster::raster(paste0(root,'/data/_global/masks/mask_world_1km.tif'))
-  shp_country <- shp#raster::shapefile(paste0(root,'/data/',ISO3,'/_shps/',ISO3,'.shp'))
+  shp_country <- as(shp_country, "Spatial")#raster::shapefile(paste0(root,'/data/',ISO3,'/_shps/',ISO3,'.shp'))
   
   coordinates(wealth_df) <- ~longitude+latitude
   crs(wealth_df) <- "+proj=longlat +datum=WGS84 +no_defs"
@@ -1134,6 +1135,39 @@ get_RWI_var <- function(iso){
   return("ok")
 }
 #'Run
-get_RWI_var(iso = iso)
+get_RWI_var(iso = iso, shp_country = shp)
 
+#' Function to get Country mask
+#' @param iso (character): Conuntry ISO-3 code
+#' @return Raster file for country raster mask
+#' .../mask/{iso}_mask.tif
+get_contry_mask <- function(iso, root, shp){
+  
+  w_mask <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/_global/masks/mask_world.tif"
+  
+  c_mask <- terra::rast(w_mask) %>% 
+    terra::crop(., terra::ext(shp)) %>% 
+    terra::mask(., shp)
+  
+  writeRaster(c_mask, paste0(root, "/data/", iso, "/mask/",iso, "_mask.tif"))
+  return("ok")
+}
+#' Run
+get_contry_mask(iso = iso, root = root, shp = shp)
 
+#' Function to get livelihood zone shapefile
+#' @param iso3 (character): Conuntry ISO-3 code
+#' @param iso2 (character): COuntry ISO-2 code
+#' @return Shapefile for country livelihood zone
+#' .../livelihood/{iso2}_LHZ_2011.shp
+get_livelihood_zones <- function(iso3, iso2, root){
+  
+  lv_shp <- terra::vect(paste0(root, "/data/_global/livelihood_zones/FEWS_NET_LH_World.shp"))
+  lv_shp <- lv_shp[lv_shp$COUNTRY == iso2]
+  
+  terra::writeVector(lv_shp, paste0(root, "/data/",iso,"/livelihood/", iso2, "_LHZ_2011.shp"))
+  return("ok")
+  
+}
+#' RUN
+get_livelihood_zones(iso3 = iso, iso2 = iso2, root = root)

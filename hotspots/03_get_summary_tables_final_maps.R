@@ -16,11 +16,11 @@ suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColor
 #' Variable definition
 #'
 
-iso <- "RWA"
+iso <- "MOZ"
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 root <- paste0(baseDir, iso, "/")
-scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right", 'GTM'="right", "NER" = "right", "BFA" = "right", "SOM" = "right", "RWA" = "right")
-scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom", 'PHL'="top", 'GTM'="bottom", "NER" = "bottom", "BFA" = "bottom","SOM" = "bottom","RWA" = "bottom")
+scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right", 'GTM'="right", "NER" = "right", "BFA" = "right", "SOM" = "right", "RWA" = "right", "MOZ"= "right")
+scale_bar_top <- switch( iso, "ZWE" = "bottom", "KEN" = "bottom", "UGA" = "bottom", "MLI" = "bottom", "SEN" = "top", "NGA" = "bottom", "SDN" = "bottom", 'PHL'="top", 'GTM'="bottom", "NER" = "bottom", "BFA" = "bottom","SOM" = "bottom","RWA" = "bottom", "MOZ" = "bottom")
 
 
 create_labels <- function(text, type = c("short", "long")){
@@ -848,7 +848,8 @@ livelihood_pth <-  switch (iso,
                            "PHL" =  "livelihood/ML_LHZ_2014.shp",
                            "NER" =  "livelihood/NE_LHZ_2011.shp",
                            "BFA" =  "livelihood/BF_LHZ_2014.shp",
-                           "SOM" =  "livelihood/SO_LHZ_2011.shp"
+                           "SOM" =  "livelihood/SO_LHZ_2011.shp",
+                           "MOZ" =  "livelihood/MZ_LHZ_2011.shp"
 )
 
 mf_diff <- raster::raster(paste0(root, "education/medn_difference_edu.tif"))
@@ -884,7 +885,8 @@ fips_country <- switch (iso,
                         "PHL" = "PH",
                         "NER" = "NE",
                         "BFA" = "BF",
-                        "SOM" = "SO"
+                        "SOM" = "SO",
+                        "MOZ" = "MZ"
 )
 
 gwis_country <- switch (iso,
