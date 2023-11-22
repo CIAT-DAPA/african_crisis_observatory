@@ -11,7 +11,7 @@ mig <- mig[mig$city!='Kurri',]
 proj4string(mig) <-  CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") #CRS("+proj=longlat +datum=WGS84 +no_defs")
 #plot(mig)
 #text(mig, mig$city)
-mapview(mig, cex = 3, alpha = .5, popup = NULL)
+mapview(mig, cex = 3, alpha = .5)
 
 library(sf)
 library(raster)
