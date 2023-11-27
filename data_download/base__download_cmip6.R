@@ -3,10 +3,12 @@
 
 #java headspace
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
-
+install.packages("rgdal")
+install.packages('rgdal',repos="http://www.stats.ox.ac.uk/pub/RWin")
 #load libraries
 library(devtools)
-library(loadeR) 
+library(loadeR)
+library(loadeR.java)
 library(climate4R.UDG) 
 library(transformeR)
 library(downscaleR)
@@ -15,19 +17,21 @@ library(rgdal)
 library(tidyverse)
 library(terra)
 
+remove.packages("climate4R.UDG")
+install_github("SantanderMetGroup/loadeR")
 # # in case the above packages do not exist, install as follows
-# install_github(c("SantanderMetGroup/loadeR.java",
-#                   "SantanderMetGroup/climate4R.UDG",
-#                   "SantanderMetGroup/loadeR",
-#                   "SantanderMetGroup/transformeR",
-#                   "SantanderMetGroup/visualizeR",
-#                   "SantanderMetGroup/convertR",
-#                   "SantanderMetGroup/climate4R.indices",
-#                   "SantanderMetGroup/downscaleR"))
+install_github(c("SantanderMetGroup/loadeR.java",
+                  "SantanderMetGroup/climate4R.UDG",
+                  "SantanderMetGroup/loadeR",
+                  "SantanderMetGroup/transformeR",
+                  "SantanderMetGroup/visualizeR",
+                  "SantanderMetGroup/convertR",
+                  "SantanderMetGroup/climate4R.indices",
+                  "SantanderMetGroup/downscaleR"))
 
 
-#working directory
-wd <- "//CATALOGUE/WFP_ClimateRiskPr1/1.Data/CMIP6/AFRICA"
+1#working directory
+wd <- "//CATALOGUE/WFP_ClimateRiskPr1/1.Data/CMIP6/AFRICA/New Data/"
 if (!file.exists(wd)) {dir.create(wd, recursive=TRUE)}
 
 #lons <- c(-23, 59)  # Africa
@@ -46,7 +50,7 @@ dataset_list <- c("CMIP6_ACCESS-ESM1-5_scenario_r1i1p1f1",
 
 #function to download CMIP6 data
 downloadCMIP6 <- function(ds_name="CMIP6_ACCESS-ESM1-5_scenario_r1i1p1f1", rcp="ssp585", varname="tasmin", 
-                          years.hist=1995:2014, years.rcp=2021:2060, lons=c(-23, 59), lats=c(-37, 40),
+                          years.hist=2000:2014, years.rcp=2015:2060, lons=c(-23, 59), lats=c(-37, 40),
                           basedir) {
   #info
   cat("dataset=", ds_name, "/ rcp=", rcp, "/ variable=", varname, "\n")
@@ -108,15 +112,15 @@ downloadCMIP6 <- function(ds_name="CMIP6_ACCESS-ESM1-5_scenario_r1i1p1f1", rcp="
 
 #run function
 for (i in 1:length(dataset_list)) {
-  for (scenario in c("ssp370")) {
+  for (scenario in c("ssp585")) {
     for (varname in c("tas", "tasmin", "tasmax", "pr")) {
       cmip6_data <- downloadCMIP6(ds_name=dataset_list[i], 
                                   rcp=scenario, 
                                   varname=varname, 
-                                  years.hist=1995:2014, 
-                                  years.rcp=2021:2060, 
-                                  lons=c(-93, 76), 
-                                  lats=c(-6, 2), 
+                                  years.hist=2000:2014, 
+                                  years.rcp=2015:2060, 
+                                  lons=c(-23, 59), 
+                                  lats=c(-37, 40), 
                                   basedir=wd)
       rm(cmip6_data)
       gc(verbose=FALSE, full=TRUE)
