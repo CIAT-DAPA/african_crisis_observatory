@@ -16,7 +16,7 @@ suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColor
 #' Variable definition
 #'
 
-iso <- "MOZ"
+iso <- "MLI"
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 root <- paste0(baseDir, iso, "/")
 scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right", 'GTM'="right", "NER" = "right", "BFA" = "right", "SOM" = "right", "RWA" = "right", "MOZ"= "right")
@@ -221,7 +221,7 @@ conf_clust_labs <- read_csv(paste0(root, "_results/cluster_results/conflict/conf
 conf_clust@data <-  conf_clust@data %>% 
   left_join(., conf_clust_labs , by = c("clust")) %>% 
   dplyr::rename(clust_km = short_label)  %>% 
-  rename_with(., function(i){return("conflict_cluster_text_description")}, starts_with("cltrt")) %>% 
+  rename_with(., function(i){return("conflict_cluster_text_description")}, starts_with("clutert")) %>% 
   #dplyr::rename("label" = "clust") %>% 
   dplyr::mutate(short_label = stringr::str_extract(string = label, pattern = "[A-Za-z]+"),
                 label = factor(label, levels = c("High conflict", "Moderate conflict", "Limited conflict"))) %>% 

@@ -23,7 +23,7 @@ suppressMessages(pacman::p_load(meteo,sp,spacetime,gstat,plyr,xts,snowfall,doPar
 suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr))
 set.seed(1000)
 
-source('./base__lowest_gadm.R')
+source('./data_download/base__lowest_gadm.R')
 #' Reclassifies raster layers using quantiles and also resamples to the same spatial resultion. 
 #' @param root base directory path
 #' @param iso country ISO code
