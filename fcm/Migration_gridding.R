@@ -1,11 +1,3 @@
-
-#* TODO: Script to grid point data, perform pixelwise correlation and make plots
-
-#* References: https://gist.github.com/hakimabdi/7308bbd6d9d94cf0a1b8
-#* 
-#* Author: Victor Korir
-###############################################################################
-
 library(geodata)
 library(sf)
 library(terra)
@@ -13,6 +5,7 @@ library(tmap)
 library(geodata)
 library(tidyverse)
 library(raster)
+library(data.table)
 #Shapefiles of individual countries in the region
 DRC <- geodata::gadm(country = 'Democratic Republic of the Congo', level = 0, path = tempdir())
 Uganda <- geodata::gadm(country = 'Uganda', level = 0, path = tempdir())
@@ -42,8 +35,8 @@ EA_region <- terra::mask(EA_region, region)
 
 # Define function to read and process geocoded data
 read_and_process_geocode <- function(year) {
-  file_path <- paste0("Z:/1.Data/Palmira/IOM/Migration/geo_", year, ".csv")
-  origins_geocode <- read.csv(file_path)
+  file_path <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/Migration/geo_", year, ".csv")
+  origins_geocode <- fread(file_path)
   
   mig_points <- vect(origins_geocode, geom=c('lon', 'lat'), crs = crs(EA_region))
   
@@ -76,7 +69,7 @@ list2env(mig_rasters, envir = .GlobalEnv)
 
 # Define a function to read and filter conflict data
 read_and_filter_conflict <- function(country_code) {
-  file_path <- sprintf("Z:/1.Data/Palmira/CSO/data/%s/conflict/%s_conflict.csv", country_code, country_code)
+  file_path <- sprintf("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/%s/conflict/%s_conflict.csv", country_code, country_code)
   confl_data <- read.csv(file_path)
   confl_data <- confl_data[confl_data$YEAR >= 2018,]
   return(confl_data)
@@ -107,21 +100,21 @@ names(conf_rasters) <- paste0("conf_raster_", years)
 
 #Climate data
 
-ETH_TR <- subset(rast("Z:/1.Data/Palmira/IOM/ETH/climatic_indexes/season_type_1/TR.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
-SSD_TR <- subset(rast("Z:/1.Data/Palmira/IOM/SSD/climatic_indexes/season_type_1/TR.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
-UGA_TR <- subset(rast("Z:/1.Data/Palmira/IOM/UGA/climatic_indexes/season_type_1/TR.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
-TZA_TR <- subset(rast("Z:/1.Data/Palmira/IOM/TZA/climatic_indexes/season_type_1/TR.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
-COD_TR <- subset(rast("Z:/1.Data/Palmira/IOM/COD/climatic_indexes/seanon_type_1/TR.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
+ETH_TR <- subset(rast("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/ETH/climatic_indexes/season_type_1/TR.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
+SSD_TR <- subset(rast("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/SSD/climatic_indexes/season_type_1/TR.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
+UGA_TR <- subset(rast("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/UGA/climatic_indexes/season_type_1/TR.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
+TZA_TR <- subset(rast("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/TZA/climatic_indexes/season_type_1/TR.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
+COD_TR <- subset(rast("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/COD/climatic_indexes/seanon_type_1/TR.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
 
 TR <- terra::merge(ETH_TR, SSD_TR, UGA_TR, TZA_TR, COD_TR)
 rm(ETH_TR, SSD_TR, UGA_TR, TZA_TR, COD_TR)
 
 
-ETH_AT <- subset(rast('Z:/1.Data/Palmira/IOM/ETH/climatic_indexes/season_type_1/AT.tif'), c( "2018" ,"2019", '2020', '2021', '2022'))
-SSD_AT <- subset(rast("Z:/1.Data/Palmira/IOM/SSD/climatic_indexes/season_type_1/AT.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
-UGA_AT <- subset(rast("Z:/1.Data/Palmira/IOM/UGA/climatic_indexes/season_type_1/AT.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
-TZA_AT <- subset(rast("Z:/1.Data/Palmira/IOM/TZA/climatic_indexes/season_type_1/AT.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
-COD_AT <- subset(rast("Z:/1.Data/Palmira/IOM/COD/climatic_indexes/seanon_type_1/AT.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
+ETH_AT <- subset(rast('//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/ETH/climatic_indexes/season_type_1/AT.tif'), c( "2018" ,"2019", '2020', '2021', '2022'))
+SSD_AT <- subset(rast("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/SSD/climatic_indexes/season_type_1/AT.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
+UGA_AT <- subset(rast("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/UGA/climatic_indexes/season_type_1/AT.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
+TZA_AT <- subset(rast("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/TZA/climatic_indexes/season_type_1/AT.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
+COD_AT <- subset(rast("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/COD/climatic_indexes/seanon_type_1/AT.tif"), c( "2018" ,"2019", '2020', '2021', '2022'))
 
 AT <- terra::merge(ETH_AT, SSD_AT, UGA_AT, TZA_AT, COD_AT)
 rm(ETH_AT, SSD_AT, UGA_AT, TZA_AT, COD_AT)
@@ -131,13 +124,13 @@ TR <- terra::resample(TR, EA_region, method = 'bilinear')
 
 #Preparing data for correlation
 conf_rasters <- rast(conf_rasters)
-mig_rasters <- rast(mig_rasters)
-mig_rasters1 <- brick(mig_rasters_2018, mig_rasters_2019, mig_rasters_2020, 
-                 mig_rasters_2021, mig_rasters_2022, mig_rasters_2023)
+mig_rasters<- c(mig_rasters_2018, mig_rasters_2019, mig_rasters_2020, 
+                mig_rasters_2021, mig_rasters_2022, mig_rasters_2023)
 
-AT_mig <- stack(as(AT, 'Raster'), as(migrasters1, 'Raster'))
-TR_mig <- stack(as(TR, 'Raster'), as(migrasters1, 'Raster'))
-conf_mig <- stack(as(conf_rasters, 'Raster'), as(migrasters1, 'Raster'))
+
+AT_mig <- stack(as(AT, 'Raster'), as(mig_rasters, 'Raster'))
+TR_mig <- stack(as(TR, 'Raster'), as(mig_rasters, 'Raster'))
+conf_mig <- stack(as(conf_rasters, 'Raster'), as(mig_rasters, 'Raster'))
 
 #Pixelwise correlation fuction
 gridcorts <- function(rasterstack, method, type=c("corel","pval","both")){
@@ -224,48 +217,6 @@ mig_TR_corr <- gridcorts(TR_mig, method="pearson", type="both")
 
 
 
-#Correlation between conflict and Migration
-values_2018 <- data.frame(values(mig_rasters_2018), 
-                          values(conf_rasters$`2018`), 
-                          values(TR$`2018`), values(AT$`2018`))
-values_2019 <- data.frame(values(mig_rasters_2019), 
-                          values(conf_rasters[["conf_raster_2019"]]), 
-                          values(TR$`2019`), values(AT$`2019`))
-values_2020 <- data.frame(values(mig_rasters_2020), 
-                          values(conf_rasters[["conf_raster_2020"]]), 
-                          values(TR$`2020`), values(AT$`2020`))
-values_2021 <- data.frame(values(mig_rasters_2021), 
-                          values(conf_rasters[["conf_raster_2021"]]), 
-                          values(TR$`2021`), values(AT$`2021`))
-values_2022 <- data.frame(values(mig_rasters_2022), values(conf_rasters[["conf_raster_2022"]]), values(TR$`2022`), values(AT$`2022`))
-
-names(values_2018) <- c('Migrants', 'Conflicts', 'Rainfall', 'Temperature')
-names(values_2019) <- c('Migrants', 'Conflicts', 'Rainfall', 'Temperature')
-names(values_2020) <- c('Migrants', 'Conflicts', 'Rainfall', 'Temperature')
-names(values_2021) <- c('Migrants', 'Conflicts', 'Rainfall', 'Temperature')
-names(values_2021) <- c('Migrants', 'Conflicts', 'Rainfall', 'Temperature')
-values <- rbind(c(values_2018, values_2019, values_2020, values_2021, values_2022))
-rm(conf_rasters)
-rm(mig_rasters_2018, mig_rasters_2019, mig_rasters_2020, mig_rasters_2021, mig_rasters_2022)
-
-names(values) <- c('Migrants', 'Conflicts', 'Rainfall', 'Temperature')
-values <- na.omit(values)
-values <- as.data.frame(values)
-#Pearson correlation
-# correlation for all variables
-round(cor(as.numeric(values)),
-      digits = 2 # rounded to 2 decimals
-)
-
-pair_plot <- pairs(values[, c('Migrants', 'Conflicts', 'Rainfall', 'Temperature')])
-
-# improved correlation matrix
-library(corrplot)
-corrplot(cor(as.numeric(values)),
-         method = "number",
-         type = "upper" # show only upper side
-)
-
 ###################################################
 #plotting 
 tm_shape(mig_TR_corr)+
@@ -321,7 +272,7 @@ tmap_save(migration_plot,  dpi= 600,  height=4, width=8, units="in",
 plot_list <- list()
 # Iterate over layers of the raster stack
 for (i in 1:nlayers(mig_AT_corr)) {
- 
+  
   # Create the tm_shape object for the current layer
   current_plot <- tm_shape(mig_AT_corr[[i]]) +
     tm_raster(palette = "RdYlGn", style = "jenks", colorNA = 'grey', legend.show = TRUE, legend.reverse = TRUE) +
