@@ -10,7 +10,7 @@
 g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 suppressMessages(library(pacman))
-suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColorBrewer, writexl, raster,terra, sp, sf, stringr, stringi, lattice, rasterVis, maptools,
+suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColorBrewer, writexl, raster,terra, sf, stringr, stringi, lattice, rasterVis, maptools,
                                 latticeExtra, RColorBrewer,cowplot, grid,tmap, tmaptools, geojson, geojsonio, MetBrewer, paletteer, exactextractr))
 
 #' Variable definition
@@ -234,7 +234,14 @@ clim_clust@data <- clim_clust@data %>%
   dplyr::left_join(., clim_clust_labs , by = c("clust" = "clust")) %>% 
   as_tibble()
 
-conf_clust@data$clim_cluster <- as.character(sp::over(conf_clust, clim_clust, returnList = F)$text_output)
+#conf_clust@data$clim_cluster <- as.character(sp::over(conf_clust, clim_clust, returnList = F)$text_output)
+
+conf_clust@data$clim_cluster <- as.character(unlist(st_intersects(st_as_sf(conf_clust), st_as_sf(clim_clust))))
+
+sf_ov <- as.character(unlist(sf_ov))
+conf_clust@data$clim_cluster <- sf_ov
+
+
 conf_clust@data$clim_cluster_short_label <- as.character(sp::over(conf_clust, clim_clust, returnList = F)$label)
 conf_clust@data$clim_cluster_order <- as.numeric(sp::over(conf_clust, clim_clust, returnList = F)$order)
 
