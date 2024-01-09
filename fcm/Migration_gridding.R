@@ -1,11 +1,15 @@
-library(geodata)
-library(sf)
-library(terra)
-library(tmap)
-library(geodata)
-library(tidyverse)
-library(raster)
-library(data.table)
+
+#* TODO: Grid number of migrants originating from every pixel
+#*  and perform pixelwise correlation with climate and conflict data
+#* 
+#* Author: Victor Korir
+################################################################################
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
+suppressMessages(library(pacman))
+suppressMessages(pacman::p_load(tidyverse,sf,terra,geodata, tmap, raster, data.table))
+
+
 #Shapefiles of individual countries in the region
 DRC <- geodata::gadm(country = 'Democratic Republic of the Congo', level = 0, path = tempdir())
 Uganda <- geodata::gadm(country = 'Uganda', level = 0, path = tempdir())

@@ -5,10 +5,11 @@
 #* 
 #* Author: Victor Korir
 ################################################################################
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
+suppressMessages(library(pacman))
+suppressMessages(pacman::p_load(tidyverse,ggmap,tidyverse,lubridate))
 
-library(ggmap)
-library(tidyverse)
-library(lubridate)
 # Enter the API key here
 register_google(key = "API KEY", write = TRUE)
 
@@ -22,7 +23,7 @@ names <- FMS_data$`City (Cleaned)`
 names <- names[-c(which(names=='Not Specified'))]
 names <- as.data.frame(names)
 
-#Geocode village admin levels
+######### GEOCODING METHOD 1 #################################################
 geo <- mutate_geocode(names, location = names, output = 'latlona')
 write.csv(geo, file = 'Z:/1.Data/Palmira/IOM/Migration/geo_villages.csv')
 
