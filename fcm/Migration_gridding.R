@@ -6,29 +6,14 @@
 ################################################################################
 g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
-suppressMessages(library(pacman))
-suppressMessages(pacman::p_load(tidyverse,sf,terra,geodata, tmap, raster, data.table))
-
-
-#Shapefiles of individual countries in the region
-DRC <- geodata::gadm(country = 'Democratic Republic of the Congo', level = 0, path = tempdir())
-Uganda <- geodata::gadm(country = 'Uganda', level = 0, path = tempdir())
-Ethiopia <- geodata::gadm(country = 'Ethiopia', level = 0, path = tempdir())
-South_Sudan <- geodata::gadm(country = 'SSD', level = 0, path = tempdir())
-Tanzania <- geodata::gadm(country = 'Tanzania ', level = 0, path = tempdir())
-Kenya <- geodata::gadm(country = 'Kenya ', level = 0, path = tempdir())
-Rwanda <- geodata::gadm(country = 'Rwanda ', level = 0, path = tempdir())
-Burundi <- geodata::gadm(country = 'Burundi ', level = 0, path = tempdir())
-Somalia <- geodata::gadm(country = 'Somalia ', level = 0, path = tempdir())
-Djibouti <- geodata::gadm(country = 'Djibouti ', level = 0, path = tempdir())
-Eritrea <- geodata::gadm(country = 'Eritrea ', level = 0, path = tempdir())
-
-
-#merging the individual country boundaries
-region <- rbind(DRC, Uganda, Ethiopia, South_Sudan, Tanzania, Kenya, Rwanda, Burundi, Somalia)
+list.of.packages <- c("tidyverse","sf","terra","geodata", "tmap", "raster", "data.table")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages, dependencies = T)
+lapply(list.of.packages, require, character.only = TRUE)
+countries <- c('Democratic Republic of the Congo', 'Uganda', 'Ethiopia', 'SSD', 'Tanzania', 'Kenya',
+               'Rwanda', 'Burundi', 'Somalia', 'Djibouti', 'Eritrea')
+region <- gadm(country =countries , level = 0, path = tempdir())
 region <-st_as_sf(region)
-region$COUNTRY[region$COUNTRY=="Dem.Rep.Congo"] <- "D.R.Congo"
-
 
 # Create a grid covering the region
 EA_region <- rast(ext = ext(region), res = 1.6)
