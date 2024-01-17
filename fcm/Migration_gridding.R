@@ -1,11 +1,15 @@
-library(geodata)
-library(sf)
-library(terra)
-library(tmap)
-library(geodata)
-library(tidyverse)
-library(raster)
-library(data.table)
+
+#* TODO: Grid number of migrants originating from every pixel
+#*  and perform pixelwise correlation with climate and conflict data
+#* 
+#* Author: Victor Korir
+################################################################################
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
+suppressMessages(library(pacman))
+suppressMessages(pacman::p_load(tidyverse,sf,terra,geodata, tmap, raster, data.table))
+
+
 #Shapefiles of individual countries in the region
 DRC <- geodata::gadm(country = 'Democratic Republic of the Congo', level = 0, path = tempdir())
 Uganda <- geodata::gadm(country = 'Uganda', level = 0, path = tempdir())
@@ -123,9 +127,11 @@ AT <- terra::resample(AT, EA_region, method = 'bilinear')
 TR <- terra::resample(TR, EA_region, method = 'bilinear')
 
 #Preparing data for correlation
-conf_rasters <- rast(conf_rasters)
+
+conf_rasters <- c(conf_rasters$conf_raster_2018,conf_rasters$conf_raster_2019,
+                  conf_rasters$conf_raster_2020, conf_rasters$conf_raster_2021, conf_rasters$conf_raster_2022)
 mig_rasters<- c(mig_rasters_2018, mig_rasters_2019, mig_rasters_2020, 
-                mig_rasters_2021, mig_rasters_2022, mig_rasters_2023)
+                mig_rasters_2021, mig_rasters_2022)
 
 
 AT_mig <- stack(as(AT, 'Raster'), as(mig_rasters, 'Raster'))
@@ -240,7 +246,7 @@ migrasters1 <- stack(as(mig_rasters_2018, 'Raster'),
                      as(mig_rasters_2022, 'Raster'),
                      as(mig_rasters_2023, 'Raster'))
 region_cast <- st_cast(region)
-names(mig_rasters) <- c("2018", "2019", "2020", "2021", "2022", "2023")
+names(mig_rasters1) <- c("2018", "2019", "2020", "2021", "2022", "2023")
 names(conf_rasters) <- c("2018", "2019", "2020", "2021", "2022", "2023")
 mig_rasters <- mig_rasters/1000
 migration_plot <- tm_shape(conf_rasters)+
