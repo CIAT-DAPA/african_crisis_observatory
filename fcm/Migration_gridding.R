@@ -4,12 +4,17 @@
 #* 
 #* Author: Victor Korir
 ################################################################################
+rm(list=ls(all=TRUE))
 g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 options(warn = -1, scipen = 999)    # Remove warning alerts and scientific notation
 list.of.packages <- c("tidyverse","sf","terra","geodata", "tmap", "raster", "data.table")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages, dependencies = T)
 lapply(list.of.packages, require, character.only = TRUE)
+
+root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/'
+
+
 countries <- c('Democratic Republic of the Congo', 'Uganda', 'Ethiopia', 'SSD', 'Tanzania', 'Kenya',
                'Rwanda', 'Burundi', 'Somalia', 'Djibouti', 'Eritrea')
 region <- gadm(country =countries , level = 0, path = tempdir())
@@ -24,7 +29,7 @@ EA_region <- terra::mask(EA_region, region)
 
 # Define function to read and process geocoded data
 read_and_process_geocode <- function(year) {
-  file_path <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/IOM/Migration/geo_", year, ".csv")
+  file_path <- paste0(root,"intermediate/fms_geocoded/geo_", year, ".csv")
   origins_geocode <- fread(file_path)
   
   mig_points <- vect(origins_geocode, geom=c('lon', 'lat'), crs = crs(EA_region))
