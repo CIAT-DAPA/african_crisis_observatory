@@ -105,6 +105,8 @@ events = function(region = NULL, iso = NULL, updatedSince = NULL, field = NULL)
 ## List regions and codes
 dtRegion = regions() 
 head(dtRegion)
+cat('Region names:', sort(unique(dtRegion$region_name)), sep='\n')
+reg.names <- sort(unique(dtRegion$region_name))
 
 #' Download several countries in a region
 #' Note this may take some time  donwload
@@ -123,7 +125,7 @@ oceania <- donwloadRegion("Oceania")
 asiaPacific <- do.call(rbind, list(eastAsia, centralAsia, southAsia, southEastAsia, oceania))
 names(asiaPacific) <- toupper(names(asiaPacific))
 library("writexl")
-write_xlsx(asiaPacific, paste0(out, regionName, '_', Sys.Date(),'.xlsx'))
+write_xlsx(asiaPacific, paste0(out, regionName, '.xlsx'))
 #data.table::fwrite faster for csv
 
 regionName <- 'Africa'
@@ -134,14 +136,15 @@ Na <- donwloadRegion("Northern Africa")
 EA <- donwloadRegion("Eastern Africa")
 africa <- do.call(rbind, list(WA, SA, MA, Na, EA))
 names(africa) <- toupper(names(africa))
-write_xlsx(africa, paste0(out, regionName, '_', Sys.Date(),'.xlsx'))
+#write_xlsx(africa, paste0(out, regionName, '_', Sys.Date(),'.xlsx'))
+write_xlsx(africa, paste0(out, regionName, '.xlsx'))
 
 regionName <- 'MENA'
 ME  <- donwloadRegion('Middle East')
 
 mena <- do.call(rbind, list(Na, ME))
 names(mena) <- toupper(names(mena))
-write_xlsx(mena, paste0(out, regionName, '_', Sys.Date(),'.xlsx'))
+write_xlsx(mena, paste0(out, regionName, '.xlsx'))
 
 regionName <- 'Americas'
 cAmer  <- donwloadRegion('Central America')
@@ -150,13 +153,13 @@ nAmer  <- donwloadRegion('North America')
 
 americas <- do.call(rbind, list(cAmer, sAmer, nAmer))
 names(americas) <- toupper(names(americas))
-write_xlsx(americas, paste0(out, regionName, '_', Sys.Date(),'.xlsx'))
+write_xlsx(americas, paste0(out, regionName, '.xlsx'))
 
 regionName <- 'Europe'
 EU  <- donwloadRegion('Europe')
 
 names(EU) <- toupper(names(EU))
-write_xlsx(EU, paste0(out, regionName, '_', Sys.Date(),'.xlsx'))
+write_xlsx(EU, paste0(out, regionName, '.xlsx'))
 
 
 
