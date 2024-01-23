@@ -15,7 +15,7 @@ lapply(list.of.packages, require, character.only = TRUE)
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/'
 
 
-countries <- c('Democratic Republic of the Congo', 'Uganda', 'Ethiopia', 'SSD', 'Tanzania', 'Kenya',
+countries <- c('Democratic Republic of the Congo', 'Uganda', 'Ethiopia', 'South Sudan', 'Tanzania', 'Kenya',
                'Rwanda', 'Burundi', 'Somalia', 'Djibouti', 'Eritrea')
 region <- gadm(country = countries , level = 0, path = paste0(root,'raw/admin'), version="latest")
 region <-st_as_sf(region)
@@ -29,12 +29,15 @@ st_crs(grd) <- st_crs(region)
 plot(st_geometry(grd))
 plot(st_geometry(region), add = TRUE)
  
+#' =======================================================================================
+#' 1.0 MIGRATION PRESENCE in GRIDS (MEGA-PIXELS)
+#' =======================================================================================
 #' Load migration geocoded points
 
 load_mig <- function(year){
   filename <- paste0(root,"intermediate/fms_geocoded/geo_", year, ".csv")
   temp <- read.csv(filename, header = T)
-  names(temp) <- c('Index', 'Date', 'Reason', 'Forcibly_displaced', 'District', 'City', 'ID', 'Long', 'Lat', 'Address' )
+  names(temp) <- c('Index', 'YEAR', 'Reason', 'Forcibly_displaced', 'District', 'City', 'ID', 'Long', 'Lat', 'Address' )
   return(temp)
 }
 
@@ -42,16 +45,85 @@ years <- 2018:2023
 mig <- lapply(years, load_mig)
 mig <- do.call(rbind, mig)
 
+coordinates(mig) <- ~Long+Lat
+proj4string(mig) <-  CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
+mig <- st_as_sf(mig)
+st_crs(mig) <- st_crs(grd)
+plot(st_geometry(grd))
+plot(st_geometry(region), add=T)
+plot(st_geometry(mig), pch=16,col="red", cex=0.5, add=T)
+
 #' Count number of migration points in a grid
 
 
-df <- sapply(st_intersects(grd, mig), function(i){if(length(i)>0){ st_drop_geometry( mig[i,]) %>% group_by(year, month) %>% tally() }else{NA} })
+df <- sapply(st_intersects(grd, mig), 
+             function(i){if(length(i)>0){ st_drop_geometry( mig[i,]) %>% group_by(YEAR) %>% tally() }else{NA} }
+             )
 
-for(id in 1:length(df)){ if(length(df[[id]]) > 1){df[[id]] <- data.frame(id = id, df[[id]]) }}
-df_final <- do.call(rbind, df)
+for(id in 1:length(df)){
+  if(length(df[[id]]) > 1){df[[id]] <- data.frame(id = id, df[[id]]) }
+  }
+df_m <- do.call(rbind, df)
+df_m <- na.omit(df_m)
+names(df_m)[names(df_m)=='n'] <-'Migration'
 
 
-aa=EA_region <- rast(ext = ext(region), res = 1.6)
+#' =======================================================================================
+#' 2.0 CONFLICT PRESENCE in GRIDS (MEGA-PIXELS)
+#' =======================================================================================
+
+#Conflict data
+filename <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/_global/conflict/Africa.xlsx"
+conf <- readxl::read_excel(filename, sheet = 1)
+country <- c("Democratic Republic of Congo", 'Uganda', 'Ethiopia', 'South Sudan', 'Tanzania', 'Kenya',
+               'Rwanda', 'Burundi', 'Somalia', 'Djibouti', 'Eritrea')
+conf <- conf[conf$YEAR >= 2018 & conf$COUNTRY==country,]
+
+coordinates(conf) <- ~LONGITUDE+LATITUDE
+proj4string(conf) <-  CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
+conf <- st_as_sf(conf)
+st_crs(conf) <- st_crs(grd)
+
+#' Count number of migration points in a grid
+
+temp <- sapply(st_intersects(grd, conf), 
+             function(i){if(length(i)>0){ st_drop_geometry(conf[i,]) %>% group_by(YEAR) %>% tally() }else{NA} }
+)
+
+for(id in 1:length(temp)){
+  if(length(temp[[id]]) > 1){temp[[id]] <- data.frame(id = id, temp[[id]]) }
+}
+df_c <- do.call(rbind, temp)
+df_c <- na.omit(df_c)
+names(df_c)[names(df_c)=='n'] <-'Conflict'
+
+plot(st_geometry(grd))
+plot(st_geometry(region), add=T)
+plot(st_geometry(df_c), pch=16,col="red", cex=0.5, add=T)
+
+
+# Merge Conflict & Migration into Megapixels
+
+
+#' OLD CODE xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+#' 
+# Define a function to read and filter conflict data
+read_and_filter_conflict <- function(country_code) {
+  file_path <- sprintf("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/%s/conflict/%s_conflict.csv", country_code, country_code)
+  confl_data <- read.csv(file_path)
+  confl_data <- confl_data[confl_data$YEAR >= 2018,]
+  return(confl_data)
+}
+
+# List of country codes
+#, "SSD", "TZA", "UGA", 'COD'
+country_codes <- c("ETH", "SSD", "TZA", "UGA", 'COD','KEN','SOM')
+
+# Read and filter conflict data for each country
+conflict_data_list <- lapply(country_codes, read_and_filter_conflict)
+
+
+
 EA_region <- terra::crop(EA_region, region)
 values(EA_region) <- 1:ncell(EA_region)
 EA_region <- terra::mask(EA_region, region)
@@ -89,22 +161,6 @@ mig_rasters <- setNames(mig_rasters, mig_raster_names)
 list2env(mig_rasters, envir = .GlobalEnv)
 
 
-#Conflict data
-
-# Define a function to read and filter conflict data
-read_and_filter_conflict <- function(country_code) {
-  file_path <- sprintf("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/%s/conflict/%s_conflict.csv", country_code, country_code)
-  confl_data <- read.csv(file_path)
-  confl_data <- confl_data[confl_data$YEAR >= 2018,]
-  return(confl_data)
-}
-
-# List of country codes
-#, "SSD", "TZA", "UGA", 'COD'
-country_codes <- c("ETH", "SSD", "TZA", "UGA", 'COD','KEN','SOM')
-
-# Read and filter conflict data for each country
-conflict_data_list <- lapply(country_codes, read_and_filter_conflict)
 
 # Combine the data into a single dataframe
 merged_conf <- bind_rows(conflict_data_list)
