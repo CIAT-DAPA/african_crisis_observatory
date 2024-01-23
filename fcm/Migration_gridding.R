@@ -97,13 +97,10 @@ df_c <- do.call(rbind, temp)
 df_c <- na.omit(df_c)
 names(df_c)[names(df_c)=='n'] <-'Conflict'
 
-plot(st_geometry(grd))
-plot(st_geometry(region), add=T)
-plot(st_geometry(df_c), pch=16,col="red", cex=0.5, add=T)
 
 
 # Merge Conflict & Migration into Megapixels
-
+dff <- merge(df_m, df_c, by =c("id","YEAR"))
 
 #' OLD CODE xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #' 
