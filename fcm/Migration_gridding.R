@@ -2,7 +2,7 @@
 #* TODO: Grid number of migrants originating from every pixel
 #*  and perform pixelwise correlation with climate and conflict data
 #* 
-#* Author: Victor Korir
+#* Author: Victor Korir and Benson Kenduiywo
 ################################################################################
 rm(list=ls(all=TRUE))
 g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
@@ -17,11 +17,41 @@ root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/'
 
 countries <- c('Democratic Republic of the Congo', 'Uganda', 'Ethiopia', 'SSD', 'Tanzania', 'Kenya',
                'Rwanda', 'Burundi', 'Somalia', 'Djibouti', 'Eritrea')
-region <- gadm(country =countries , level = 0, path = tempdir())
+region <- gadm(country = countries , level = 0, path = paste0(root,'raw/admin'), version="latest")
 region <-st_as_sf(region)
 
-# Create a grid covering the region
-EA_region <- rast(ext = ext(region), res = 1.6)
+#'  Create vector square grids of approximately 51 km2 (0.46 degrees)  covering the region
+
+grd <- st_make_grid(st_bbox(extent(region)+2), cellsize = 0.46, square = TRUE)
+grd <- st_as_sf(grd)
+grd$id <- 1:nrow(grd)
+st_crs(grd) <- st_crs(region)
+plot(st_geometry(grd))
+plot(st_geometry(region), add = TRUE)
+ 
+#' Load migration geocoded points
+
+load_mig <- function(year){
+  filename <- paste0(root,"intermediate/fms_geocoded/geo_", year, ".csv")
+  temp <- read.csv(filename, header = T)
+  names(temp) <- c('Index', 'Date', 'Reason', 'Forcibly_displaced', 'District', 'City', 'ID', 'Long', 'Lat', 'Address' )
+  return(temp)
+}
+
+years <- 2018:2023
+mig <- lapply(years, load_mig)
+mig <- do.call(rbind, mig)
+
+#' Count number of migration points in a grid
+
+
+df <- sapply(st_intersects(grd, mig), function(i){if(length(i)>0){ st_drop_geometry( mig[i,]) %>% group_by(year, month) %>% tally() }else{NA} })
+
+for(id in 1:length(df)){ if(length(df[[id]]) > 1){df[[id]] <- data.frame(id = id, df[[id]]) }}
+df_final <- do.call(rbind, df)
+
+
+aa=EA_region <- rast(ext = ext(region), res = 1.6)
 EA_region <- terra::crop(EA_region, region)
 values(EA_region) <- 1:ncell(EA_region)
 EA_region <- terra::mask(EA_region, region)
