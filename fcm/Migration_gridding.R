@@ -44,6 +44,10 @@ load_mig <- function(year){
 years <- 2018:2023
 mig <- lapply(years, load_mig)
 mig <- do.call(rbind, mig)
+#' Extract Forced migrationn only
+mig$Forcibly_displaced <-toupper(mig$Forcibly_displaced)
+mig <- mig[mig$Forcibly_displaced =='YES', ]
+mig <- na.omit(mig)
 
 coordinates(mig) <- ~Long+Lat
 proj4string(mig) <-  CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0") 
@@ -97,10 +101,18 @@ df_c <- do.call(rbind, temp)
 df_c <- na.omit(df_c)
 names(df_c)[names(df_c)=='n'] <-'Conflict'
 
-
-
-# Merge Conflict & Migration into Megapixels
+#' Merge Conflict & Migration into Megapixels
 dff <- merge(df_m, df_c, by =c("id","YEAR"))
+
+#' Merge @dff with megapixels
+
+dff <- merge(grd, dff, by ='id')
+
+
+
+
+
+
 
 #' OLD CODE xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 #' 
