@@ -300,7 +300,7 @@ seasons <- switch(iso, "KEN" = list(season_type_1 = 1:6, season_type_2 = 7:12),
                   "NER" = list(season_type_1 = 5:10),
                   "SSD" = list(season_type_1 = 4:11),
                   "BFA" = list(seanon_type_1 = 4:10)
-                  )
+)
 
 shp_fl <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/_shps/", iso, ".shp")
 tmp_path <- "//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/chirps-v2.0.2020.01.01.tif"
@@ -326,9 +326,4 @@ out_root_dir <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Da
       })
     return(cat('Process finished successfully!\n'))
   })
-
-
-
-
-
 
