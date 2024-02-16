@@ -16,7 +16,7 @@ suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColor
 #' Variable definition
 #'
 
-iso <- "MLI"
+iso <- "NER"
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 root <- paste0(baseDir, iso, "/")
 scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right", 'GTM'="right", "NER" = "right", "BFA" = "right", "SOM" = "right", "RWA" = "right", "MOZ"= "right")
@@ -196,18 +196,18 @@ if(!dir.exists(to_share_dir)){dir.create(to_share_dir)}
 ######### Generate climate and conflict intersection #############
 ##################################################################
 
-shp_c  <- raster::shapefile(paste0(root, "_shps/", iso, ".shp"))
+shp_c  <- st_read(paste0(root, "_shps/", iso, ".shp"))
 shp <- shp_c
 
 c_mask <- w_mask %>% 
-  raster::crop(., extent(shp_c)) %>% 
-  raster::mask(., shp_c)
+  terra::crop(., extent(shp_c)) %>% 
+  terra::mask(., shp_c)
 
-conf_clust <- raster::shapefile(paste0(root, "_results/cluster_results/conflict/conflict_regular_clust.shp"))
-clim_clust <- raster::shapefile(paste0(root, "_results/cluster_results/climate/climate_regular_clust.shp"))
+conf_clust <- st_read(paste0(root, "_results/cluster_results/conflict/conflict_regular_clust.shp"))
+clim_clust <- st_read(paste0(root, "_results/cluster_results/climate/climate_regular_clust.shp"))
 
-crs(conf_clust) <- crs(c_mask)
-crs(clim_clust) <- crs(c_mask)
+st_crs(conf_clust) <- st_crs(c_mask)
+st_crs(clim_clust) <- st_crs(c_mask)
 
 
 
@@ -218,7 +218,7 @@ conf_clust_labs <- read_csv(paste0(root, "_results/cluster_results/conflict/conf
   dplyr::mutate(across(everything(.), as.character))
 
 
-conf_clust@data <-  conf_clust@data %>% 
+conf_clust <-  conf_clust %>% 
   left_join(., conf_clust_labs , by = c("clust")) %>% 
   dplyr::rename(clust_km = short_label)  %>% 
   rename_with(., function(i){return("conflict_cluster_text_description")}, starts_with("clutert")) %>% 
@@ -229,23 +229,28 @@ conf_clust@data <-  conf_clust@data %>%
 
 
 
-clim_clust@data <- clim_clust@data %>%
+clim_clust <- clim_clust %>%
   dplyr::mutate(clust = as.character(clust)) %>%
   dplyr::left_join(., clim_clust_labs , by = c("clust" = "clust")) %>% 
   as_tibble()
 
+conf_clust <- st_as_sf(conf_clust)
+clim_clust <- st_as_sf(clim_clust)
 #conf_clust@data$clim_cluster <- as.character(sp::over(conf_clust, clim_clust, returnList = F)$text_output)
+conf_clim <- st_intersection(conf_clust, clim_clust)
+conf_clim <- conf_clim %>% dplyr::rename(clim_cluster = text_output)
+conf_clim <- conf_clim %>% dplyr::rename(clim_cluster_short_label = label)
 
-conf_clust@data$clim_cluster <- as.character(unlist(st_intersects(st_as_sf(conf_clust), st_as_sf(clim_clust))))
+#conf_clust$clim_cluster <- as.character(unlist(st_intersects(st_as_sf(conf_clust), st_as_sf(clim_clust))))
 
-sf_ov <- as.character(unlist(sf_ov))
-conf_clust@data$clim_cluster <- sf_ov
+#sf_ov <- as.character(unlist(sf_ov))
+#conf_clust@data$clim_cluster <- sf_ov
 
 
-conf_clust@data$clim_cluster_short_label <- as.character(sp::over(conf_clust, clim_clust, returnList = F)$label)
-conf_clust@data$clim_cluster_order <- as.numeric(sp::over(conf_clust, clim_clust, returnList = F)$order)
+#conf_clust@data$clim_cluster_short_label <- as.character(sp::over(conf_clust, clim_clust, returnList = F)$label)
+#conf_clust@data$clim_cluster_order <- as.numeric(sp::over(conf_clust, clim_clust, returnList = F)$order)
 
-conf_clust@data$intersect_conf_clim <- paste0(conf_clust@data$label, "-[", conf_clust@data$clim_cluster_short_label,"]")
+conf_clim$intersect_conf_clim <- paste0(conf_clim$label, "-[", conf_clim$clim_cluster_short_label,"]")
 
 
 ###################################################################
@@ -912,7 +917,7 @@ gwis_country <- switch (iso,
 
 
 
-eth_c<- eth[eth@data$FIPS_CNTR == fips_country,]
+eth_c<- eth[eth@data$FIPS_CNTRY == fips_country,]
 
 eth_c@data$eth_short_name <- eth_c@data %>% 
   dplyr::select(contains("SHORTNAM")) %>%
@@ -928,9 +933,21 @@ eth_c@data$eth_long_name <- eth_c@data %>%
 
 #clusts_to_share <- as(sf::st_read(paste0(root, "/_results/clim_conflict_ips_overlays.geojson")), "Spatial")
 
-clusts_to_share <- conf_clust
+clusts_to_share <- conf_clim
 
-rs <- sp::over(clusts_to_share, shp, returnList = T) 
+
+rs <- st_intersects(clusts_to_share, st_as_sf(shp))
+
+
+# Append attributes from sf2 to sf1 based on intersections
+for (i in 1:nrow(clusts_to_share)){
+  clusts_to_share[i, 'NAME_0'] <- lapply(rs[i], function(x){shp$NAME_0[x]}) %>% unlist() %>% unique() %>% paste(., collapse = ",")
+  clusts_to_share[i, 'NAME_1'] <- lapply(rs[i], function(x){shp$NAME_1[x]}) %>% unlist() %>% unique() %>% paste(., collapse = ",")
+  clusts_to_share[i, 'NAME_2'] <- lapply(rs[i], function(x){shp$NAME_3[x]}) %>% unlist() %>% unique() %>% paste(., collapse = ",")
+  clusts_to_share[i, 'NAME_3'] <- lapply(rs[i], function(x){shp$NAME_3[x]}) %>% unlist() %>% unique() %>% paste(., collapse = ",")
+}
+
+
 
 
 mf_diff_ext <- exactextractr::exact_extract(mf_diff, sf::st_as_sf(clusts_to_share), fun = "median")
@@ -938,8 +955,14 @@ m_edu_ext <- exactextractr::exact_extract(m_edu, sf::st_as_sf(clusts_to_share), 
 f_edu_ext <- exactextractr::exact_extract(f_edu, sf::st_as_sf(clusts_to_share), fun = "median")
 m_pop_ext <- exactextractr::exact_extract(m_pop, sf::st_as_sf(clusts_to_share), fun = "sum")
 f_pop_ext <- exactextractr::exact_extract(f_pop, sf::st_as_sf(clusts_to_share), fun = "sum")
-eth_ext <- sp::over(clusts_to_share, eth_c, returnList = T) 
-liveext <- sp::over(clusts_to_share, livelihoods, returnList = T)
+eth_ext <- st_intersection(clusts_to_share, st_as_sf(eth_c)) %>% 
+  dplyr::group_by(ov) %>% 
+  dplyr::summarize(eth_short_name = paste0(eth_short_name, collapse = ";"), eth_long_name = paste0(eth_long_name, collapse = ";") ) %>% 
+  st_drop_geometry()
+liveext <- st_intersection(clusts_to_share, st_as_sf(livelihoods)) %>% 
+  dplyr::group_by(ov) %>% 
+  dplyr::summarize(LZNAMEEN = paste0(LZNAMEEN, collapse = ";")) %>% 
+  st_drop_geometry()
 
 
 ##extraer todas las variables de clima
@@ -1036,19 +1059,18 @@ ip_rasts <- all_rasts %>%
   }) %>% 
   dplyr::bind_cols()
 
+clusts_to_share <- merge(x=clusts_to_share,y=liveext, by=c("ov"),all.x=TRUE)
+clusts_to_share <- merge(x=clusts_to_share1,y=eth_ext, by=c("ov"),all.x=TRUE)
 
-clusts_to_share@data <- clusts_to_share@data %>% 
-  dplyr::mutate(NAME_1 = lapply(rs, function(df){df %>% pull(NAME_1) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
-                NAME_2 = lapply(rs, function(df){df %>% pull(NAME_2) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
-                NAME_3 = lapply(rs, function(df){df %>% pull(NAME_3) %>% unique(.) %>% paste(., collapse = ";")}) %>% unlist,
-                livelihoods = lapply(liveext, function(df){df %>% pull(LZNAMEEN) %>% unique(.) %>% paste(., collapse = ";") }) %>%  unlist,
+
+
+clusts_to_share <- clusts_to_share %>% 
+  dplyr::mutate(
                 median_male_female_edu_diff  = mf_diff_ext,
                 median_male_edu = m_edu_ext,
                 median_female_edu = f_edu_ext,
                 male_population = m_pop_ext,
-                female_population = f_pop_ext,
-                ethnicity_short_name = lapply(eth_ext, function(df){df %>% pull(eth_short_name) %>% unique(.) %>% paste(., collapse =";")}) %>%  unlist,
-                ethnicity_long_name = lapply(eth_ext, function(df){df %>% pull(eth_long_name)%>% unique(.) %>% paste(., collapse =";") }) %>%  unlist ) 
+                female_population = f_pop_ext)
 
 
 # extract information from ip variables
@@ -1070,7 +1092,7 @@ ip_raw_info <- tibble(file_names = rc_fls,
 for(ip_x in get_ip_names){
   
   v_name <- paste0(ip_x, "_text_description")
-  clusts_to_share@data <- clusts_to_share@data %>% 
+  clusts_to_share <- clusts_to_share %>% 
     dplyr::mutate(!!v_name := ip_text_description(shp_object = clusts_to_share,
                                                   ip = ip_x,
                                                   df = ip_raw_info,
@@ -1080,7 +1102,7 @@ for(ip_x in get_ip_names){
 
 
 
-clusts_to_share@data <- clusts_to_share@data %>% 
+clusts_to_share <- clusts_to_share %>% 
   dplyr::mutate(across(everything(.), as.vector)) %>% 
   dplyr::select(  EVENTS,
                   TYPE_RICHNESS = TYPE_RI,
@@ -1088,9 +1110,9 @@ clusts_to_share@data <- clusts_to_share@data %>%
                   ACTOR1_RICHNESS = ACTOR1_,
                   ACTOR2_RICHNESS = ACTOR2_,
                   FATALITIES = FATALIT,
-                  conflict_clust_label = label, 
+                  conflict_clust_label = label.1, 
                   conflict_clust_short_label = clust_km, 
-                  conflict_cluster_text_description = clutert_text_description,
+                  conflict_cluster_text_description ,
                   clim_cluster_text_description = clim_cluster,
                   clim_cluster_short_label, 
                   intersect_conf_clim,
@@ -1098,25 +1120,27 @@ clusts_to_share@data <- clusts_to_share@data %>%
                   NAME_1,
                   NAME_2,
                   NAME_3,
-                  clim_cluster_order,
+                  clim_clust_order,
                   starts_with("median"),
                   starts_with("ethnicity"),
                   female_population,
                   male_population,
-                  livelihoods) 
+                  livelihoods = LZNAMEEN
+  )
 
 
-clusts_to_share@data <- clusts_to_share@data %>% 
+
+clusts_to_share <- clusts_to_share %>% 
   dplyr::bind_cols(.,clim_rasts ) %>% 
   dplyr::bind_cols(., ip_rasts)
 #clusts_to_share@data$conflict_cluster_text_description[1]
 
-row.names(clusts_to_share@data) <- sapply(slot(clusts_to_share, "polygons"), function(x) slot(x, "ID"))
-
+#row.names(clusts_to_share) <- sapply(slot(clusts_to_share, "polygons"), function(x) slot(x, "ID"))
+row.names(clusts_to_share) <- sf::st_geometry(clusts_to_share)$id
 geojsonio::geojson_json(clusts_to_share) %>% 
   geojsonio::geojson_write(., file = paste0(root, "/_results/clim_conflict_ips_overlays.geojson") )
 
-clusts_to_share@data %>% writexl::write_xlsx(paste0(root, "_results/clim_conflict_ips_overlays.xlsx"))
+clusts_to_share %>% writexl::write_xlsx(paste0(root, "_results/clim_conflict_ips_overlays.xlsx"))
 
 #raster::shapefile(clusts_to_share, paste0(root, "_results/clim_conflict_ips_overlays.shp"), overwrite = T)
 base::saveRDS(clusts_to_share, paste0(root, "_results/clim_conflict_ips_overlays.rds"))
