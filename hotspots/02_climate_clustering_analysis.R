@@ -3,7 +3,7 @@
 ########################################
 #*PLEASE NOTE: AFTER COMPLETING THE CLUSTERING, 
 
-#*YOU NEED TO MANUALLY ADD 'label' and 'clim_clust_order' COLUMNS IN THE 'clim_cluster_reg_text_description'
+#*YOU NEED TO MANUALLY ADD 'label' and 'clim_clust_order' COLUMNS IN THE 'clim_cluster_reg_text_description.csv'
 #*
 #################################################################################
 
