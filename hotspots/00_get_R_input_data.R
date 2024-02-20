@@ -2,7 +2,7 @@ suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, raster, trend, vegan, VGAM))
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
-source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/base__lowest_gadm.R') # Get lowest administrative level per country
+source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/main/data_download/base__lowest_gadm.R') # Get lowest administrative level per country
 source('https://raw.githubusercontent.com/CIAT-DAPA/agro-clim-indices/main/AWCPTF.R')
 
 
