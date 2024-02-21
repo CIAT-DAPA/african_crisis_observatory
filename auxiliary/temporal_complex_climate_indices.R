@@ -17,6 +17,7 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/agro-clim-indices/main/_main
 #' 
 store <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/climate_indices/'
 
+
 zscore <- function(x){
   y <- (x-mean(x, na.rm=T))/(sd(x, na.rm=T))
   return(y)
@@ -30,14 +31,11 @@ get_5_dry_spell <- function(prec){
 }
 
 
-
 coef_var_index <- function(prec){
   
   ret <- sd(prec, na.rm=T)/mean(prec, na.rm = T)
   return(ret)
 }
-
-
 
 
 selectSeason <- function(dates, seasons){
@@ -52,20 +50,23 @@ selectSeason <- function(dates, seasons){
 iso <- 'KEN'
 #shp <- geodata::gadm(country = iso , level = 0, path = paste0(store,'raw/admin'), version="latest")
 # Function to compute complex Agro-climatic indices
+era5Dir <- '//catalogue/WFP_ClimateRiskPr1/1.Data/AgERA5'
+chr_pth <- '//catalogue/Workspace14/WFP_ClimateRiskPr1/1.Data/Chirps'
 calc_AgrClm_cmplx <- function(season = season, iso,
                               soil_cp_pth = "",
-                              soil_sat_pth = ""){
+                              soil_sat_pth = "",
+                              chr_pth, era5Dir){
   
   ## Daily files
   # Precipitation
-  chr_pth <- '//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/Chirps'
+  #chr_pth <- '//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/Chirps'
   chr_fls <- gtools::mixedsort(list.files(chr_pth, pattern = '*.tif$', full.names = T))
   chr_dts <- strsplit(x = chr_fls, split = 'chirps-v2.0.', fixed = T) %>% purrr::map(2) %>% unlist()
   chr_dts <- strsplit(x = chr_dts, split = '.tif', fixed = T) %>% purrr::map(1) %>% unlist()
   chr_dts <- as.Date(gsub('.', '-', chr_dts, fixed = T))
   
   # Tmax
-  era5Dir <- '//CATALOGUE/Workspace14/WFP_ClimateRiskPr/1.Data/ERA5'
+  #era5Dir <- '//CATALOGUE/Workspace14/WFP_ClimateRiskPr/1.Data/ERA5'
   tmx_pth <- paste0(era5Dir,'/2m_temperature-24_hour_maximum')
   tmx_fls <- gtools::mixedsort(list.files(tmx_pth, pattern = '*.nc$', full.names = T))
   tmx_dts <- strsplit(x = tmx_fls, split = 'glob-agric_AgERA5_', fixed = T) %>% purrr::map(2) %>% unlist()
@@ -103,7 +104,7 @@ calc_AgrClm_cmplx <- function(season = season, iso,
   # Filtering days within the season
   yrs <- lubridate::year(tmx_dts)
   yrs <- names(table(yrs)[table(yrs) %in% 365:366])
-  yrs <- yrs[!yrs %in% c("2020", "2021")]
+  yrs <- yrs[!yrs %in% c("2024", "2025")] #XXXXXFILTER OUT UNWANTED YEARS
   
   tmx_fls <- tmx_fls[lubridate::year(tmx_dts) %in% yrs]
   tmn_fls <- tmn_fls[lubridate::year(tmn_dts) %in% yrs]
@@ -133,6 +134,7 @@ calc_AgrClm_cmplx <- function(season = season, iso,
     yrs_dts <<- split(tmx_dts, grp)
   }
   
+  #' Complex indices computation
   cat('..... Computing water balance model.\n')
   WTBL <- 1:length(yrs_dts) %>%
     purrr::map(.f = function(i){
@@ -236,7 +238,8 @@ out_root_dir <- paste0(store, 'climate_indices/', iso, '/')
     # Indices calculation
     indices <- calc_AgrClm_cmplx(seasons[[s]], iso,
                                  soil_cp_pth =  paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/temp/soilcp.tif"),
-                                 soil_sat_pth = paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/temp/soilsat.tif"))
+                                 soil_sat_pth = paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/", iso, "/climatic_indexes/temp/soilsat.tif"),
+                                 chr_pth, era5Dir)
     # Saving results
     out <- paste0(out_root_dir,names(seasons)[s]); if(!dir.exists(out)){dir.create(out,F,T)}
     1:length(names(indices)) %>%

@@ -44,14 +44,15 @@ calc_AgrClm <- function(season = season, shp_fl = shp_fl){
   
   ## Daily files
   # Precipitation
-  chr_pth <- '//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/Chirps'
+  chr_pth <- '//catalogue/Workspace14/WFP_ClimateRiskPr1/1.Data/Chirps'
   chr_fls <- gtools::mixedsort(list.files(chr_pth, pattern = '*.tif$', full.names = T))
   chr_dts <- strsplit(x = chr_fls, split = 'chirps-v2.0.', fixed = T) %>% purrr::map(2) %>% unlist()
   chr_dts <- strsplit(x = chr_dts, split = '.tif', fixed = T) %>% purrr::map(1) %>% unlist()
   chr_dts <- as.Date(gsub('.', '-', chr_dts, fixed = T))
   
   # Tmax
-  era5Dir <- '//CATALOGUE/Workspace14/WFP_ClimateRiskPr/1.Data/ERA5'
+  #era5Dir <- '//CATALOGUE/Workspace14/WFP_ClimateRiskPr/1.Data/ERA5'
+  era5Dir <- '//catalogue/WFP_ClimateRiskPr1/1.Data/AgERA5'
   tmx_pth <- paste0(era5Dir,'/2m_temperature-24_hour_maximum')
   tmx_fls <- gtools::mixedsort(list.files(tmx_pth, pattern = '*.nc$', full.names = T))
   tmx_dts <- strsplit(x = tmx_fls, split = 'glob-agric_AgERA5_', fixed = T) %>% purrr::map(2) %>% unlist()
