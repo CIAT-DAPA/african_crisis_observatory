@@ -239,7 +239,7 @@ clim_clust <- st_as_sf(clim_clust)
 #conf_clust@data$clim_cluster <- as.character(sp::over(conf_clust, clim_clust, returnList = F)$text_output)
 conf_clim <- st_intersection(conf_clust, clim_clust)
 conf_clim <- conf_clim %>% dplyr::rename(clim_cluster = text_output)
-conf_clim <- conf_clim %>% dplyr::rename(clim_cluster_short_label = label)
+conf_clim <- conf_clim %>% dplyr::rename(clim_cluster_short_label = label.1)
 
 #conf_clust$clim_cluster <- as.character(unlist(st_intersects(st_as_sf(conf_clust), st_as_sf(clim_clust))))
 
@@ -1060,7 +1060,8 @@ ip_rasts <- all_rasts %>%
   dplyr::bind_cols()
 
 clusts_to_share <- merge(x=clusts_to_share,y=liveext, by=c("ov"),all.x=TRUE)
-clusts_to_share <- merge(x=clusts_to_share1,y=eth_ext, by=c("ov"),all.x=TRUE)
+clusts_to_share <- merge(x=clusts_to_share,y=eth_ext, by=c("ov"),all.x=TRUE)
+
 
 
 
@@ -1110,8 +1111,8 @@ clusts_to_share <- clusts_to_share %>%
                   ACTOR1_RICHNESS = ACTOR1_,
                   ACTOR2_RICHNESS = ACTOR2_,
                   FATALITIES = FATALIT,
-                  conflict_clust_label = label.1, 
-                  conflict_clust_short_label = clust_km, 
+                  conflict_clust_label = clust_km, 
+                  conflict_clust_short_label = label, 
                   conflict_cluster_text_description ,
                   clim_cluster_text_description = clim_cluster,
                   clim_cluster_short_label, 
