@@ -50,8 +50,9 @@ selectSeason <- function(dates, seasons){
 iso <- 'KEN'
 #shp <- geodata::gadm(country = iso , level = 0, path = paste0(store,'raw/admin'), version="latest")
 # Function to compute complex Agro-climatic indices
-era5Dir <- '//catalogue/WFP_ClimateRiskPr1/1.Data/AgERA5'
-chr_pth <- '//catalogue/Workspace14/WFP_ClimateRiskPr1/1.Data/Chirps'
+era5Dir <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr1/1.Data/AgERA5'
+chr_pth <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr1/1.Data/Chirps'
+
 calc_AgrClm_cmplx <- function(season = season, iso,
                               soil_cp_pth = "",
                               soil_sat_pth = "",
@@ -104,7 +105,9 @@ calc_AgrClm_cmplx <- function(season = season, iso,
   # Filtering days within the season
   yrs <- lubridate::year(tmx_dts)
   yrs <- names(table(yrs)[table(yrs) %in% 365:366])
-  yrs <- yrs[!yrs %in% c("2024", "2025")] #XXXXXFILTER OUT UNWANTED YEARS
+  
+  #' FILTER OUT YEARS
+  yrs <- yrs[!yrs %in% "2024" & !yrs < "1981"]  #NOTE CHIRPS IS AVAILABLE FROM 1981
   
   tmx_fls <- tmx_fls[lubridate::year(tmx_dts) %in% yrs]
   tmn_fls <- tmn_fls[lubridate::year(tmn_dts) %in% yrs]
@@ -119,9 +122,9 @@ calc_AgrClm_cmplx <- function(season = season, iso,
   rhy_dts <- rhy_dts[lubridate::year(rhy_dts) %in% yrs]
   
   # Raster template
-  tmp <- terra::rast('//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/chirps-v2.0.2020.01.01.tif')
-  shp <- geodata::gadm(country = iso , level = 0, path = paste0(store,'raw/admin'), version="latest")
-  #shp <- terra::vect(shp_fl)
+  tmp <- terra::rast('//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr1/1.Data/Chirps/chirps-v2.0.2020.01.01.tif')
+  #shp <- geodata::gadm(country = iso , level = 0, path = tempdir(), version="latest")
+  shp <- terra::vect(shp_fl) #\\alliancedfs.alliance.cgiar.org\WS18_Afrca_K_N_ACO2\FCM\Data\raw\admin\gadm
   tmp <- tmp %>% terra::crop(terra::ext(shp)) %>% terra::mask(shp)
   tmp[!is.na(tmp)] <- 1
   
@@ -223,11 +226,10 @@ calc_AgrClm_cmplx <- function(season = season, iso,
 seasons <- switch(iso, "KEN" = list(annual = 1:12)
 )
 
-
-#shp_fl <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/" ,iso, "/_shps/" , iso, ".shp")
+shp_fl <- paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/" ,iso, "/_shps/" , iso, ".shp")
 
 tmp_path <- "//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/chirps-v2.0.2020.01.01.tif"
-out_root_dir <- paste0(store, 'climate_indices/', iso, '/')
+out_root_dir <- paste0(store, iso, '/')
 #soil_pth <- "//catalogue/workspace_cluster_14/WFP_ClimateRiskPr/1.Data/soil/KEN"
 
 
