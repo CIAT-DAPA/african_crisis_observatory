@@ -1,5 +1,5 @@
 # ------------------------------------------ #
-# FAO-Penman-Monteith Evapotranspiration
+# FAO-Penman-Monteith Evapotranspiration method
 # By: Cesar Saavedra & Harold Achicanoy
 # Adopted by Benson Kenduiywo
 # ABC
