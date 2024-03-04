@@ -14,7 +14,7 @@ lapply(list.of.packages, require, character.only = TRUE)
 path <-  '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/raw/avhrr/'
 #path <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr/1.Data/'
 start <- "1981-01-01" 
-end <- "2024-02-14"
+end <- "2024-03-04"
 
 
 #' List all AVHRR files available for download
@@ -105,14 +105,3 @@ getAVHRR <- function(start_date, end_date, path, overwrite = FALSE, update = FAL
 }
 
 getAVHRR(start_date=start, end_date= end, path = path)
-
-# TODO
-# parallel download
-# processAVHRR <- function(ff){
-#	 ndvi <- raster::raster(ff, varname = "NDVI")
-#	 qa <- raster::raster(ff, varname = "QA")
-#	 # Quality unpack --- page 29 of 
-#	 # https://www1.ncdc.noaa.gov/pub/data/sds/cdr/CDRs/Normalized%20Difference%20Vegetation%20Index/AlgorithmDescription_01B-20b.pdf
-# }
-# Create composite
-# Should it be a general reduce-type function
