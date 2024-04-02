@@ -1,7 +1,7 @@
 rm(list=ls(all=TRUE))
 pacman::p_load(tidyverse, terra, raster)
 
-iso <- "SOM"
+iso <- "SSD"
 
 n_dirs <- list.files(paste0("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/",iso, "/climatic_indexes/temp/"), pattern = "season_type") %>% 
   length()
