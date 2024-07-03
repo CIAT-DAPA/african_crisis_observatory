@@ -104,7 +104,7 @@ select_eco_vars <- function(root, iso, cntr, ip){
 
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
-isos  <- c("KEN", "SEN", "ZWE", "SDN", "MLI", 'PHL')
+isos  <- c("KEN", "SEN", "ZWE", "SDN", "MLI", 'PHL', 'SSD')
 
 for(iso in isos){
 cat("Getting vars for: ", iso, "\n")
@@ -114,7 +114,8 @@ cntr <- switch (iso,
                    "ZWE" = "Zimbabwe",
                    "SDN" = "Sudan",
                    "MLI" = "Mali",
-                   'PHL' = 'Philippines'
+                   'PHL' = 'Philippines',
+                   'SSD' = 'South Sudan'
 )
 
 
