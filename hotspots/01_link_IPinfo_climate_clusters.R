@@ -13,8 +13,8 @@
 # suppressMessages(pacman::p_load(tidyverse,readxl))
 rm(list=ls(all=TRUE))
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
-iso <- "SOM"
-cntr <- "Philippines"
+iso <- "SSD"
+cntr <- "South Sudan"
 
 select_clim_vars <- function(root, iso, cntr){
   # Data dictionary
