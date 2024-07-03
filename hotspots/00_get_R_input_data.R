@@ -313,13 +313,13 @@ get_gender_pop_var <- function(iso, root, method = 'auto'){
   for(i in file_names){
     
     download.file(paste0("https://data.worldpop.org/GIS/AgeSex_structures/Global_2000_2020_Constrained/2020/",toupper(iso),"//",i), 
-                  paste0(root_dir, "/data/", iso, "/gender_population/", i),
+                  paste0(root_dir, "/", iso, "/gender_population/", i),
                   method = method
     )
     Sys.sleep(30)
   }
   
-  stk <- list.files(paste0(root_dir, "/data/", iso, "/gender_population"), pattern = "_f_", full.names = T) %>%
+  stk <- list.files(paste0(root_dir, "/", iso, "/gender_population"), pattern = "_f_", full.names = T) %>%
     purrr::map(., raster)
   
   sum_r <- sum(raster::stack(stk), na.rm = T)
