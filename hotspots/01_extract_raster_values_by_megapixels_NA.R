@@ -13,7 +13,7 @@ root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'
 
 #primero correr la creaci'on de los cluster de conflicto
 
-iso <- 'SOM'
+iso <- 'SSD'
 # Country shapefile
 shp <- terra::vect(paste0(root,'/data/', iso,'/_shps/', iso,'.shp'))
 # Conflict clusters

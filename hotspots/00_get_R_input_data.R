@@ -1,3 +1,4 @@
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, raster, trend, vegan, VGAM))
 
@@ -6,8 +7,8 @@ source('https://raw.githubusercontent.com/CIAT-DAPA/african_crisis_observatory/m
 source('https://raw.githubusercontent.com/CIAT-DAPA/agro-clim-indices/main/AWCPTF.R')
 
 
-iso <- 'MOZ' #ISO-3 code
-iso2 <- "MZ" #ISO-2 code
+iso <- 'SSD' #ISO-3 code
+iso2 <- "SS" #ISO-2 code
 
 #' Compute a PDF from  Pareto distribution.
 #' @param x (data.frame): dataframe for country relative wealth index
@@ -312,18 +313,18 @@ get_gender_pop_var <- function(iso, root, method = 'auto'){
   for(i in file_names){
     
     download.file(paste0("https://data.worldpop.org/GIS/AgeSex_structures/Global_2000_2020_Constrained/2020/",toupper(iso),"//",i), 
-                  paste0(root_dir, "/", iso, "/gender_population/", i),
+                  paste0(root_dir, "/data/", iso, "/gender_population/", i),
                   method = method
     )
     Sys.sleep(30)
   }
   
-  stk <- list.files(paste0(root_dir, "/", iso, "/gender_population"), pattern = "_f_", full.names = T) %>%
+  stk <- list.files(paste0(root_dir, "/data/", iso, "/gender_population"), pattern = "_f_", full.names = T) %>%
     purrr::map(., raster)
   
   sum_r <- sum(raster::stack(stk), na.rm = T)
   sum_r[sum_r[] <= 1] <- NA
-  writeRaster(sum_r,paste0(root_dir, "/", iso, "/gender_population/", iso, "_female_population.tif"), overwirte = T)
+  writeRaster(sum_r,paste0(root_dir, "/data/", iso, "/gender_population/", iso, "_female_population.tif"), overwirte = T)
   
   
   #####################################
@@ -337,7 +338,7 @@ get_gender_pop_var <- function(iso, root, method = 'auto'){
     
     download.file(paste0("https://data.worldpop.org/GIS/AgeSex_structures/Global_2000_2020_Constrained/2020/",toupper(iso),"//",i), 
                   
-                  paste0(root_dir, "/", iso, "/gender_population/", i),
+                  paste0(root_dir, "/data/", iso, "/gender_population/", i),
                   method = method
     )
     Sys.sleep(30)
@@ -345,12 +346,12 @@ get_gender_pop_var <- function(iso, root, method = 'auto'){
   
   
   
-  stk <- list.files(paste0(root_dir, "/", iso, "/gender_population"), pattern = "_m_", full.names = T) %>%
+  stk <- list.files(paste0(root_dir, "/data/", iso, "/gender_population"), pattern = "_m_", full.names = T) %>%
     purrr::map(., raster)
   
   sum_r <- sum(raster::stack(stk), na.rm = T)
   sum_r[sum_r[] <= 1] <- NA
-  writeRaster(sum_r,paste0(root_dir, "/", iso, "/gender_population/",iso , "_male_population.tif"), overwirte = T)
+  writeRaster(sum_r,paste0(root_dir, "/data/", iso, "/gender_population/",iso , "_male_population.tif"), overwirte = T)
   
   
 }
