@@ -23,7 +23,7 @@ suppressMessages(pacman::p_load(meteo,sp,spacetime,gstat,plyr,xts,snowfall,doPar
 suppressMessages(pacman::p_load(spatstat,maptools, Rcpp, maptree, exactextractr))
 set.seed(1000)
 
-source('./base__lowest_gadm.R')
+source('./data_download/base__lowest_gadm.R')
 #' Reclassifies raster layers using quantiles and also resamples to the same spatial resultion. 
 #' @param root base directory path
 #' @param iso country ISO code
@@ -35,8 +35,8 @@ fconf <- 'Africa_1997-2022_Jul08.xlsx' #Name of conflict file
 
 yearRange <- 1997:2022#range of years to select in ACCLED data
 recompute <- TRUE #Recompute Kernel densities?
-country_iso2 <- iso <- "MOZ"
-country <- 'Mozambique'
+country_iso2 <- iso <- "SSD"
+country <- 'South Sudan'
 
 root <- '//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO'#dir path to folder data storage
 baseDir <- paste0(root, "/data/",country_iso2)

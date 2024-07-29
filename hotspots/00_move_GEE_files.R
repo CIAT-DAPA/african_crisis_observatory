@@ -7,13 +7,10 @@
 ### 4. Run and wait
 
 
-<<<<<<< HEAD
-ISO <- "BFA"
-GEE_data_path <-  "C:/Users/acmendez/Downloads/BFA"
-=======
+
 ISO <- "SOM"
 GEE_data_path <-  "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/GEE data"
->>>>>>> 08429c2c546e106c25825e42d995c1b1d29332b8
+
 
 
 source_folders <- data.frame(folders =  list.dirs("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/KEN", recursive = T))

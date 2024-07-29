@@ -10,11 +10,11 @@ suppressMessages(pacman::p_load(tidyverse,terra,lubridate,R.utils))
 
 # Time frame
 ini <- as.Date('1981-01-01')
-end <- as.Date('2023-12-31')
+end <- as.Date('2024-12-31')
 dts <- seq(from = ini, to = end, by = 'day'); rm(ini, end)
 
 # Output directory
-Out  <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr/1.Data/Chirps'
+Out  <- '//CATALOGUE.CGIARAD.ORG/WFP_ClimateRiskPr1/1.Data/Chirps'
 dir.create(Out,F,T)
 
 # Main function

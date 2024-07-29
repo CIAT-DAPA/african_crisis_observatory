@@ -8,8 +8,8 @@ suppressMessages(pacman::p_load(rJava,readr, readxl, corrplot, matrixcalc, qgrap
 #library(CSO)
 
 root <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/"
-iso <- 'PHL'
-country_name<-'Philippines'
+iso <- 'SSD'
+country_name<-'South Sudan'
 
 data_file <- vroom::vroom(paste0(root,"data_extracted/",iso,"_stats.csv"))
 head(data_file, n=5)
