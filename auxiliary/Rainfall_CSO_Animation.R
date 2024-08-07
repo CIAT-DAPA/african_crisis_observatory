@@ -15,17 +15,15 @@ setwd(dir)
 matching_files <- list.files(pattern=paste0(".*", 'ssp585', ".*", 'pr', ".*"))
 matching_files
 length(matching_files)
-
+hist<- terra::rast(paste0(dir,"CMIP6_ACCESS-ESM1-5_historical_r1i1p1f1_pr_Africa_daily.tif"))
+hist[[1]]
+hist["2015-01-01 12:00:00 GMT"]
 #extract models
 model1 <- terra::rast(matching_files[[1]])
-model1[[2]]
-plot(model1[[2]])
 model2 <- terra::rast(matching_files[[2]])
-model2
 model3 <- terra::rast(matching_files[[3]])
-model3
 model4 <- terra::rast(matching_files[[4]])
-model4
+plot(model1[[1]])
 
 #resampling to have same resolution 
 first_resampled <- terra::resample(model1,model3)

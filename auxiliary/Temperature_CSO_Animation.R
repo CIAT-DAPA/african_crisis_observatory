@@ -24,6 +24,8 @@ model3 <- terra::rast(matching_files[[3]])
 model4 <- terra::rast(matching_files[[4]])
 plot(model4[[1]])
 model2
+new <- terra::rast(paste0(dir,"New Data/CMIP6_ACCESS-ESM1-5_ssp585_r1i1p1f1_tas_Africa_daily.tif"))
+plot(new[[1]])
 #resample to fine resolution
 ref <- terra::rast(ncols=83, nrows=89, xmin=-23.9, xmax=59.5, ymin=-37.4, ymax=40.2, nlyrs=1, res=0.5)
 ref
