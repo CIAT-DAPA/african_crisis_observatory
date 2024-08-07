@@ -125,34 +125,73 @@ within_sankey <- subset(fms_region, HOA == "within")
 names(within_sankey)[names(within_sankey) == "Region"] <- "Origin"
 within_sankey$migrants <- 1
 within_sankey <- aggregate(migrants ~ Origin + Destination, data=within_sankey, FUN=sum)
+within_sankey$Destination[within_sankey$Destination == "Tanzania"] <- "United Republic of Tanzania"
 
 outside_sankey <- subset(fms_region, HOA == "outside")
 names(outside_sankey)[names(outside_sankey) == "Region"] <- "Origin"
 outside_sankey$migrants <- 1
 outside_sankey <- aggregate(migrants ~ Origin + Destination, data=outside_sankey, FUN=sum)
 #define regions outside HOA
-Northern_Africa <- c("Algeria", "Egypt", "Libya", "Morocco", "Sudan", "Tunisia", "Western Sahara")
-Western_Africa <- c("Benin", "Burkina Faso", "Cape Verde", "Côte d'Ivoire", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Liberia", "Mali", "Mauritania", "Niger", "Nigeria", "Senegal", "Sierra Leone", "Togo")
-Central_Africa <- c("Angola", "Cameroon", "Central African Republic", "Chad", "Congo", "Democratic Republic of the Congo", "Equatorial Guinea", "Gabon", "São Tomé and Príncipe")
-Southern_Africa <- c("Botswana", "Eswatini", "Lesotho", "Namibia", "South Africa")
-Eastern_Africa <- c("Burundi", "Comoros", "Djibouti", "Eritrea", "Ethiopia", "Kenya", "Madagascar", "Malawi", "Mauritius", "Mozambique", "Rwanda", "Seychelles", "Somalia", "South Sudan", "Tanzania", "Uganda", "Zambia", "Zimbabwe")
+MENA <- C("Algeria","Morocco","Libya","Tunisia","Egypt","Jordan","Syria","Saudi Arabia","Iraq","United Arab Emirates","Iran","Yemen","Oman","Israel")
+Sub_saharan <- c(Western_Africa,Central_Africa,Southern_Africa, Eastern_Africa, "Sudan","Western Sahara")
+Europe <- c(Eastern_Europe,Northern_Europe,Southern_Europe,Western_Europe)
+
+
+# Northern_Africa <- c("Algeria", "Egypt", "Libya", "Morocco", "Sudan", "Tunisia", "Western Sahara")
+# Western_Africa <- c("Benin", "Burkina Faso", "Cape Verde", "Côte d'Ivoire", "Gambia", "Ghana", "Guinea", "Guinea-Bissau", "Liberia", "Mali", "Mauritania", "Niger", "Nigeria", "Senegal", "Sierra Leone", "Togo")
+# Central_Africa <- c("Angola", "Cameroon", "Central African Republic", "Chad", "Congo", "Democratic Republic of the Congo", "Equatorial Guinea", "Gabon", "São Tomé and Príncipe")
+# Southern_Africa <- c("Botswana", "Eswatini", "Lesotho", "Namibia", "South Africa")
+# Eastern_Africa <- c("Burundi", "Comoros", "Djibouti", "Eritrea", "Ethiopia", "Kenya", "Madagascar", "Malawi", "Mauritius", "Mozambique", "Rwanda", "Seychelles", "Somalia", "South Sudan", "Tanzania", "Uganda", "Zambia", "Zimbabwe")
+North_America = c("Canada", "Mexico", "United States")
+Central_America = c("Belize", "Costa Rica", "El Salvador", "Guatemala", "Honduras", "Nicaragua", "Panama")
+Caribbean = c("Antigua and Barbuda", "Bahamas", "Barbados", "Cuba", "Dominica", "Dominican Republic", "Grenada", "Haiti", "Jamaica", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Trinidad and Tobago")
+South_America = c("Argentina", "Bolivia", "Brazil", "Chile", "Colombia", "Ecuador", "Guyana", "Paraguay", "Peru", "Suriname", "Uruguay", "Venezuela")
+Central_Asia = c("Kazakhstan", "Kyrgyzstan", "Tajikistan", "Turkmenistan", "Uzbekistan")
+East_Asia = c("China", "Japan", "Mongolia", "North Korea", "South Korea", "Taiwan")
+South_Asia = c("Afghanistan", "Bangladesh", "Bhutan", "India", "Maldives", "Nepal", "Pakistan", "Sri Lanka")
+Southeast_Asia = c("Brunei", "Cambodia", "East Timor", "Indonesia", "Laos", "Malaysia", "Myanmar", "Philippines", "Singapore", "Thailand", "Vietnam")
+Western_Asia = c("Armenia", "Azerbaijan", "Bahrain", "Cyprus", "Georgia", "Iraq", "Israel", "Jordan", "Kuwait", "Lebanon", "Oman", "Qatar", "Saudi Arabia", "Syria", "Turkey", "United Arab Emirates", "Yemen")
+Eastern_Europe = c("Belarus", "Bulgaria", "Czech Republic", "Hungary", "Moldova", "Poland", "Romania", "Russia", "Slovakia", "Ukraine")
+Northern_Europe = c("Denmark", "Estonia", "Finland", "Iceland", "Ireland", "Latvia", "Lithuania", "Norway", "Sweden", "United Kingdom")
+Southern_Europe = c("Albania", "Andorra", "Bosnia and Herzegovina", "Croatia", "Greece", "Italy", "Kosovo", "Malta", "Montenegro", "North Macedonia", "Portugal", "San Marino", "Serbia", "Slovenia", "Spain", "Vatican City")
+Western_Europe = c("Austria", "Belgium", "France", "Germany", "Liechtenstein", "Luxembourg", "Monaco", "Netherlands", "Switzerland")
+Australia_and_New_Zealand = c("Australia", "New Zealand")
+Melanesia = c("Fiji", "Papua New Guinea", "Solomon Islands", "Vanuatu")
+Micronesia = c("Kiribati", "Marshall Islands", "Micronesia (Federated States of)", "Nauru", "Palau")
+Polynesia = c("Samoa", "Tonga", "Tuvalu")
 outside_sankey$region <- ifelse(outside_sankey$Destination %in% Northern_Africa, "Northern Africa", 
                          ifelse(outside_sankey$Destination %in% Western_Africa, "Western Africa",
                          ifelse(outside_sankey$Destination %in% Southern_Africa, "Southern Africa",
                          ifelse(outside_sankey$Destination %in% Eastern_Africa, "Eastern Africa",
                          ifelse(outside_sankey$Destination %in% Central_Africa, "Central Africa",
-                                "")))))
+                         ifelse(outside_sankey$Destination %in% North_America, "North America",
+                         ifelse(outside_sankey$Destination %in% Central_America, "Central America",
+                         ifelse(outside_sankey$Destination %in% Caribbean, "Caribbean",
+                         ifelse(outside_sankey$Destination %in% South_America, "South America",
+                         ifelse(outside_sankey$Destination %in% Central_Asia, "Central Asia",
+                         ifelse(outside_sankey$Destination %in% East_Asia, "East Asia",
+                         ifelse(outside_sankey$Destination %in% Southeast_Asia, "South East Asia",
+                         ifelse(outside_sankey$Destination %in% Western_Asia, "Western Asia",
+                                ifelse(outside_sankey$Destination %in% Eastern_Europe, "Eastern Europe",
+                                       ifelse(outside_sankey$Destination %in% Northern_Europe, "Northern Europe",
+                                              ifelse(outside_sankey$Destination %in% Southern_Europe, "Southern Europe",
+                                                     ifelse(outside_sankey$Destination %in% Western_Europe, "Western Europe",
+                                                            ifelse(outside_sankey$Destination %in% Australia_and_New_Zealand, "Australia&New_Zealand",
+                                                                   ifelse(outside_sankey$Destination %in% Melanesia, "Melanesia",
+                                                                          ifelse(outside_sankey$Destination %in% Micronesia, "Micronesia",
+                                                                                 ifelse(outside_sankey$Destination %in% Polynesia, "Polynesia",
+                                "")))))))))))))))))))))
 
 # Generate unique nodes
-nodes <- data.frame(name = unique(c(as.character(outside_sankey$Origin), 
-                                    as.character(outside_sankey$Destination))))
+nodes <- data.frame(name = unique(c(as.character(within_sankey$Origin), 
+                                    as.character(within_sankey$Destination))))
 View(links)
 
 # Generate links dataframe using indices
 links <- data.frame(
-  source = match(outside_sankey$Origin, nodes$name) - 1,  # match returns positions, subtract 1 for zero-indexing
-  target = match(outside_sankey$Destination, nodes$name) - 1,  # match returns positions, subtract 1 for zero-indexing
-  value = outside_sankey$migrants
+  source = match(within_sankey$Origin, nodes$name) - 1,  # match returns positions, subtract 1 for zero-indexing
+  target = match(within_sankey$Destination, nodes$name) - 1,  # match returns positions, subtract 1 for zero-indexing
+  value = within_sankey$migrants
 )
 sankey_ <- sankeyNetwork(
   Links = links,
@@ -164,7 +203,7 @@ sankey_ <- sankeyNetwork(
   fontSize = 12,  # optional
   nodeWidth = 30  # optional
 )
-saveWidget(sankey_, paste0(wd,"/Results/outside/sankey_plot.html"))
+saveWidget(sankey_, paste0(wd,"/Results/within/sankey_plot.html"))
 #initialize webshot
 webshot::install_phantomjs()
 
