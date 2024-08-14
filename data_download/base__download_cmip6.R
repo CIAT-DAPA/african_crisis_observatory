@@ -34,14 +34,14 @@ install_github(c("SantanderMetGroup/loadeR.java",
 
 
 #working directory
-wd <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/Data/CMIP6/Daily"
+wd <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/Data/CMIP6/Monthly_1991_2050"
 wd
 if (!file.exists(wd)) {dir.create(wd, recursive=TRUE)}
 
 lons <- c(-23, 59)  # Africa
 lats <- c(-37, 40)   # Africa
-years.hist <- 1995:2014
-years.rcp <- 2021:2060
+years.hist <- 1991:2020
+years.rcp <- 2021:2050
 #varname one of "tas","tasmin","tasmax","pr"
 #rcp one of "ssp126", "ssp245", "ssp370", "ssp585"
 
@@ -54,7 +54,7 @@ dataset_list <- c("CMIP6_ACCESS-ESM1-5_scenario_r1i1p1f1",
 
 #function to download CMIP6 data
 downloadCMIP6 <- function(ds_name="CMIP6_ACCESS-ESM1-5_scenario_r1i1p1f1", rcp="ssp585", varname="pr", 
-                          years.hist=2000:2014, years.rcp=2015:2060, lons=c(-23, 59), lats=c(-37, 40),
+                          years.hist=1991:2020, years.rcp=2021:2050, lons=c(-23, 59), lats=c(-37, 40),
                           basedir) {
   #info
   cat("dataset=", ds_name, "/ rcp=", rcp, "/ variable=", varname, "\n")
@@ -121,8 +121,8 @@ for (i in 1:length(dataset_list)) {
       cmip6_data <- downloadCMIP6(ds_name=dataset_list[i], 
                                   rcp=scenario,  
                                   varname=varname, 
-                                  years.hist=2000:2014, 
-                                  years.rcp=2015:2060, 
+                                  years.hist=1991:2020, 
+                                  years.rcp=2021:2050, 
                                   lons=c(-23, 59), 
                                   lats=c(-37, 40), 
                                   basedir=wd)

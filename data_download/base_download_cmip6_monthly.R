@@ -1,5 +1,5 @@
-#download CMIP6 data from UDG mirror, using UDG tools
-#JRV, Dec 2022
+#download monthly aggregated CMIP6 data from UDG mirror, using UDG tools
+# August 2024
 
 #java headspace
 options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx8192m"))
@@ -34,14 +34,14 @@ install_github(c("SantanderMetGroup/loadeR.java",
 
 
 #working directory
-wd <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/Data/CMIP6/monthly"
+wd <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/Data/CMIP6/Monthly_1991_2050"
 wd
 if (!file.exists(wd)) {dir.create(wd, recursive=TRUE)}
 
 lons <- c(-23, 59)  # Africa
 lats <- c(-37, 40)   # Africa
-years.hist <- 1995:2014
-years.rcp <- 2021:2040
+years.hist <- 1991:2014
+years.rcp <- 2015:2050
 #varname one of "tas","tasmin","tasmax","pr"
 #rcp one of "ssp126", "ssp245", "ssp370", "ssp585"
 
@@ -54,7 +54,7 @@ dataset_list <- c("CMIP6_ACCESS-ESM1-5_scenario_r1i1p1f1",
 
 #function to download CMIP6 data
 downloadCMIP6 <- function(ds_name="CMIP6_ACCESS-ESM1-5_scenario_r1i1p1f1", rcp="ssp585", varname="pr", 
-                          years.hist=2000:2014, years.rcp=2021:2040, lons=c(-23, 59), lats=c(-37, 40),
+                          years.hist=1991:2014, years.rcp=2015:2050, lons=c(-23, 59), lats=c(-37, 40),
                           basedir) {
   #info
   cat("dataset=", ds_name, "/ rcp=", rcp, "/ variable=", varname, "\n")
@@ -74,7 +74,7 @@ downloadCMIP6 <- function(ds_name="CMIP6_ACCESS-ESM1-5_scenario_r1i1p1f1", rcp="
     #loading mean temperature, historical
     cat("downloading historical data, please wait...\n")
     data_his <- load.data(dataset.hist, years.hist, var=varname)
-    cat("hhhhhhhh  mean")
+    cat("downloaded")
     #convert 'grid' to sp object
     r_his <- grid2sp(data_his)
     r_his <- terra::rast(r_his)
@@ -96,7 +96,7 @@ downloadCMIP6 <- function(ds_name="CMIP6_ACCESS-ESM1-5_scenario_r1i1p1f1", rcp="
     #loading mean temperature, rcp
     cat("downloading rcp data, please wait...\n")
     data_rcp <- load.data(dataset.rcp, years.rcp, var=varname)
-    
+    cat("downloaded rcp")
     #convert 'grid' to sp object
     r_rcp <- grid2sp(data_rcp)
     r_rcp <- terra::rast(r_rcp)
@@ -121,8 +121,8 @@ for (i in 1:length(dataset_list)) {
       cmip6_data <- downloadCMIP6(ds_name=dataset_list[i], 
                                   rcp=scenario,  
                                   varname=varname, 
-                                  years.hist=2000:2014, 
-                                  years.rcp=2021:2040, 
+                                  years.hist=1991:2014, 
+                                  years.rcp=2015:2050, 
                                   lons=c(-23, 59), 
                                   lats=c(-37, 40), 
                                   basedir=wd)
