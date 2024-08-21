@@ -6,6 +6,8 @@ install.packages("networkD3")
 install.packages("htmlwidgets")
 install.packages("webshot")
 install.packages("scatterpie")
+install.packages("ggplot2")
+
 library(geodata)
 library(tidyverse)
 library(sf)
@@ -28,10 +30,12 @@ fms <- read_excel(file)
 View(fms)
 #data cleaning
 fms <- subset(fms, departure_country == "Ethiopia")
-unique(fms$departure_admin3) #TOTALS VALUES = 110,066
+#TOTALS VALUES = 110,066
 adm1_count <- sum(!fms$departure_admin1 %in% exclude & !is.na(fms$departure_admin1)) #107,688
 adm2_count <- sum(!fms$departure_admin2 %in% exclude & !is.na(fms$departure_admin2)) #92,682
 adm3_count <- sum(!fms$departure_admin3 %in% exclude & !is.na(fms$departure_admin3)) #80,488
+names(fms)[names(fms) == "departure_admin1"] <- "Region"
+names(fms)[names(fms) == "departure_admin2"] <- "Zones"
 names(fms)[names(fms) == "departure_admin3"] <- "Woredas"
 names(fms)[names(fms) == "final_destination_country"] <- "Destination"
 fms$survey_date <- as.Date(fms$survey_date)
@@ -78,11 +82,11 @@ within_by_year <- aggregate(migrants ~ Region + year, data = fms_within, FUN = s
 outside_by_date <- aggregate(migrants ~ survey_date + Region, data = fms_outside, FUN = sum)
 outside_by_year <- aggregate(migrants ~ Region + year, data = fms_outside, FUN = sum)
 
-
+View(outside_by_date)
 #plotting line plot
-region_trends <- ggplot(within_by_year, aes(x = year, y = migrants,color = Region, group = Region)) +
+region_trends <- ggplot(within_by_date, aes(x = survey_date, y = migrants,color = Region, group = Region)) +
   geom_line(size = 0.8) +
-  geom_smooth(se = TRUE, method = "loess", linetype = "dashed", size = 0.7) +
+  geom_smooth(se = FALSE, method = "loess", linetype = "dashed", size = 0.7) + #Adds a smoothed line (trend line) to the plot to show the overall trend in the data.
   geom_point(size = 0.8) +
   labs(
     title = "Migration Trends from Ethiopia to countries within HOA (2018-2024)",
@@ -92,7 +96,7 @@ region_trends <- ggplot(within_by_year, aes(x = year, y = migrants,color = Regio
   theme_bw()
 region_trends
 #save the plot
-file <- paste0(wd,"/Results/within/trends_by_year.png")
+file <- paste0(wd,"/Results/within/trends_date.png")
 ggsave(file, plot = region_trends, width = 11, height = 8, dpi = 300)
 
 #map plotting
@@ -272,6 +276,23 @@ map
 tmap_save(map,  dpi= 300,  height=8.3, width=11.7, units="in",scale = 1.6,
           filename=paste0(wd,"/Results/within/Overlay.png"))
 #socioeconomic profiles
+#define professions
+agriculture <- c("Agriculture, Fishery, and/or Forestry workers",
+                 "Skilled agricultural, forestry and fishery worker (e.g. gardeners, farmers, fishers, gatherers)",
+                 "Unskilled farmer", "Traditional farmer")
+pastoralist <- c("Pastoralist","Pastoralist or livestock herder","Livestock herder",
+                 "Livestock rearing","Livestock keeper","Livestock","Rearing reduced","Rearing induce")
+elementary <- c("Elementary occupation (e.g. cleaners, mining/ construction labourers, street vendors, refuse workers)",
+                "Aide conducteur","Motorbike operator","Construction worker's")
+profession <- c("Professional (e.g. doctors, nurses, teachers, accountants)","Managers, Professionals , Office work (ex: public servant, NGO / UN worker)",
+                "Mining","Health Professional","Education Professional")
+services <- c("Waitress","Waiter at a restaurant","Waiter","vente","Vendeur de son boutique",
+              "Vegetable seller","Dishwasher","Selling of milk","Casual labour","Beauty salon",
+              "Shop keeper","Car wash","Domestic worker","Garage", 
+              "Services and sales worker (e.g. cooks, hairdressers, protective services",
+              "Service and sales workers (ex: make tea, serve food, sell at market)")
+skilled_manual <- c("Carpenter","i. Skilled manual (craft, transport)")
+unskilled_manual <- c("Unskilled Manual")
 #within
 within_profession <- fms_within[,c("survey_date","Region","main_profession_of_recent_or_current_job","other_profession_of_recent_or_current_job")]
 View(within_profession)
@@ -284,147 +305,187 @@ within_profession$main_profession_of_recent_or_current_job <- ifelse(
   within_profession$main_profession_of_recent_or_current_job
 )
 
-within_profession$profession <- ifelse(
+within_profession$main_profession_of_recent_or_current_job <- ifelse(
   within_profession$main_profession_of_recent_or_current_job == "Other, specify" & !is.na(within_profession$other_profession_of_recent_or_current_job),
   within_profession$other_profession_of_recent_or_current_job,
-  within_profession$profession
+  within_profession$main_profession_of_recent_or_current_job
 )
-
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Elementary occupation (e.g. cleaners, mining/ construction labourers, street vendors, refuse workers)"] <- "Elementary Occupation"
 # within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
 #                                "Plant and machine operator, assembler (e.g. truck/ bus drivers, mining/ rubber machine operators)"] <- "Assembling,Plant&Machine Operation"
 # within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
 #                                "Technician and associate professional (e.g. sales and purchasing agents, religious associate professionals)"] <- "Technician&Associates"
 # within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Services and sales worker (e.g. cooks, hairdressers, protective services)"] <- "Services&Sales"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Service and sales workers (ex: make tea, serve food, sell at market)"] <- "Services&Sales"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
 #                                "Craft and related trades worker (e.g. metal workers, repairers, woodworkers, electronic installers)"] <- "Trade&Craft"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Education Professional"] <- "Professional"
 # within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
 #                                "Manager (e.g. directors, senior officials)"] <- "Management"
 # within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
 #                                "Clerical support worker (e.g. general secretaries, customer service clerks)"] <- "Clerical Work"
 # within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Professional (e.g. doctors, nurses, teachers, accountants)"] <- "Professional"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Health Professional"] <- "Professional"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
 #                                "Armed forces occupation"] <- "Armed Forces"
 # within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
 #                                "Government Civil Servants and Administrators"] <- "Civil Servants"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Managers, Professionals , Office work (ex: public servant, NGO / UN worker)"] <- "Professional"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Unskilled Manual"] <- "Unskilled Manual"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-                               # "i. Skilled manual (craft, transport)"] <- "Skilled Manual"
-# elementary <- c("Aide conducteur","Motorbike operator","Construction worker's")
-# services <- c("Waitress","Waiter at a restaurant","Waiter","vente","Vendeur de son boutique",
-#               "Vegetable seller","Dishwasher","Selling of milk","Casual labour","Beauty salon",
-#               "Shop keeper","Car wash","Domestic worker","Garage")
-# profession <- c("Mining")
 # business <- c("Small Business woman","Business Woman","Small Business Owner","Business woman")
-agriculture <- c("Agriculture, Fishery, and/or Forestry workers",
-                 "Skilled agricultural, forestry and fishery worker (e.g. gardeners, farmers, fishers, gatherers)",
-                 "Unskilled farmer", "Traditional farmer")
-# skilled_manual <- c("Carpenter")
-pastoralist <- c("Pastoralist","Pastoralist or livestock herder","Livestock herder",
-                 "Livestock rearing","Livestock keeper","Livestock","Rearing reduced","Rearing induce")
 # unwanted <- c("Employed","Nongovernmental employed","UN Worker","Doker","Housewife")
 
 
 within_profession$profession <- ifelse(within_profession$main_profession_of_recent_or_current_job %in% pastoralist, "Pastoralist", 
-                                ifelse(within_profession$main_profession_of_recent_or_current_job %in% agriculture, "Agriculture, Fishery&Forestry",
-                                       "Others"))
+                                        ifelse(within_profession$main_profession_of_recent_or_current_job %in% agriculture, "Agriculture, Fishery&Forestry",
+                                               ifelse(within_profession$main_profession_of_recent_or_current_job %in% elementary, "Elementary Occupation",
+                                                      ifelse(within_profession$main_profession_of_recent_or_current_job %in% profession, "Professional",
+                                                             ifelse(within_profession$main_profession_of_recent_or_current_job %in% services, "Services&Sales",
+                                                                    ifelse(within_profession$main_profession_of_recent_or_current_job %in% skilled_manual, "Skilled Manual",
+                                                                           ifelse(within_profession$main_profession_of_recent_or_current_job %in% unskilled_manual, "Unskilled Manual",
+                                                                                  "Others")))))))
 within_profession_ <- within_profession[,c("Region","profession")]
-unique(within_profession$profession)
+unique(within_profession_$profession)
 within_profession_$number <- 1
 within_profession_ <- aggregate(number ~ Region+profession, data=within_profession_, FUN=sum)
-percentages <- within_total$number / sum(within_total$number) * 100
+#convert to long format
 within_prof_wide <- pivot_wider(
   data = within_profession_,
   names_from = profession,
   values_from = number
 )
-names(within_pie)
-View(within_pie)
+#replace NA value with 0
+within_prof_wide[is.na(within_prof_wide)] <- 0
+#merge with shp
 within_pie <- merge(admin1,within_prof_wide, by="Region")
 centroids <- st_centroid(within_pie)
-plot(centroids)
 c <- cbind(centroids, st_coordinates(centroids))
-c$Pastoralist <- as.numeric(c$Pastoralist)
-c$X <- round(c$X)
+labels <- cbind(centroids, st_coordinates(centroids))
+names(c)[names(c) == "Agriculture..Fishery.Forestry"] <- "Agriculture,Fishery&Forestry"
+names(c)[names(c) == "Elementary.Occupation"] <- "Elementary Occupation"
+names(c)[names(c) == "Services.Sales"] <- "Services&Sales"
+names(c)[names(c) == "Skilled.Manual"] <- "Skilled Manual"
+names(c)[names(c) == "Unskilled.Manual"] <- "Unskilled Manual"
+c <- as.data.frame(c)
 View(c)
-c$Pastoralist[is.na(c$Pastoralist)] <- 0
-c$Others[is.na(c$Others)] <- 0
 # Plot the map with pie charts
+within_plot <- ggplot() +
+  geom_sf(data = within_pie, fill = "gray80", color = "white")+
+  geom_scatterpie(data = c, aes(x = X, y = Y, r = 0.5, group=Region),  # Add pie charts using centroid coordinates
+  cols = c("Pastoralist", "Agriculture,Fishery&Forestry", "Professional","Elementary Occupation", "Skilled Manual","Unskilled Manual","Services&Sales","Others"),
+  color = "black",
+  size=0.3)+
+  geom_text(data=labels,
+    aes(x=X, y=Y,label=Region),
+    size=3,
+    color="brown",
+    fontface="bold"
+  )+
+  coord_sf()+
+  theme_minimal() +
+  # theme_classic()+
+  theme(
+    panel.grid.major = element_blank(),  # Remove major grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    axis.text.x = element_blank(),        # Remove x-axis text (labels)
+    axis.text.y = element_blank(),        # Remove y-axis text (labels)
+    axis.ticks = element_blank(),
+    axis.title.x = element_blank(),  # Remove x-axis label
+    axis.title.y = element_blank(),  # Remove y-axis label
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    legend.position.inside = c(0.95, 0.05),  # Position the legend in the bottom right
+    legend.justification = c("right", "bottom"),
+    panel.border = element_rect(color = "gray50", fill = NA, size = 1),
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "black")
+    
+  )+
+  scale_fill_manual(values = c("Agriculture,Fishery&Forestry" = "green", "Others" = "white", "Pastoralist" = "orange","Elementary Occupation" = "thistle",
+                               "Professional"="purple","Services&Sales"="lavender","Skilled Manual"="black", "Unskilled Manual"="blue"))+  # Custom colors
+  labs(title = "Socioeconomic profiles for Migrants moving within HOA",fill="Profession")
+within_plot
+output <- paste0(wd,"/Results/within/within_pie.png")
+ggsave(output, plot = within_plot, dpi= 600,  height=8.3, width=11.7, units="in")
 
-ggplot() +
-  geom_sf(data = within_pie, fill = "gray80", color = "white") +  # Plot the world map
-  geom_scatterpie(data = c, aes(x = X, y = Y, r = 2),  # Add pie charts using centroid coordinates
-                  cols = c("Pastoralist", "Agriculture..Fishery.Forestry", "Others"),
-                  color = "black") +  # Border color for the pie charts
-  # theme_minimal() +  # Apply a minimal theme
-  labs(title = "Distribution of Migrants occupation in Selected African Countries") +  # Add title
-  scale_fill_manual(values = c("Agriculture..Fishery.Forestry" = "green", "Others" = "blue", "Pastoralist" = "orange"))  # Custom colors
-
-# Create a tmap plot with pie charts
-tmap_mode("view")  # Set to interactive view mode (use "plot" for static mode)
-
-map <- tm_shape(within_pie) +
-       tm_borders() +  
-       tm_symbols(size = 0.5,  # Size of the symbols (pie charts)
-             shape = 21,  # Circle shape
-             pies = c("Pastoralist", "Agriculture, Fishery&Forestry", "Others"),  # Data for pie charts
-             col = c("red", "green", "blue"),  # Colors for the categories
-             border.col = "black",  # Border color of pie charts
-             border.lwd = 0.5) +  # Border line width
-      tm_layout(title = "Migrants Occupation")
-#total profession pie chart
-png(paste0(wd,"/Results/within/total_pie.png"), width = 2500, height = 2000)
-#plotting area for i row and 1 column
-par(mfrow = c(1, 1))
-pie(
-  within_total$number, 
-  labels = percentages, 
-  main = "Migrants within HOA Occupation",
-  col = rainbow(length(within_total$profession)),
-  radius = 1,
-  font=2
+#plot outside HOA pie charts
+outside_profession <- fms_outside[,c("survey_date","Region","main_profession_of_recent_or_current_job","other_profession_of_recent_or_current_job")]
+View(outside_profession)
+outside_profession <- outside_profession[!is.na(outside_profession$main_profession_of_recent_or_current_job), ]
+outside_profession <- subset(outside_profession, !main_profession_of_recent_or_current_job == "Don’t know/ No answer")
+outside_profession$profession <- ""
+outside_profession$main_profession_of_recent_or_current_job <- ifelse(
+  outside_profession$main_profession_of_recent_or_current_job == "Other" & !is.na(outside_profession$other_profession_of_recent_or_current_job),
+  outside_profession$other_profession_of_recent_or_current_job,
+  outside_profession$main_profession_of_recent_or_current_job
 )
-legend("topright", 
-       legend = within_total$profession, 
-       fill = rainbow(length(within_total$profession)), 
-       cex = 1,  # Size of the text in the legend
-       bty = "n")
-dev.off()
-# Loop through each region and create a pie chart
-#plot pie charts
-png(paste0(wd,"/Results/within/region_pie.png"), width = 2500, height = 2000)
-# Set up the plotting area for 5 rows and 3 columns for regions
-par(mfrow = c(5, 3), mar = c(2, 2, 2, 2) + 0.1)
-regions <- unique(within_profession_region$Region)
 
-for (region in regions) {
-  region_data <- subset(within_profession_region, Region == region)
-  
-  # Create a pie chart
-  pie(
-    region_data$number, 
-    labels = NA, 
-    main = region,
-    col = rainbow(length(region_data$profession)),
-    radius=1,
-    cex = 2
-  )
-  legend("topright", 
-         legend = within_total$profession, 
-         fill = rainbow(length(within_total$profession)), 
-         cex = 1,  # Size of the text in the legend
-         bty = "n")
-}
-dev.off()
+outside_profession$main_profession_of_recent_or_current_job <- ifelse(
+  outside_profession$main_profession_of_recent_or_current_job == "Other, specify" & !is.na(outside_profession$other_profession_of_recent_or_current_job),
+  outside_profession$other_profession_of_recent_or_current_job,
+  outside_profession$main_profession_of_recent_or_current_job
+)
+unique(outside_profession$profession)
+
+outside_profession$profession <- ifelse(outside_profession$main_profession_of_recent_or_current_job %in% pastoralist, "Pastoralist", 
+                                       ifelse(outside_profession$main_profession_of_recent_or_current_job %in% agriculture, "Agriculture, Fishery&Forestry",
+                                              ifelse(outside_profession$main_profession_of_recent_or_current_job %in% elementary, "Elementary Occupation",
+                                              ifelse(outside_profession$main_profession_of_recent_or_current_job %in% profession, "Professional",
+                                                     ifelse(outside_profession$main_profession_of_recent_or_current_job %in% services, "Services&Sales",
+                                                            ifelse(outside_profession$main_profession_of_recent_or_current_job %in% skilled_manual, "Skilled Manual",
+                                                                   ifelse(outside_profession$main_profession_of_recent_or_current_job %in% unskilled_manual, "Unskilled Manual",
+                                              "Others")))))))
+
+outside_profession_ <- outside_profession[,c("Region","profession")]
+unique(outside_profession_$profession)
+outside_profession_$number <- 1
+outside_profession_ <- aggregate(number ~ Region+profession, data=outside_profession_, FUN=sum)
+#convert to long format
+outside_prof_wide <- pivot_wider(
+  data = outside_profession_,
+  names_from = profession,
+  values_from = number
+)
+#replace NA value with 0
+outside_prof_wide[is.na(outside_prof_wide)] <- 0
+#merge with shp
+outside_pie <- merge(admin1,outside_prof_wide, by="Region")
+out_centroids <- st_centroid(outside_pie)
+out_c <- cbind(out_centroids, st_coordinates(out_centroids))
+labels_ <- cbind(out_centroids, st_coordinates(out_centroids))
+names(out_c)[names(out_c) == "Agriculture..Fishery.Forestry"] <- "Agriculture,Fishery&Forestry"
+names(out_c)[names(out_c) == "Elementary.Occupation"] <- "Elementary Occupation"
+names(out_c)[names(out_c) == "Services.Sales"] <- "Services&Sales"
+names(out_c)[names(out_c) == "Skilled.Manual"] <- "Skilled Manual"
+names(out_c)[names(out_c) == "Unskilled.Manual"] <- "Unskilled Manual"
+out_c <- as.data.frame(out_c)
+View(out_c)
+# Plot the map with pie charts
+outside_plot <- ggplot() +
+  geom_sf(data = outside_pie, fill = "gray80", color = "white")+
+  geom_scatterpie(data = out_c, aes(x = X, y = Y, r = 0.5, group=Region),  # Add pie charts using centroid coordinates
+                  cols = c("Pastoralist", "Agriculture,Fishery&Forestry", "Professional","Elementary Occupation", "Skilled Manual","Unskilled Manual","Services&Sales","Others"),
+                  color = "black",
+                  size=0.3)+
+  geom_text(data=labels_,
+            aes(x=X, y=Y,label=Region),
+            size=3,
+            color="brown",
+            fontface="bold"
+  )+
+  coord_sf()+
+  theme_minimal() +
+  # theme_classic()+
+  theme(
+    panel.grid.major = element_blank(),  # Remove major grid lines
+    panel.grid.minor = element_blank(),  # Remove minor grid lines
+    axis.text.x = element_blank(),        # Remove x-axis text (labels)
+    axis.text.y = element_blank(),        # Remove y-axis text (labels)
+    axis.ticks = element_blank(),
+    axis.title.x = element_blank(),  # Remove x-axis label
+    axis.title.y = element_blank(),  # Remove y-axis label
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA),
+    legend.position.inside = c(0.95, 0.05),  # Position the legend in the bottom right
+    legend.justification = c("right", "bottom"),
+    panel.border = element_rect(color = "gray50", fill = NA, size = 1),
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold", color = "black")
+    
+  )+
+  scale_fill_manual(values = c("Agriculture,Fishery&Forestry" = "green", "Others" = "white", "Pastoralist" = "orange","Elementary Occupation" = "thistle",
+                               "Professional"="purple","Services&Sales"="lavender","Skilled Manual"="black", "Unskilled Manual"="blue"))+  # Custom colors
+  labs(title = "Socioeconomic profiles for Migrants moving outside HOA",fill="Profession")
+outside_plot
+output_file <- paste0(wd,"/Results/outside/outside_pie.png")
+ggsave(output_file, plot = outside_plot, dpi= 600,  height=8.3, width=11.7, units="in")
