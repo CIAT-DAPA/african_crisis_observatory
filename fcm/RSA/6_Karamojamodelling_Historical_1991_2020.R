@@ -1,3 +1,9 @@
+#*Pasture Suitability Modelling to inform resource sharing agreement in Karamoja
+#* Historical World Climate Data downscaled from Climatic Climatic Research Unit-1960-2018
+#* 
+#* Author:: Ogero Derrick
+#* 
+########################################################################
 # Install necessary packages (if not already installed)
 install.packages(c("geodata", "Recocrop", "tmap", "terra", "sf", "dplyr", "raster"))
 
