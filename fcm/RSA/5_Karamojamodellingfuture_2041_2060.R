@@ -1,5 +1,5 @@
 #*Pasture Suitability Modelling to inform resource sharing agreement in Karamoja
-#* Future World Climate Data downscaled from CMIP 6 datasets
+#* Future World Climate Data downscaled from CMIP 6 datasets for the year 2021-2040
 #* 
 #* Author:: Ogero Derrick
 #* 
@@ -20,8 +20,6 @@ library(raster)
 work_dir <- "D:/OneDrive - CGIAR/SA_Team/Projects/AGNES"
 data_dir <- file.path(work_dir, "3_Data/1_Raw/climate_data/climate/wc2.1_2.5m")
 output_dir <- file.path(work_dir, "3_Data/3_Outputs/suitability_maps")
-dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
-dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 setwd(work_dir)
 
 # Define the path to the AOI shapefile
@@ -30,29 +28,29 @@ aoi <- vect(aoi_shapefile)
 # Define the period you want to process (2021-2040)
 period <- "2041-2060"
 
-# Step 1: List Raster Files for tmax, tmin, and prec for the period 2021-2040
+#  List Raster Files for tmax, tmin, and prec for the period 2021-2040
 tmax_files <- list.files(path = data_dir, pattern = paste0("wc2.1_2.5m_tmax_.*_", scenario, "_", period, "\\.tif$"), full.names = TRUE)
 tmin_files <- list.files(path = data_dir, pattern = paste0("wc2.1_2.5m_tmin_.*_", scenario, "_", period, "\\.tif$"), full.names = TRUE)
 prec_files <- list.files(path = data_dir, pattern = paste0("wc2.1_2.5m_prec_.*_", scenario, "_", period, "\\.tif$"), full.names = TRUE)
 
-# Step 2: Load and stack rasters using terra
+# Load and stack rasters using terra
 tmax_stack <- rast(tmax_files)
 tmin_stack <- rast(tmin_files)
 prec_stack <- rast(prec_files)
 
-# Step 3: Calculate Averages across all models for each month separately
+# Calculate Averages across all models for each month separately
 mean_tmax <- tapp(tmax_stack, index=rep(1:12, times=13), fun = mean, na.rm = TRUE)
 mean_tmin <- tapp(tmin_stack, index=rep(1:12, times=13), fun = mean, na.rm = TRUE)
 mean_prec <- tapp(prec_stack, index=rep(1:12, times=13), fun = mean, na.rm = TRUE)
 
-# Step 4: Generate tavg from the mean tmax and tmin
+# calculate tavg from the mean tmax and tmin
 mean_tavg <- (mean_tmax + mean_tmin) / 2
 
-# Step 5: Mask to AOI
+# Mask to AOI
 tavg<- mask(crop(mean_tavg, aoi), aoi)
 rain <- mask(crop(mean_prec, aoi), aoi)
 
-# Step 6: Rename layers to match WorldClim format
+#  Rename layers to match WorldClim format
 names(tavg) <- paste0("KEN_w~avg_", 1:12)
 names(rain) <- paste0("KEN_w~prec_", 1:12)
 
@@ -62,10 +60,8 @@ cat("Processing completed for period:", period, "\n")
 # Grass types to model
 grass_types <- c("Cenchrus ciliaris L.", "Chloris gayana", "Eragrostis superba",
                  "Pennisetum clandestinum", "Eragrostis tef", 
-                 "Dichanthium aristatum",
-                 "Desmodium intortum",
-                 "Mucuna pruriens", "Acacia senegal",
-                 "Balanites aegyptiaca")
+                 "Dichanthium aristatum","Desmodium intortum",
+                 "Mucuna pruriens", "Acacia senegal","Balanites aegyptiaca")
 
 # Load place names for Kenya, Uganda, and South Sudan
 ken_setl <- st_read("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/1_Raw/Place_Names/Kenya/hotosm_ken_populated_places_points_shp.shp") %>%
@@ -85,7 +81,7 @@ ssd_setl <- st_read("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/1_Raw/Pla
   st_as_sf() %>%
   st_intersection(st_as_sf(aoi))
 
-# Step 7: Function to run the EcoCrop model and save plots
+#  Function to run the EcoCrop model and save plots
 run_and_save_ecocrop <- function(grass_name, rain, tavg, aoi, ken_setl, uga_setl, ssd_setl) {
   # Create an Ecocrop model
   crop <- Recocrop::ecocropPars(grass_name)
@@ -142,7 +138,7 @@ run_and_save_ecocrop <- function(grass_name, rain, tavg, aoi, ken_setl, uga_setl
   return(hv_clipped)
 }
 
-# Step 8: Initialize a list to store suitability indices
+# Initialize a list to store suitability indices
 suitability_list <- list()
 
 # Loop through each grass type and run the model
@@ -174,6 +170,8 @@ writeRaster(median_suitability, median_suitability_path, overwrite = TRUE)
 
 # Plot the median suitability with additional details
 median_suitability_jpg <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability_2041_2060/models", "median_suitability.jpg")
+avg_suitability_path <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability_2041_2060/models", "average_suitability.jpg")
+
 
 # Create an sf object for plotting
 aoi_sf <- st_as_sf(aoi)
@@ -202,18 +200,8 @@ median_map <- tm_shape(median_suitability) +
   tm_compass(type = "8star", position = c("right", "top"), size = 1) +
   tm_graticules(n.x = 6, n.y = 6, lines = TRUE, labels.size = 0.6)
 
-# Function to create a legend for the grass types
-create_legend <- function(grass_types, suitability_values) {
-  colors <- tmaptools::get_brewer_pal("RdYlGn", n = 7)
-  labels <- paste(grass_types, round(suitability_values, 1), sep = " - ")
-  tm_add_legend(type = "fill", labels = labels, col = colors, title = "Grass Types with Median Suitability")
-}
-
 # Calculate median suitability values for each grass type
 suitability_values <- sapply(suitability_list, function(r) median(values(r), na.rm = TRUE))
-
-# Add the legend to the map
-median_map <- median_map + create_legend(grass_types, suitability_values)
 
 # Save the median suitability map as JPEG
 tmap_save(median_map, median_suitability_jpg, width = 1200, height = 800, dpi = 300)
