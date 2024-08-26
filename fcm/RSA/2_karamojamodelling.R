@@ -1,4 +1,4 @@
-#*Pasture Suitability Modelling to inform resource sharing agreement in Karamoja
+#*Pasture Suitability Modelling to inform resource sharing agreement in Karamoja using wordlclim data 1970-2000
 #* 
 #* 
 #* Author:: Ogero Derrick
@@ -194,19 +194,8 @@ median_map <- tm_shape(median_suitability) +
   tm_compass(type = "8star", position = c("right", "top"), size = 1) +
   tm_graticules(n.x = 6, n.y = 6, lines = TRUE, labels.size = 0.6)
 
-# Define a function to create a legend for the grass types
-create_legend <- function(grass_types, suitability_values) {
-  colors <- tmaptools::get_brewer_pal("RdYlGn", n = 7)
-  bins <- seq(40, 75, length.out = 7)
-  labels <- paste(grass_types, round(suitability_values, 1), sep = " - ")
-  tm_add_legend(type = "fill", labels = labels, col = colors, title = "Grass Types with Median Suitability")
-}
-
 # Calculate median suitability values for each grass type
 suitability_values <- sapply(suitability_list, function(r) median(values(r), na.rm = TRUE))
-
-# Add the legend to the map
-median_map <- median_map + create_legend(grass_types, suitability_values)
 
 # Save the median suitability map as JPEG
 tmap_save(median_map, file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability/models", "median_suitability.jpg"), width = 1200, height = 800, dpi = 300)
