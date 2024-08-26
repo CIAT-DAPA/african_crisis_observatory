@@ -22,30 +22,30 @@ setwd(work_dir)
 aoi_shapefile <- "D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/1_Raw/igad_cluster_1_1/igad_cluster_1_1.shp"
 aoi <- vect(aoi_shapefile)
 
-# Step 1: List Raster Files for tmax, tmin, and prec for the period 1991-2020
+# List Raster Files for tmax, tmin, and prec for the period 1991-2020
 # Adjust patterns to match your filenames
 tmax_files <- list.files(file.path(data_dir, "tmax_1991_2020"), pattern = "tmax", full.names = TRUE)
 tmin_files <- list.files(file.path(data_dir, "tmin_1991_2020"), pattern = "tmin", full.names = TRUE)
 prec_files <- list.files(file.path(data_dir, "prec_1991_2020"), pattern = "prec", full.names = TRUE)
 
-# Step 2: Load and stack rasters using terra
+# Load and stack rasters using terra
 tmax_stack <- rast(tmax_files)
 tmin_stack <- rast(tmin_files)
 prec_stack <- rast(prec_files)
 
-# Step 3: Compute monthly averages across all years
+# Compute monthly averages across all years
 mean_tmax <- tapp(tmax_stack, index = 1:12, fun = mean)
 mean_tmin <- tapp(tmin_stack, index = 1:12, fun = mean)
 mean_prec <- tapp(prec_stack, index = 1:12, fun = mean)
 
-# Step 4: Generate tavg from the mean tmax and tmin
+# Generate tavg from the mean tmax and tmin
 mean_tavg <- (mean_tmax + mean_tmin) / 2
 
-# Step 5: Mask and crop to AOI
+# Mask and crop to AOI
 tavg <- mask(crop(mean_tavg, aoi), aoi)
 rain <- mask(crop(mean_prec, aoi), aoi)
 
-# Step 6: Rename layers to match WorldClim format
+# SRename layers to match WorldClim format
 names(tavg) <- paste0("KEN_w~avg_", 1:12)
 names(rain) <- paste0("KEN_w~prec_", 1:12)
 
@@ -179,12 +179,12 @@ median_map <- tm_shape(median_suitability) +
   tm_shape(ssd_setl) + tm_text("featureNam", size = 0.3, col = "black", remove.overlap = TRUE) +
   tm_layout(
     title = "Karamoja Pasture Suitability Index 1991-2020",
-    title.size = 2.6,
-    title.fontface = "bold",  # Make the title bold
+    title.size = 3.6,
+    title.fontface = "bold",  # 
     title.position = c("center", "top"),
     legend.outside = TRUE,
     legend.outside.position = "right",
-    legend.title.size = 1.8,
+    legend.title.size = 3.8,
     legend.text.size = 0.8,
     inner.margins = c(0.02, 0.02, 0.02, 0.02)
   ) +
@@ -193,18 +193,9 @@ median_map <- tm_shape(median_suitability) +
   tm_compass(type = "8star", position = c("right", "top"), size = 1) +
   tm_graticules(n.x = 6, n.y = 6, lines = TRUE, labels.size = 0.6)
 
-# Function to create a legend for the grass types
-create_legend <- function(grass_types, suitability_values) {
-  colors <- tmaptools::get_brewer_pal("RdYlGn", n = 7)
-  labels <- paste(grass_types, round(suitability_values, 1), sep = " - ")
-  tm_add_legend(type = "fill", labels = labels, col = colors, title = "Grass Types with Median Suitability")
-}
 
 # Calculate median suitability values for each grass type
 suitability_values <- sapply(suitability_list, function(r) median(values(r), na.rm = TRUE))
-
-# Add the legend to the map
-median_map <- median_map + create_legend(grass_types, suitability_values)
 
 # Save the median suitability map as JPEG
 tmap_save(median_map, median_suitability_jpg, width = 1200, height = 800, dpi = 300)
