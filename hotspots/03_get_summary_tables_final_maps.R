@@ -303,7 +303,7 @@ tmap_save(mainmap,
           #insets_tm=insetmap, 
           #insets_vp=vp,
           height=8,
-          width=15,
+          width=10,
           units="in")
 
 ##############################################
