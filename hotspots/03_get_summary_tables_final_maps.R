@@ -275,12 +275,13 @@ temp <- as(temp, 'Spatial')
 conf_occ@data$over <- conf_occ %over%  temp %>% dplyr::pull(COUNTRY)
 conf_occ <- conf_occ[!is.na(conf_occ$over),]
 #x11()
-mainmap <- tmap::tm_shape(temp)+
-  tm_borders(col = "black")+
-  tm_shape(conf_clust)+
+mainmap <- tmap::tm_shape(conf_clust)+
   tm_fill(col = "label", palette = c("#d7191c", "#e5a03e", "#ffffbf"), alpha = 0.7, title = expression("Conflict clusters"))+
-  #tm_borders(col ="black") + 
-  tm_compass(type = "8star", position = c("left", "top")) +
+  #tm_borders(col ="black") +
+  tm_shape(temp)+
+  tm_borders(col = "black")+
+  tm_text("NAME_1", size = 0.95, col='black', remove.overlap = TRUE)+ 
+  tm_compass(type = "8star", position = c("right", "top")) +
   tm_scale_bar(breaks = c(0, 100, 200), text.size = 1, position = c(scale_bar_pos, scale_bar_top))+
   tm_shape(conf_occ)+
   tm_symbols(col = "#31b225", border.col = "black", size = "FATALITIES", scale = 3, title.size = "Number of fatalities")+
@@ -298,7 +299,7 @@ mainmap <- tmap::tm_shape(temp)+
 x11();mainmap
 tmap_save(mainmap,
           filename= paste0(root, "_results/cluster_results/conflict/geographic_distr_conflict.png"),
-          dpi=300, 
+          dpi=600, 
           #insets_tm=insetmap, 
           #insets_vp=vp,
           height=8,
