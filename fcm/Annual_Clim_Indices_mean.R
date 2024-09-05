@@ -10,7 +10,7 @@ indices_list <- list.files(dir, pattern="*.tif", full.names=TRUE)
 #Define function to compute the average of each raster file
 index_average <- function(file){
   index_raster <- terra::rast(file)
-  mean <- mean(index_raster)
+  mean <- mean(index_raster, na.rm = T)
   return(mean)
 }
 
@@ -22,4 +22,7 @@ layer_names <- gsub(".tif$", "", basename(indices_list))
 names(averaged_indices) <- layer_names
 
 # Export the stacked
-terra::writeRaster(averaged_indices, paste0(dir, '/average_indices.tiff') )
+terra::writeRaster(averaged_indices, paste0(dir, '/output/KEN_average_indices.tiff') )
+plot(averaged_indices,
+     col = terrain.colors(100), # Color palette (adjust as needed)
+     facet = list(facets = TRUE))
