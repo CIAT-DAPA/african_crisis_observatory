@@ -1,16 +1,11 @@
-#*Pasture Suitability Modelling to inform resource sharing agreement in Karamoja using wordlclim data 1970-2000
-#* 
+#*Pasture Suitability Modelling to inform resource sharing agreement in Karamoja
+#* Historical World Climate Data downscaled from Climatic Climatic Research Unit-1960-2018
 #* 
 #* Author:: Ogero Derrick
 #* 
 ########################################################################
-# Install necessary  packages
-install.packages("geodata")
-install.packages("Recocrop")
-install.packages("tmap")
-install.packages("terra")
-install.packages("sf")
-install.packages("dplyr")
+# Install necessary packages (if not already installed)
+install.packages(c("geodata", "Recocrop", "tmap", "terra", "sf", "dplyr", "raster"))
 
 # Load necessary libraries
 library(geodata)
@@ -19,34 +14,47 @@ library(tmap)
 library(terra)
 library(sf)
 library(dplyr)
+library(raster)
 
 # Define working directory
 work_dir <- "D:/OneDrive - CGIAR/SA_Team/Projects/AGNES"
-dir.create(work_dir, showWarnings = FALSE, recursive = TRUE)
+data_dir <- file.path(work_dir, "3_Data/1_Raw/Historical_Climate_data_1991_2020/")
+output_dir <- file.path(work_dir, "3_Data/3_Outputs/suitability_maps")
+dir.create(data_dir, showWarnings = FALSE, recursive = TRUE)
+dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 setwd(work_dir)
 
 # Define the path to the AOI shapefile
 aoi_shapefile <- "D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/1_Raw/igad_cluster_1_1/igad_cluster_1_1.shp"
-
-# Load AOI shapefile
 aoi <- vect(aoi_shapefile)
 
-# Define ISO codes for the Karamoja cluster (Kenya, Uganda, South Sudan, Ethiopia)
-iso_codes <- c("KEN", "UGA", "SSD", "ETH")
+# List Raster Files for tmax, tmin, and prec for the period 1991-2020
+# Adjust patterns to match your filenames
+tmax_files <- list.files(file.path(data_dir, "tmax_1991_2020"), pattern = "tmax", full.names = TRUE)
+tmin_files <- list.files(file.path(data_dir, "tmin_1991_2020"), pattern = "tmin", full.names = TRUE)
+prec_files <- list.files(file.path(data_dir, "prec_1991_2020"), pattern = "prec", full.names = TRUE)
 
-# Download climate data for the Karamoja cluster
-rain_list <- lapply(iso_codes, function(iso) 
-  geodata::worldclim_country(iso, var="prec", path="D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/1_Raw"))
-tavg_list <- lapply(iso_codes, function(iso) 
-  geodata::worldclim_country(iso, var="tavg", path="D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/1_Raw"))
+# Load and stack rasters using terra
+tmax_stack <- rast(tmax_files)
+tmin_stack <- rast(tmin_files)
+prec_stack <- rast(prec_files)
 
-# Merge the climate data
-rain <- do.call(merge, rain_list)
-tavg <- do.call(merge, tavg_list)
+# Compute monthly averages across all years
+mean_tmax <- tapp(tmax_stack, index = 1:12, fun = mean)
+mean_tmin <- tapp(tmin_stack, index = 1:12, fun = mean)
+mean_prec <- tapp(prec_stack, index = 1:12, fun = mean)
 
-# Mask the climate data to the AOI
-rain_aoi <- mask(rain, aoi)
-tavg_aoi <- mask(tavg, aoi)
+# Generate tavg from the mean tmax and tmin
+mean_tavg <- (mean_tmax + mean_tmin) / 2
+
+# Mask and crop to AOI
+tavg <- mask(crop(mean_tavg, aoi), aoi)
+rain <- mask(crop(mean_prec, aoi), aoi)
+
+# SRename layers to match WorldClim format
+names(tavg) <- paste0("KEN_w~avg_", 1:12)
+names(rain) <- paste0("KEN_w~prec_", 1:12)
+
 
 # Grass types to model
 grass_types <- c("Cenchrus ciliaris L.", "Chloris gayana", "Eragrostis superba",
@@ -74,44 +82,42 @@ ssd_setl <- st_read("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/1_Raw/Pla
   st_as_sf() %>%
   st_intersection(st_as_sf(aoi))
 
-# Function to run the EcoCrop model and save plots
-run_and_save_ecocrop <- function(grass_name, rain, tavg, aoi, work_dir, ken_setl, uga_setl, ssd_setl) {
+# Step 7: Function to run the EcoCrop model and save plots
+run_and_save_ecocrop <- function(grass_name, rain, tavg, aoi, ken_setl, uga_setl, ssd_setl) {
   # Create an Ecocrop model
   crop <- Recocrop::ecocropPars(grass_name)
   model <- Recocrop::ecocrop(crop)
   
   # Use the model to make predictions
-  plant <- predict(model, prec=rain, tavg=tavg)
+  plant <- predict(model, prec = rain, tavg = tavg)
   
   # Process predictions to suitability index
   p <- classify(plant > 0, cbind(0, NA)) * 1:12
-  pm <- median(p, na.rm=TRUE)
+  pm <- median(p, na.rm = TRUE)
   hv <- pm + model$duration
   hv <- ifel(hv > 12, hv - 12, hv)
   
   # Normalize suitability values to 0-100 range
   hv <- (pm / 12) * 100
-  print(hv)
   
   # Clip the suitability index to the AOI
   hv_clipped <- crop(hv, aoi)
-  print(hv_clipped)
+  
   # Create a subdirectory for each grass type
-  grass_dir <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs","suitability", gsub(" ", "_", grass_name))
+  grass_dir <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability_1991_2020", gsub(" ", "_", grass_name))
   dir.create(grass_dir, showWarnings = FALSE, recursive = TRUE)
-  print(grass_dir)
   
   # Convert the AOI and place names to sf for plotting
   aoi_sf <- st_as_sf(aoi)
   
   # Create the thematic map
   them_map <- tm_shape(hv_clipped) +
-    tm_raster(style = "cat", palette = "-RdYlGn", title = "Suitability Index",legend.show = TRUE) +
+    tm_raster(style = "cat", palette = "-RdYlGn", title = "Suitability Index") +
     tm_shape(aoi_sf) +
     tm_borders(col = "red", lwd = 2) +
     tm_shape(ken_setl) + tm_text("name", size = 0.3, col = "black", remove.overlap = T) +
     tm_shape(uga_setl) + tm_text("name", size = 0.3, col = "black", remove.overlap = T) +
-    tm_shape(ssd_setl) + tm_text("featureNam", size = 0.3, col = "black",remove.overlap = T) +
+    tm_shape(ssd_setl) + tm_text("featureNam", size = 0.3, col = "black", remove.overlap = T) +
     tm_layout(
       title = paste("Suitability Map for", grass_name, "in Karamoja"),
       title.size = 2.0,
@@ -125,22 +131,21 @@ run_and_save_ecocrop <- function(grass_name, rain, tavg, aoi, work_dir, ken_setl
     tm_scale_bar(width = 0.15, position = c("right", "bottom")) +
     tm_compass(type = "8star", position = c("right", "top"), size = 1) +
     tm_graticules(n.x = 6, n.y = 6, lines = TRUE, labels.size = 0.6)
-  them_map
+  
   # Save the suitability map as JPEG
-  tmap_save(them_map, file.path(grass_dir,paste0("suitability_map_", gsub(" ", "_", grass_name), ".jpg")), width = 1200, height = 800, dpi = 300)
+  tmap_save(them_map, file.path(grass_dir, paste0("suitability_map_", gsub(" ", "_", grass_name), ".jpg")), width = 1200, height = 800, dpi = 300)
   
   # Return the raster object for further processing
   return(hv_clipped)
 }
 
-# Initialize a list to store suitability indices
+# Step 8: Initialize a list to store suitability indices
 suitability_list <- list()
 
 # Loop through each grass type and run the model
 for (grass_name in grass_types) {
   tryCatch({
-    suitability_index <- run_and_save_ecocrop(grass_name, rain_aoi, tavg_aoi, aoi, 
-                                              work_dir, ken_setl, uga_setl, ssd_setl)
+    suitability_index <- run_and_save_ecocrop(grass_name, rain, tavg, aoi, ken_setl, uga_setl, ssd_setl)
     suitability_list[[grass_name]] <- suitability_index
   }, error = function(e) {
     message("Error in processing ", grass_name, ": ", e$message)
@@ -157,15 +162,15 @@ avg_suitability <- app(suitability_stack, fun = mean, na.rm = TRUE)
 median_suitability <- app(suitability_stack, fun = median, na.rm = TRUE)
 
 # Save the average suitability map
-avg_suitability_path <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability/models", "average_suitability.tif")
+avg_suitability_path <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability_1991_2020/models", "average_suitability.tif")
 writeRaster(avg_suitability, avg_suitability_path, overwrite = TRUE)
 
 # Save the median suitability map
-median_suitability_path <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability/models", "median_suitability.tif")
+median_suitability_path <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability_1991_2020/models", "median_suitability.tif")
 writeRaster(median_suitability, median_suitability_path, overwrite = TRUE)
 
 # Plot the median suitability with additional details
-jpeg(file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability/models", "median_suitability.jpg"))
+median_suitability_jpg <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability_1991_2020/models", "median_suitability.jpg")
 
 # Create an sf object for plotting
 aoi_sf <- st_as_sf(aoi)
@@ -175,17 +180,17 @@ median_map <- tm_shape(median_suitability) +
   tm_raster(style = "cont", palette = "-RdYlGn", title = "Median Suitability") +
   tm_shape(aoi_sf) +
   tm_borders(col = "black", lwd = 2) +
-  tm_shape(ken_setl) + tm_text("name", size = 0.3, col = "black", remove.overlap = T) +
-  tm_shape(uga_setl) + tm_text("name", size = 0.3, col = "black", remove.overlap = T) +
-  tm_shape(ssd_setl) + tm_text("featureNam", size = 0.3, col = "black",remove.overlap = T) +
+  tm_shape(ken_setl) + tm_text("name", size = 0.3, col = "black", remove.overlap = TRUE) +
+  tm_shape(uga_setl) + tm_text("name", size = 0.3, col = "black", remove.overlap = TRUE) +
+  tm_shape(ssd_setl) + tm_text("featureNam", size = 0.3, col = "black", remove.overlap = TRUE) +
   tm_layout(
-    title = "Karamoja Pasture Suitability Index",
-    title.size = 2.6,
-    title.fontface = "bold",  # Make the title bold
+    title = "Karamoja Pasture Suitability Index 1991-2020",
+    title.size = 3.6,
+    title.fontface = "bold",  # 
     title.position = c("center", "top"),
     legend.outside = TRUE,
     legend.outside.position = "right",
-    legend.title.size = 1.8,
+    legend.title.size = 3.8,
     legend.text.size = 0.8,
     inner.margins = c(0.02, 0.02, 0.02, 0.02)
   ) +
@@ -194,10 +199,13 @@ median_map <- tm_shape(median_suitability) +
   tm_compass(type = "8star", position = c("right", "top"), size = 1) +
   tm_graticules(n.x = 6, n.y = 6, lines = TRUE, labels.size = 0.6)
 
+
 # Calculate median suitability values for each grass type
 suitability_values <- sapply(suitability_list, function(r) median(values(r), na.rm = TRUE))
 
 # Save the median suitability map as JPEG
-tmap_save(median_map, file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability/models", "median_suitability.jpg"), width = 1200, height = 800, dpi = 300)
+tmap_save(median_map, median_suitability_jpg, width = 1200, height = 800, dpi = 300)
 
+# Ensure the map is displayed
 median_map
+

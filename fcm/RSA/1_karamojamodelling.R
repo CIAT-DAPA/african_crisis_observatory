@@ -1,5 +1,5 @@
 #*Pasture Suitability Modelling to inform resource sharing agreement in Karamoja
-#* 
+#* Using Wordclim datasets for the year 1970-2000
 #* 
 #* Author:: Ogero Derrick
 #* 
