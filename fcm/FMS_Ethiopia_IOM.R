@@ -1,6 +1,10 @@
+# ****************************
 #Author:Brenda Chepngetich
-"Analyze IOM FMS migration data to visualize trends, analyse co-occurrence of climate-conflict clusters with migration, analyze socioeconomic profiles of migrants.
-This is done using admin level 1 (regions)"
+# Analyze IOM FMS migration data to visualize trends using line plots and facet maps
+# Analyse co-occurrence of climate-conflict clusters with migration
+# Analyze socioeconomic profiles of migrants
+# Use admin level 1 (regions)
+# *******************************************
 #install and load required packages
 install.packages("networkD3")
 install.packages("htmlwidgets")
@@ -8,7 +12,6 @@ install.packages("webshot")
 install.packages("scatterpie")
 install.packages("ggplot2")
 
-library(geodata)
 library(tidyverse)
 library(sf)
 library(tmap)
@@ -28,6 +31,7 @@ setwd(wd)
 file <- "D:/OneDrive - CGIAR/IOM - CGIAR Climate Security Coordination/Data/OneDrive_1_7-23-2024/FMS.xlsx"
 fms <- read_excel(file)
 View(fms)
+unique(fms$Region)
 #data cleaning
 fms <- subset(fms, departure_country == "Ethiopia")
 #TOTALS VALUES = 110,066
@@ -81,51 +85,52 @@ within_by_year <- aggregate(migrants ~ Region + year, data = fms_within, FUN = s
 #fms outside
 outside_by_date <- aggregate(migrants ~ survey_date + Region, data = fms_outside, FUN = sum)
 outside_by_year <- aggregate(migrants ~ Region + year, data = fms_outside, FUN = sum)
-
-View(outside_by_date)
+# here*********
 #plotting line plot
-region_trends <- ggplot(within_by_date, aes(x = survey_date, y = migrants,color = Region, group = Region)) +
-  geom_line(size = 0.8) +
+region_trends <- ggplot(outside_by_year, aes(x = year, y = migrants,color = Region, group = Region)) +
+  geom_line(linewidth = 0.8) +
   geom_smooth(se = FALSE, method = "loess", linetype = "dashed", size = 0.7) + #Adds a smoothed line (trend line) to the plot to show the overall trend in the data.
   geom_point(size = 0.8) +
   labs(
-    title = "Migration Trends from Ethiopia to countries within HOA (2018-2024)",
+    title = "Migration Trends from Ethiopia to countries outside HOA (2018-2024)",
     x = "Time",
     y = "Number of Migrants"
   ) +
-  theme_bw()
+  theme_bw()+
+  theme(legend.text = element_text(size=9),
+        axis.text.x = element_text(color = "black"),
+        axis.text.y = element_text(color = "black"))
 region_trends
 #save the plot
-file <- paste0(wd,"/Results/within/trends_date.png")
-ggsave(file, plot = region_trends, width = 11, height = 8, dpi = 300)
+file <- paste0(wd,"/Final results/trends_outside.png")
+ggsave(file, plot = region_trends, width = 11, height = 8, dpi = 600)
 
 #map plotting
-
 admin1 <- st_read(paste0(wd, "/data/eth_admbnda_admins_csa_bofedb_2024.shp/eth_admbnda_adm1_csa_bofedb_2024.shp"))
 admin1 <- admin1[ ,"admin1Name"]
 names(admin1)[names(admin1) == "admin1Name"] <- "Region"
 plot(admin1)
-#to do: add admin 2 data
 
 #merge shp with data
 Eth_outside <- sf::st_as_sf(merge(outside_by_year, admin1, by="Region"))
 Eth_within <- sf::st_as_sf(merge(within_by_year, admin1, by="Region"))
+
 #map plotting to create facets
-map <- tm_shape(Eth_within) +
+map <- tm_shape(Eth_outside) +
   tm_polygons(col ="migrants", title = "Migrants", style = "cont", palette="YlOrBr", legend.show = T, border.col = "black", lwd = 1) +
   tm_text("Region", size =0.42, col="black", auto.placement = TRUE)+
   tm_facets(by= "year", ncol = 3) +
   tm_compass(type = "8star", size = 2,position = c("right", "top")) +
   tm_scale_bar(breaks = c(0, 50, 100), text.size = 1, 
                position = c("right", "bottom"))+
-  tm_layout(main.title = "Ethiopia migration within HOA",
+  tm_layout(main.title = "Ethiopia migration outside HOA",
             legend.outside = T,
             asp = 1.4,
             # inner.margins = c(0,0,0,0)
             )
 map
-tmap_save(map,  dpi= 300,  height=8.3, width=11.7, units="in",scale = 1.6,
-          filename=paste0(wd,"/Results/within/facets.png"))
+tmap_save(map,  dpi= 600,  height=8.3, width=11.7, units="in",scale = 1.6,
+          filename=paste0(wd,"/Final results/outside_facets.png"))
 
 
 #plot sankey diagram
@@ -184,15 +189,15 @@ outside_sankey$region <- ifelse(outside_sankey$Destination %in% MENA, "MENA",
 
 outside_sankey_ <- aggregate(migrants ~ Origin + region, data=outside_sankey, FUN=sum)
 # Generate unique nodes
-nodes <- data.frame(name = unique(c(as.character(outside_sankey_$Origin), 
-                                    as.character(outside_sankey_$region))))
+nodes <- data.frame(name = unique(c(as.character(within_sankey$Origin), 
+                                    as.character(within_sankey$Destination))))
 View(links)
 
 # Generate links dataframe using indices
 links <- data.frame(
-  source = match(outside_sankey_$Origin, nodes$name) - 1,  # match returns positions, subtract 1 for zero-indexing
-  target = match(outside_sankey_$region, nodes$name) - 1,  # match returns positions, subtract 1 for zero-indexing
-  value = outside_sankey_$migrants
+  source = match(within_sankey$Origin, nodes$name) - 1,  # match returns positions, subtract 1 for zero-indexing
+  target = match(within_sankey$Destination, nodes$name) - 1,  # match returns positions, subtract 1 for zero-indexing
+  value = within_sankey$migrants
 )
 sankey_ <- sankeyNetwork(
   Links = links,
@@ -201,21 +206,21 @@ sankey_ <- sankeyNetwork(
   Target = "target",
   Value = "value",
   NodeID = "name",  # optional
-  fontSize = 12,  # optional
+  fontSize = 16,  # optional
   nodeWidth = 30  # optional
 )
-file_path <- paste0(wd,"/Results/outside/sankey_plot.html")
+file_path <- paste0(wd,"/Final results/within_sankey_plot.html")
 saveWidget(sankey_, file_path)
 #initialize webshot
 webshot::install_phantomjs()
 
 # Save as PNG
-webshot(file_path, paste0(wd,"/Results/outside/sankey_plot.png"))
+webshot(file_path, paste0(wd,"/Final results/within_sankey_plot.png"), zoom = 600/72)
 
 #overlay climate_conflict hotspots with migration
 #get total migrants over the years
-within_migrants <- merge(shp,aggregate(migrants ~ Region, data = within_by_year, FUN = sum))
-outside_migrants <- merge(shp,aggregate(migrants ~ Region, data = outside_by_year, FUN = sum))
+within_migrants <- merge(admin1,aggregate(migrants ~ Region, data = within_by_year, FUN = sum))
+outside_migrants <- merge(admin1,aggregate(migrants ~ Region, data = outside_by_year, FUN = sum))
 #load climate-conflict hotspots
 clim_conflict <- sf::st_read(paste0(wd, "/data/clim_conflict_ips_overlays.geojson"))
 
@@ -233,8 +238,6 @@ required <- c("High conflict + High drought stress","Limited conflict + High dro
               ,"Moderate conflict + High drought stress","High conflict + Low drought stress"
               ,"High conflict + Moderate drought stress")
 clusters <- subset(clim_conflict, intersect_conf_clim %in% required)
-View(clim_conflict)
-unique(clusters$clust)
 c <- clusters$intersect_conf_clim
 clusters$clust[c=="High conflict + High drought stress"] <- 1
 clusters$clust[c=="High conflict + Moderate drought stress"] <- 2
@@ -248,7 +251,7 @@ label <- c("High conflict + High drought", "High conflict + Moderate drought",
             "Moderate conflict + High drought")
 #mapping
 tmap_mode("plot")
-map <- tm_shape(within_migrants) +
+map <- tm_shape(outside_migrants) +
   tm_polygons(col ="migrants", title = "Migrants", style = "cont", palette="Blues", 
               legend.show = T, border.col = "black", lwd = 1) +
   tm_shape(clusters) +
@@ -260,7 +263,7 @@ map <- tm_shape(within_migrants) +
   tm_scale_bar(breaks = c(0, 50, 100), text.size = 1.5, 
                position = c("right", "bottom"))+
   tm_layout(legend.outside=F,
-            main.title = "Migration flows within HOA",
+            main.title = "Climate-Conflict Migration co-occurence outside HOA",
             main.title.position = "center",
             legend.text.size = 0.6,
             legend.text.color = "black",
@@ -273,8 +276,8 @@ map <- tm_shape(within_migrants) +
             inner.margins = c(0,0.05,0,0.05)
   )
 map
-tmap_save(map,  dpi= 300,  height=8.3, width=11.7, units="in",scale = 1.6,
-          filename=paste0(wd,"/Results/within/Overlay.png"))
+tmap_save(map,  dpi= 600,  height=8.3, width=11.7, units="in",scale = 1.6,
+          filename=paste0(wd,"/Final results/outside_Overlay.png"))
 #socioeconomic profiles
 #define professions
 agriculture <- c("Agriculture, Fishery, and/or Forestry workers",
@@ -295,7 +298,6 @@ skilled_manual <- c("Carpenter","i. Skilled manual (craft, transport)")
 unskilled_manual <- c("Unskilled Manual")
 #within
 within_profession <- fms_within[,c("survey_date","Region","main_profession_of_recent_or_current_job","other_profession_of_recent_or_current_job")]
-View(within_profession)
 within_profession <- within_profession[!is.na(within_profession$main_profession_of_recent_or_current_job), ]
 within_profession <- subset(within_profession, !main_profession_of_recent_or_current_job == "Don’t know/ No answer")
 within_profession$profession <- ""
@@ -362,15 +364,15 @@ c <- as.data.frame(c)
 View(c)
 # Plot the map with pie charts
 within_plot <- ggplot() +
-  geom_sf(data = within_pie, fill = "gray80", color = "white")+
+  geom_sf(data = within_pie, fill = "gray80", color = "black")+
   geom_scatterpie(data = c, aes(x = X, y = Y, r = 0.5, group=Region),  # Add pie charts using centroid coordinates
   cols = c("Pastoralist", "Agriculture,Fishery&Forestry", "Professional","Elementary Occupation", "Skilled Manual","Unskilled Manual","Services&Sales","Others"),
   color = "black",
   size=0.3)+
   geom_text(data=labels,
-    aes(x=X, y=Y,label=Region),
+    aes(x=X + 0.7, y=Y + 0.4,label=Region),
     size=3,
-    color="brown",
+    color="black",
     fontface="bold"
   )+
   coord_sf()+
@@ -396,7 +398,7 @@ within_plot <- ggplot() +
                                "Professional"="purple","Services&Sales"="lavender","Skilled Manual"="black", "Unskilled Manual"="blue"))+  # Custom colors
   labs(title = "Socioeconomic profiles for Migrants moving within HOA",fill="Profession")
 within_plot
-output <- paste0(wd,"/Results/within/within_pie.png")
+output <- paste0(wd,"/Final results/within_pie.png")
 ggsave(output, plot = within_plot, dpi= 600,  height=8.3, width=11.7, units="in")
 
 #plot outside HOA pie charts
@@ -453,15 +455,15 @@ out_c <- as.data.frame(out_c)
 View(out_c)
 # Plot the map with pie charts
 outside_plot <- ggplot() +
-  geom_sf(data = outside_pie, fill = "gray80", color = "white")+
+  geom_sf(data = outside_pie, fill = "gray80", color = "black")+
   geom_scatterpie(data = out_c, aes(x = X, y = Y, r = 0.5, group=Region),  # Add pie charts using centroid coordinates
                   cols = c("Pastoralist", "Agriculture,Fishery&Forestry", "Professional","Elementary Occupation", "Skilled Manual","Unskilled Manual","Services&Sales","Others"),
                   color = "black",
                   size=0.3)+
   geom_text(data=labels_,
-            aes(x=X, y=Y,label=Region),
+            aes(x=X + 0.7, y=Y + 0.4,label=Region),
             size=3,
-            color="brown",
+            color="black",
             fontface="bold"
   )+
   coord_sf()+
@@ -487,5 +489,5 @@ outside_plot <- ggplot() +
                                "Professional"="purple","Services&Sales"="lavender","Skilled Manual"="black", "Unskilled Manual"="blue"))+  # Custom colors
   labs(title = "Socioeconomic profiles for Migrants moving outside HOA",fill="Profession")
 outside_plot
-output_file <- paste0(wd,"/Results/outside/outside_pie.png")
+output_file <- paste0(wd,"/Final results/outside_pie.png")
 ggsave(output_file, plot = outside_plot, dpi= 600,  height=8.3, width=11.7, units="in")
