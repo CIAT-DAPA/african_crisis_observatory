@@ -30,8 +30,7 @@ setwd(wd)
 #read fms data
 file <- "D:/OneDrive - CGIAR/IOM - CGIAR Climate Security Coordination/Data/OneDrive_1_7-23-2024/FMS.xlsx"
 fms <- read_excel(file)
-View(fms)
-unique(fms$Region)
+
 #data cleaning
 fms <- subset(fms, departure_country == "Ethiopia")
 #TOTALS VALUES = 110,066
@@ -51,7 +50,6 @@ fms$Region[fms$Region == 'Hareri'] <- 'Harari'
 fms$Region[fms$Region == 'Beneshangul Gumuz'] <- 'Benishangul-Gumuz' 
 fms$Region[fms$Region == 'Gambella'] <- 'Gambela'
 snnp <- fms[fms$Region == "SNNP", ]
-View(snnp)
 Central_zones <- c("Hadiya","Guraghe","Siltie","Kembata Tembaro","Halaba")
 South_zones <- c("South Omo","Gofa","Gamo","Amaro","Burji","Wolayita","Gedeo","Konso","Derashe")
 fms$Region[fms$Region == "SNNP" & fms$Zones %in% South_zones] <- "South Ethiopia"
@@ -80,19 +78,19 @@ fms_within <- subset(fms_region, HOA == "within")
 fms_outside <- subset(fms_region, HOA == "outside")
 
 #fms within
-within_by_date <- aggregate(migrants ~ survey_date + Region, data = fms_within, FUN = sum)
+# within_by_date <- aggregate(migrants ~ survey_date + Region, data = fms_within, FUN = sum)
 within_by_year <- aggregate(migrants ~ Region + year, data = fms_within, FUN = sum)
 #fms outside
-outside_by_date <- aggregate(migrants ~ survey_date + Region, data = fms_outside, FUN = sum)
+# outside_by_date <- aggregate(migrants ~ survey_date + Region, data = fms_outside, FUN = sum)
 outside_by_year <- aggregate(migrants ~ Region + year, data = fms_outside, FUN = sum)
 # here*********
 #plotting line plot
-region_trends <- ggplot(outside_by_year, aes(x = year, y = migrants,color = Region, group = Region)) +
+region_trends <- ggplot(within_by_year, aes(x = year, y = migrants,color = Region, group = Region)) +
   geom_line(linewidth = 0.8) +
   geom_smooth(se = FALSE, method = "loess", linetype = "dashed", size = 0.7) + #Adds a smoothed line (trend line) to the plot to show the overall trend in the data.
   geom_point(size = 0.8) +
   labs(
-    title = "Migration Trends from Ethiopia to countries outside HOA (2018-2024)",
+    title = "",
     x = "Time",
     y = "Number of Migrants"
   ) +
@@ -102,35 +100,33 @@ region_trends <- ggplot(outside_by_year, aes(x = year, y = migrants,color = Regi
         axis.text.y = element_text(color = "black"))
 region_trends
 #save the plot
-file <- paste0(wd,"/Final results/trends_outside.png")
+file <- paste0(wd,"/Final results/trends_within.png")
 ggsave(file, plot = region_trends, width = 11, height = 8, dpi = 600)
 
 #map plotting
 admin1 <- st_read(paste0(wd, "/data/eth_admbnda_admins_csa_bofedb_2024.shp/eth_admbnda_adm1_csa_bofedb_2024.shp"))
 admin1 <- admin1[ ,"admin1Name"]
 names(admin1)[names(admin1) == "admin1Name"] <- "Region"
-plot(admin1)
 
 #merge shp with data
 Eth_outside <- sf::st_as_sf(merge(outside_by_year, admin1, by="Region"))
 Eth_within <- sf::st_as_sf(merge(within_by_year, admin1, by="Region"))
 
 #map plotting to create facets
-map <- tm_shape(Eth_outside) +
+map <- tm_shape(Eth_within) +
   tm_polygons(col ="migrants", title = "Migrants", style = "cont", palette="YlOrBr", legend.show = T, border.col = "black", lwd = 1) +
   tm_text("Region", size =0.42, col="black", auto.placement = TRUE)+
   tm_facets(by= "year", ncol = 3) +
   tm_compass(type = "8star", size = 2,position = c("right", "top")) +
   tm_scale_bar(breaks = c(0, 50, 100), text.size = 1, 
                position = c("right", "bottom"))+
-  tm_layout(main.title = "Ethiopia migration outside HOA",
-            legend.outside = T,
+  tm_layout(legend.outside = T,
             asp = 1.4,
             # inner.margins = c(0,0,0,0)
             )
 map
 tmap_save(map,  dpi= 600,  height=8.3, width=11.7, units="in",scale = 1.6,
-          filename=paste0(wd,"/Final results/outside_facets.png"))
+          filename=paste0(wd,"/Final results/within_facets.png"))
 
 
 #plot sankey diagram
@@ -153,12 +149,12 @@ Southern_Africa <- c("Botswana", "Eswatini", "Lesotho", "Namibia", "South Africa
 Eastern_Africa <- c("Burundi", "Comoros", "Djibouti", "Eritrea", "Ethiopia", "Kenya", "Madagascar", "Malawi", "Mauritius", "Mozambique", "Rwanda", "Seychelles", "Somalia", "South Sudan", "Tanzania", "Uganda", "Zambia", "Zimbabwe")
 Sub_saharan <- c(Western_Africa,Central_Africa,Southern_Africa, Eastern_Africa, "Sudan","Western Sahara")
 Eastern_Europe = c("Belarus", "Bulgaria", "Czech Republic", "Hungary", "Moldova", "Poland", "Romania", "Russia", "Slovakia", "Ukraine")
-Northern_Europe = c("Denmark", "Estonia", "Finland", "Iceland", "Ireland", "Latvia", "Lithuania", "Norway", "Sweden", "United Kingdom")
+Northern_Europe = c("Denmark", "Estonia", "Finland", "Iceland", "Ireland", "Latvia", "Lithuania", "Norway", "Bouvet Island", "Sweden", "United Kingdom", "London")
 Southern_Europe = c("Albania", "Andorra", "Bosnia and Herzegovina", "Croatia", "Greece", "Italy", "Kosovo", "Malta", "Montenegro", "North Macedonia", "Portugal", "San Marino", "Serbia", "Slovenia", "Spain", "Vatican City")
-Western_Europe = c("Austria", "Belgium", "France", "Germany", "Liechtenstein", "Luxembourg", "Monaco", "Netherlands", "Switzerland")
+Western_Europe = c("Austria", "Belgium", "France", "French Southern and Antarctic Territories", "Germany", "Liechtenstein", "Luxembourg", "Monaco", "Netherlands", "Switzerland")
 Europe <- c(Eastern_Europe,Northern_Europe,Southern_Europe,Western_Europe,"UNK","Cayman Islands","Europe","U.K. of Great Britain and Northern Ireland")
 Central_Asia = c("Kazakhstan", "Kyrgyzstan", "Tajikistan", "Turkmenistan", "Uzbekistan")
-East_Asia = c("China", "Japan", "Mongolia", "North Korea", "South Korea", "Taiwan")
+East_Asia = c("China", "Japan", "Mongolia", "North Korea", "South Korea", "Taiwan", "Republic of Korea")
 South_Asia = c("Afghanistan", "Bangladesh", "Bhutan", "India", "Maldives", "Nepal", "Pakistan", "Sri Lanka")
 Southeast_Asia = c("Brunei", "Cambodia", "East Timor", "Indonesia", "Laos", "Malaysia", "Myanmar", "Philippines", "Singapore", "Thailand", "Vietnam")
 Western_Asia = c("Armenia", "Azerbaijan", "Bahrain", "Cyprus", "Georgia", "Kuwait", "Lebanon","Qatar", "Turkey")
@@ -251,7 +247,7 @@ label <- c("High conflict + High drought", "High conflict + Moderate drought",
             "Moderate conflict + High drought")
 #mapping
 tmap_mode("plot")
-map <- tm_shape(outside_migrants) +
+map <- tm_shape(within_migrants) +
   tm_polygons(col ="migrants", title = "Migrants", style = "cont", palette="Blues", 
               legend.show = T, border.col = "black", lwd = 1) +
   tm_shape(clusters) +
@@ -263,8 +259,6 @@ map <- tm_shape(outside_migrants) +
   tm_scale_bar(breaks = c(0, 50, 100), text.size = 1.5, 
                position = c("right", "bottom"))+
   tm_layout(legend.outside=F,
-            main.title = "Climate-Conflict Migration co-occurence outside HOA",
-            main.title.position = "center",
             legend.text.size = 0.6,
             legend.text.color = "black",
             legend.title.size= 0.9,
@@ -277,7 +271,7 @@ map <- tm_shape(outside_migrants) +
   )
 map
 tmap_save(map,  dpi= 600,  height=8.3, width=11.7, units="in",scale = 1.6,
-          filename=paste0(wd,"/Final results/outside_Overlay.png"))
+          filename=paste0(wd,"/Final results/within_Overlay.png"))
 #socioeconomic profiles
 #define professions
 agriculture <- c("Agriculture, Fishery, and/or Forestry workers",
@@ -312,24 +306,6 @@ within_profession$main_profession_of_recent_or_current_job <- ifelse(
   within_profession$other_profession_of_recent_or_current_job,
   within_profession$main_profession_of_recent_or_current_job
 )
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Plant and machine operator, assembler (e.g. truck/ bus drivers, mining/ rubber machine operators)"] <- "Assembling,Plant&Machine Operation"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Technician and associate professional (e.g. sales and purchasing agents, religious associate professionals)"] <- "Technician&Associates"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Craft and related trades worker (e.g. metal workers, repairers, woodworkers, electronic installers)"] <- "Trade&Craft"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Manager (e.g. directors, senior officials)"] <- "Management"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Clerical support worker (e.g. general secretaries, customer service clerks)"] <- "Clerical Work"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Armed forces occupation"] <- "Armed Forces"
-# within_profession$profession[within_profession$main_profession_of_recent_or_current_job == 
-#                                "Government Civil Servants and Administrators"] <- "Civil Servants"
-# business <- c("Small Business woman","Business Woman","Small Business Owner","Business woman")
-# unwanted <- c("Employed","Nongovernmental employed","UN Worker","Doker","Housewife")
-
-
 within_profession$profession <- ifelse(within_profession$main_profession_of_recent_or_current_job %in% pastoralist, "Pastoralist", 
                                         ifelse(within_profession$main_profession_of_recent_or_current_job %in% agriculture, "Agriculture, Fishery&Forestry",
                                                ifelse(within_profession$main_profession_of_recent_or_current_job %in% elementary, "Elementary Occupation",
@@ -339,7 +315,6 @@ within_profession$profession <- ifelse(within_profession$main_profession_of_rece
                                                                            ifelse(within_profession$main_profession_of_recent_or_current_job %in% unskilled_manual, "Unskilled Manual",
                                                                                   "Others")))))))
 within_profession_ <- within_profession[,c("Region","profession")]
-unique(within_profession_$profession)
 within_profession_$number <- 1
 within_profession_ <- aggregate(number ~ Region+profession, data=within_profession_, FUN=sum)
 #convert to long format
@@ -361,7 +336,7 @@ names(c)[names(c) == "Services.Sales"] <- "Services&Sales"
 names(c)[names(c) == "Skilled.Manual"] <- "Skilled Manual"
 names(c)[names(c) == "Unskilled.Manual"] <- "Unskilled Manual"
 c <- as.data.frame(c)
-View(c)
+
 # Plot the map with pie charts
 within_plot <- ggplot() +
   geom_sf(data = within_pie, fill = "gray80", color = "black")+
@@ -396,14 +371,13 @@ within_plot <- ggplot() +
   )+
   scale_fill_manual(values = c("Agriculture,Fishery&Forestry" = "green", "Others" = "white", "Pastoralist" = "orange","Elementary Occupation" = "thistle",
                                "Professional"="purple","Services&Sales"="lavender","Skilled Manual"="black", "Unskilled Manual"="blue"))+  # Custom colors
-  labs(title = "Socioeconomic profiles for Migrants moving within HOA",fill="Profession")
+  labs(title = "",fill="Profession")
 within_plot
 output <- paste0(wd,"/Final results/within_pie.png")
 ggsave(output, plot = within_plot, dpi= 600,  height=8.3, width=11.7, units="in")
 
 #plot outside HOA pie charts
 outside_profession <- fms_outside[,c("survey_date","Region","main_profession_of_recent_or_current_job","other_profession_of_recent_or_current_job")]
-View(outside_profession)
 outside_profession <- outside_profession[!is.na(outside_profession$main_profession_of_recent_or_current_job), ]
 outside_profession <- subset(outside_profession, !main_profession_of_recent_or_current_job == "Don’t know/ No answer")
 outside_profession$profession <- ""
@@ -418,8 +392,6 @@ outside_profession$main_profession_of_recent_or_current_job <- ifelse(
   outside_profession$other_profession_of_recent_or_current_job,
   outside_profession$main_profession_of_recent_or_current_job
 )
-unique(outside_profession$profession)
-
 outside_profession$profession <- ifelse(outside_profession$main_profession_of_recent_or_current_job %in% pastoralist, "Pastoralist", 
                                        ifelse(outside_profession$main_profession_of_recent_or_current_job %in% agriculture, "Agriculture, Fishery&Forestry",
                                               ifelse(outside_profession$main_profession_of_recent_or_current_job %in% elementary, "Elementary Occupation",
@@ -430,7 +402,6 @@ outside_profession$profession <- ifelse(outside_profession$main_profession_of_re
                                               "Others")))))))
 
 outside_profession_ <- outside_profession[,c("Region","profession")]
-unique(outside_profession_$profession)
 outside_profession_$number <- 1
 outside_profession_ <- aggregate(number ~ Region+profession, data=outside_profession_, FUN=sum)
 #convert to long format
@@ -452,7 +423,7 @@ names(out_c)[names(out_c) == "Services.Sales"] <- "Services&Sales"
 names(out_c)[names(out_c) == "Skilled.Manual"] <- "Skilled Manual"
 names(out_c)[names(out_c) == "Unskilled.Manual"] <- "Unskilled Manual"
 out_c <- as.data.frame(out_c)
-View(out_c)
+
 # Plot the map with pie charts
 outside_plot <- ggplot() +
   geom_sf(data = outside_pie, fill = "gray80", color = "black")+
@@ -487,7 +458,7 @@ outside_plot <- ggplot() +
   )+
   scale_fill_manual(values = c("Agriculture,Fishery&Forestry" = "green", "Others" = "white", "Pastoralist" = "orange","Elementary Occupation" = "thistle",
                                "Professional"="purple","Services&Sales"="lavender","Skilled Manual"="black", "Unskilled Manual"="blue"))+  # Custom colors
-  labs(title = "Socioeconomic profiles for Migrants moving outside HOA",fill="Profession")
+  labs(title = "",fill="Profession")
 outside_plot
 output_file <- paste0(wd,"/Final results/outside_pie.png")
 ggsave(output_file, plot = outside_plot, dpi= 600,  height=8.3, width=11.7, units="in")
