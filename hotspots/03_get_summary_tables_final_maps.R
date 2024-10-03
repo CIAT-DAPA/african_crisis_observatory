@@ -16,7 +16,7 @@ suppressMessages(pacman::p_load(tidyverse,geojsonsf, readxl, geojsonlint, RColor
 #' Variable definition
 #'
 
-iso <- "NER"
+iso <- "KEN"
 baseDir <- "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO/1.Data/Palmira/CSO/data/"
 root <- paste0(baseDir, iso, "/")
 scale_bar_pos <- switch( iso, "ZWE" = "left", "KEN" = "left", "UGA" = "right", "MLI" = "left", "SEN" = "left", "NGA" = "right", "SDN" = "right", 'PHL'="right", 'GTM'="right", "NER" = "right", "BFA" = "right", "SOM" = "right", "RWA" = "right", "MOZ"= "right")
@@ -239,7 +239,7 @@ clim_clust <- st_as_sf(clim_clust)
 #conf_clust@data$clim_cluster <- as.character(sp::over(conf_clust, clim_clust, returnList = F)$text_output)
 conf_clim <- st_intersection(conf_clust, clim_clust)
 conf_clim <- conf_clim %>% dplyr::rename(clim_cluster = text_output)
-conf_clim <- conf_clim %>% dplyr::rename(clim_cluster_short_label = label.1)
+conf_clim <- conf_clim %>% dplyr::rename(clim_cluster_short_label = label)
 
 #conf_clust$clim_cluster <- as.character(unlist(st_intersects(st_as_sf(conf_clust), st_as_sf(clim_clust))))
 
@@ -268,15 +268,20 @@ conf_occ <- conf_data %>%
 
 coordinates(conf_occ) <- ~LONGITUDE+LATITUDE
 crs(conf_occ) <- crs(w_mask)
-conf_occ@data$over <- conf_occ %over%  shp_c %>% dplyr::pull(NAME_0)
+#conf_occ <- st_as_sf(conf_occ)
+temp <- geodata::gadm('KEN', level=1, tempdir())
+
+temp <- as(temp, 'Spatial')
+conf_occ@data$over <- conf_occ %over%  temp %>% dplyr::pull(COUNTRY)
 conf_occ <- conf_occ[!is.na(conf_occ$over),]
 #x11()
-mainmap <- tmap::tm_shape(shp_c)+
-  tm_borders(col = "black")+
-  tm_shape(conf_clust)+
+mainmap <- tmap::tm_shape(conf_clust)+
   tm_fill(col = "label", palette = c("#d7191c", "#e5a03e", "#ffffbf"), alpha = 0.7, title = expression("Conflict clusters"))+
-  #tm_borders(col ="black") + 
-  tm_compass(type = "8star", position = c("left", "top")) +
+  #tm_borders(col ="black") +
+  tm_shape(temp)+
+  tm_borders(col = "black")+
+  tm_text("NAME_1", size = 0.95, col='black', remove.overlap = TRUE)+ 
+  tm_compass(type = "8star", position = c("right", "top")) +
   tm_scale_bar(breaks = c(0, 100, 200), text.size = 1, position = c(scale_bar_pos, scale_bar_top))+
   tm_shape(conf_occ)+
   tm_symbols(col = "#31b225", border.col = "black", size = "FATALITIES", scale = 3, title.size = "Number of fatalities")+
@@ -294,7 +299,7 @@ mainmap <- tmap::tm_shape(shp_c)+
 x11();mainmap
 tmap_save(mainmap,
           filename= paste0(root, "_results/cluster_results/conflict/geographic_distr_conflict.png"),
-          dpi=300, 
+          dpi=600, 
           #insets_tm=insetmap, 
           #insets_vp=vp,
           height=8,

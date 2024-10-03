@@ -1,5 +1,5 @@
-#*Pasture Suitability Modelling to inform resource sharing agreement in Karamoja
-#* Using Wordclim datasets for the year 1970-2000
+#*Pasture Suitability Modelling to inform resource sharing agreement in Karamoja using wordlclim data 1970-2000
+#* 
 #* 
 #* Author:: Ogero Derrick
 #* 
@@ -31,7 +31,7 @@ aoi_shapefile <- "D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/1_Raw/igad_c
 # Load AOI shapefile
 aoi <- vect(aoi_shapefile)
 
-# Define ISO codes for the Karamoja cluster(Kenya,Uganda,South Sudan,Ethiopia)
+# Define ISO codes for the Karamoja cluster (Kenya, Uganda, South Sudan, Ethiopia)
 iso_codes <- c("KEN", "UGA", "SSD", "ETH")
 
 # Download climate data for the Karamoja cluster
@@ -52,7 +52,7 @@ tavg_aoi <- mask(tavg, aoi)
 grass_types <- c("Cenchrus ciliaris L.", "Chloris gayana", "Eragrostis superba",
                  "Pennisetum clandestinum", "Eragrostis tef", 
                  "Dichanthium aristatum",
-                 "Desmodium intortum", "Arachis pintoi", 
+                 "Desmodium intortum",
                  "Mucuna pruriens", "Acacia senegal",
                  "Balanites aegyptiaca")
 
@@ -79,20 +79,20 @@ run_and_save_ecocrop <- function(grass_name, rain, tavg, aoi, work_dir, ken_setl
   # Create an Ecocrop model
   crop <- Recocrop::ecocropPars(grass_name)
   model <- Recocrop::ecocrop(crop)
-
+  
   # Use the model to make predictions
   plant <- predict(model, prec=rain, tavg=tavg)
-
+  
   # Process predictions to suitability index
   p <- classify(plant > 0, cbind(0, NA)) * 1:12
   pm <- median(p, na.rm=TRUE)
   hv <- pm + model$duration
   hv <- ifel(hv > 12, hv - 12, hv)
-
+  
   # Normalize suitability values to 0-100 range
   hv <- (pm / 12) * 100
   print(hv)
-
+  
   # Clip the suitability index to the AOI
   hv_clipped <- crop(hv, aoi)
   print(hv_clipped)
@@ -100,13 +100,13 @@ run_and_save_ecocrop <- function(grass_name, rain, tavg, aoi, work_dir, ken_setl
   grass_dir <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs","suitability", gsub(" ", "_", grass_name))
   dir.create(grass_dir, showWarnings = FALSE, recursive = TRUE)
   print(grass_dir)
-
+  
   # Convert the AOI and place names to sf for plotting
   aoi_sf <- st_as_sf(aoi)
-
+  
   # Create the thematic map
   them_map <- tm_shape(hv_clipped) +
-    tm_raster(style = "cat", palette = "Greens", title = "Suitability Index",legend.show = TRUE) +
+    tm_raster(style = "cat", palette = "-RdYlGn", title = "Suitability Index",legend.show = TRUE) +
     tm_shape(aoi_sf) +
     tm_borders(col = "red", lwd = 2) +
     tm_shape(ken_setl) + tm_text("name", size = 0.3, col = "black", remove.overlap = T) +
@@ -128,14 +128,76 @@ run_and_save_ecocrop <- function(grass_name, rain, tavg, aoi, work_dir, ken_setl
   them_map
   # Save the suitability map as JPEG
   tmap_save(them_map, file.path(grass_dir,paste0("suitability_map_", gsub(" ", "_", grass_name), ".jpg")), width = 1200, height = 800, dpi = 300)
+  
+  # Return the raster object for further processing
+  return(hv_clipped)
 }
+
+# Initialize a list to store suitability indices
+suitability_list <- list()
 
 # Loop through each grass type and run the model
 for (grass_name in grass_types) {
   tryCatch({
-    run_and_save_ecocrop(grass_name, rain_aoi, tavg_aoi, aoi, 
-                         work_dir, ken_setl, uga_setl, ssd_setl)
+    suitability_index <- run_and_save_ecocrop(grass_name, rain_aoi, tavg_aoi, aoi, 
+                                              work_dir, ken_setl, uga_setl, ssd_setl)
+    suitability_list[[grass_name]] <- suitability_index
   }, error = function(e) {
     message("Error in processing ", grass_name, ": ", e$message)
   })
 }
+
+# Stack all suitability indices
+suitability_stack <- rast(suitability_list)
+
+# Calculate the average suitability
+avg_suitability <- app(suitability_stack, fun = mean, na.rm = TRUE)
+
+# Calculate the median suitability
+median_suitability <- app(suitability_stack, fun = median, na.rm = TRUE)
+
+# Save the average suitability map
+avg_suitability_path <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability/models", "average_suitability.tif")
+writeRaster(avg_suitability, avg_suitability_path, overwrite = TRUE)
+
+# Save the median suitability map
+median_suitability_path <- file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability/models", "median_suitability.tif")
+writeRaster(median_suitability, median_suitability_path, overwrite = TRUE)
+
+# Plot the median suitability with additional details
+jpeg(file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability/models", "median_suitability.jpg"))
+
+# Create an sf object for plotting
+aoi_sf <- st_as_sf(aoi)
+
+# Plot the median suitability map with added details
+median_map <- tm_shape(median_suitability) +
+  tm_raster(style = "cont", palette = "-RdYlGn", title = "Median Suitability") +
+  tm_shape(aoi_sf) +
+  tm_borders(col = "black", lwd = 2) +
+  tm_shape(ken_setl) + tm_text("name", size = 0.3, col = "black", remove.overlap = T) +
+  tm_shape(uga_setl) + tm_text("name", size = 0.3, col = "black", remove.overlap = T) +
+  tm_shape(ssd_setl) + tm_text("featureNam", size = 0.3, col = "black",remove.overlap = T) +
+  tm_layout(
+    title = "Karamoja Pasture Suitability Index",
+    title.size = 2.6,
+    title.fontface = "bold",  # Make the title bold
+    title.position = c("center", "top"),
+    legend.outside = TRUE,
+    legend.outside.position = "right",
+    legend.title.size = 1.8,
+    legend.text.size = 0.8,
+    inner.margins = c(0.02, 0.02, 0.02, 0.02)
+  ) +
+  tm_legend(outside = TRUE, outside.position = "right") +
+  tm_scale_bar(width = 0.15, position = c("left", "bottom")) +
+  tm_compass(type = "8star", position = c("right", "top"), size = 1) +
+  tm_graticules(n.x = 6, n.y = 6, lines = TRUE, labels.size = 0.6)
+
+# Calculate median suitability values for each grass type
+suitability_values <- sapply(suitability_list, function(r) median(values(r), na.rm = TRUE))
+
+# Save the median suitability map as JPEG
+tmap_save(median_map, file.path("D:/OneDrive - CGIAR/SA_Team/Projects/AGNES/3_Data/3_Outputs/suitability/models", "median_suitability.jpg"), width = 1200, height = 800, dpi = 300)
+
+median_map
