@@ -13,8 +13,8 @@ library(geodata)
 library(RColorBrewer)
 
 
-Kenya_wards <- geodata::gadm('KENYA', level=2, path = tempdir(), version = 'latest') 
-Turkana_wards <- Kenya_wards%>% subset(Kenya_wards$NAME_1 == 'Turkana',)
+#Kenya_wards <- geodata::gadm('KENYA', level=2, path = tempdir(), version = 'latest') 
+#Turkana_wards <- Kenya_wards%>% subset(Kenya_wards$NAME_1 == 'Turkana',)
 AOI <- st_read("D:/OneDrive - CGIAR/SA_Team/korir/LULC/igad_cluster_1_1/igad_cluster_1_1.shp")
 AOI_buffer <- st_buffer(AOI, 0.44996400287491034)
 plot(AOI)
@@ -62,48 +62,9 @@ LULC2022_reclass <- terra::classify(CCI_2022, Reclass_mat)
 
 kara1_class <- c(LULC1995_reclass$lccs_class, LULC2004_reclass$lccs_class, LULC2013_reclass$lccs_class, 
                  LULC2022_reclass$lccs_class)
+
 ##############################################################################
-kara_class_df <- as.data.frame(kara1_class, na.rm = TRUE)
-colnames(kara_class_df) <- c('lc1995', 'lc2004', 'lc2013', 'lc2022')
-
-create_transition_matrix <- function(raster_a, raster_b) {
-  transition_matrix <- table(raster_a, raster_b)
-  transition_matrix_percent <- prop.table(transition_matrix, 1) * 100
-  return(as.data.frame.matrix(transition_matrix_percent))
-}
-
-transition_matrix_95_04 <- create_transition_matrix(kara_class_df$lc1995, kara_class_df$lc2004)
-transition_matrix_04_13 <- create_transition_matrix(kara_class_df$lc2004, kara_class_df$lc2013)
-transition_matrix_13_22 <- create_transition_matrix(kara_class_df$lc2013, kara_class_df$lc2022)
-transition_matrix_95_22 <- create_transition_matrix(kara_class_df$lc1995, kara_class_df$lc2022)
-print(transition_matrix_95_04)
-
-melt_transition_matrix <- function(transition_matrix, name) {
-  transition_matrix <- as.data.frame(transition_matrix)
-  transition_matrix$From <- rownames(transition_matrix)
-  transition_matrix <- transition_matrix %>%
-    gather(key = "To", value = "Percentage", -From) %>%
-    mutate(From = class_names[as.character(From)],
-           To = class_names[as.character(To)],
-           Transition = name)
-  return(transition_matrix)
-}
-
-melted_95_04 <- melt_transition_matrix(transition_matrix_95_04, "1995 to 2004")
-melted_04_13 <- melt_transition_matrix(transition_matrix_04_13, "2004 to 2013")
-melted_13_22 <- melt_transition_matrix(transition_matrix_13_22, "2013 to 2022")
-
-melted_all <- bind_rows(melted_95_04, melted_04_13, melted_13_22)
-
-ggplot(melted_all, aes(x = From, y = To, fill = Percentage)) +
-  geom_tile(color = "black", size = 0.5) +  # Add black borders to the tiles
-  scale_fill_gradientn(colors = brewer.pal(9, "YlGnBu")) +
-  facet_wrap(~ Transition, scales = "free", ncol = 1) +
-  labs(title = "Transition Matrices", x = "From Class", y = "To Class", fill = "Percentage") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-##############################################################################
-#Tracking changes in graslsand
+#Tracking changes from grassland
 # Function to process the raster stack
 process_raster_stack <- function(r_stack) {
   # Initialize a list to store the results
@@ -115,7 +76,7 @@ process_raster_stack <- function(r_stack) {
     result <- r_stack[[i]] * 10 + r_stack[[i + 1]]
     
     # Mask out values to remain with values between 30 and 39
-    mask <- result >= 30 & result <= 39
+    mask <- result >= 31 & result <= 39
     result[!mask] <- NA
     results[[i]] <- result
   }
@@ -155,14 +116,9 @@ cont_table$tb_legend$color <- c("#33a02c",  "#d95f02",
                                "#7570b3",   "#e7298a",
                                 "#1f78b4", "#e6ab02")
 
-#cont_table$tb_legend <- left_join(cont_table$tb_legend, labels, by= c('categoryValue' = 'V1'))
- 
-#cont_table$tb_legend <- select(cont_table$tb_legend, -categoryName)
-#names(cont_table$tb_legend) <- c("categoryValue" , "color" ,"categoryName" )
-
 labels <- read.csv('D:/OneDrive - CGIAR/SA_Team/korir/LULC/karamoja_classes.csv', header = F)
 cont_table$tb_legend$categoryName <- labels$V2
-
+# Compares loss intensity between 2 classes
 karaSL <- intensityAnalysis(dataset = cont_table, category_n ='Grassland' , category_m ='Other', area_km2 = T )
 
 #Interval level plot
@@ -193,19 +149,22 @@ netgrossplot <-netgrossplot(dataset = cont_table$lulc_Onestep,
 
 chordDiagramLand(dataset = cont_table$lulc_Onestep,
                  legendtable = cont_table$tb_legend)
-
+#*Barplot of qunatities of LULC classes per time epoch
+#* Produces Figure 3 in the report
+#
 barplotLand(dataset = cont_table$lulc_Multistep, 
             legendtable = cont_table$tb_legend,
             xlab = "Year",
             ylab = bquote("Area (" ~ km^2~ ")"),
             area_km2 = TRUE)
 
-
+# Populated places from HOTOSM through HDX : https://data.humdata.org/dataset/kenya-settlements-0/resource/7f8e61f9-9809-4859-93df-ef7be48d2872
 ken_setl <- st_read('D:/OneDrive - CGIAR/SA_Team/korir/LULC/hotosm_ken_populated_places_points_shp.shp')%>% st_set_crs(st_crs(AOI)) %>% st_intersection(., AOI) %>% filter(., place == 'town')
 uga_setl <- st_read('D:/OneDrive - CGIAR/SA_Team/korir/LULC/hotosm_uga_populated_places_points_shp.shp')%>% st_set_crs(st_crs(AOI)) %>% st_intersection(., AOI) %>% filter(., place == 'town')
 ssd_setl <- st_read('D:/OneDrive - CGIAR/SA_Team/korir/LULC/SSD_PopulatedAreas_Dataset/ssd_pppls_ocha_20221216.shp' )%>% st_set_crs(st_crs(AOI))%>% st_intersection(., AOI) 
 
 #Country boundaries
+# Consider inclucding ILEMI triangle
 eth_b <- st_read('D:/OneDrive - CGIAR/SA_Team/korir/LULC/Country_boundaries/eth_adm_csa_bofedb_2021_shp/eth_admbnda_adm0_csa_bofedb_itos_2021.shp' )%>% st_set_crs(st_crs(AOI)) %>% dplyr::select(c('ADM0_EN', 'geometry'))
 ken_b <- st_read("D:/OneDrive - CGIAR/SA_Team/korir/LULC/Country_boundaries/ken_adm_iebc_20191031_shp/ken_admbnda_adm0_iebc_20191031.shp")%>% st_set_crs(st_crs(AOI)) %>% dplyr::select(c('ADM0_EN', 'geometry'))
 uga_b <- st_read("D:/OneDrive - CGIAR/SA_Team/korir/LULC/Country_boundaries/uga_admbnda_ubos_20200824_shp/uga_admbnda_adm0_ubos_20200824.shp")%>% st_set_crs(st_crs(AOI)) %>% dplyr::select(c('ADM0_EN', 'geometry'))
@@ -242,6 +201,7 @@ pr_dif <- futurepr-basepr
 
 
 #Plotting the changes per pixel, o - no change, 1- single change, 2 - double change
+#Figure 4 in the report
 testacc <- acc_changes(lcc_kara1_cl)
 acc_map <- tmap::tm_shape(testacc[[1]]) +
   tmap::tm_raster(
@@ -295,9 +255,7 @@ acc_map <- tmap::tm_shape(testacc[[1]]) +
 tmap_save(acc_map,'acc_map.png', device = png, dpi = 300)
 
 #Land cover maps
-
-
-
+#Figure 2 in the report
 LULC_map <- tmap::tm_shape(LULC2022_reclass$lccs_class) +
   tmap::tm_raster(
     style = "cat",
@@ -336,9 +294,8 @@ LULC_map <- tmap::tm_shape(LULC2022_reclass$lccs_class) +
   tmap::tm_layout(inner.margins = c(0.02, 0.02, 0.02, 0.02))
 tmap_save(LULC_map)
 #####################################################################
-#Grassland transitions plots
-
-
+#Grassland transitions plots, figure 6, remember to change the index manually at line 300 manually
+# Produces figure 6 in the report
 
 LULC_map <- tmap::tm_shape(final_results[[1]]) +
   tmap::tm_raster(
