@@ -23,14 +23,16 @@ kenya <- vect("//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/raw
 # list spei raster files 
 spei <- list.files(monthly_spei, pattern = "\\.tif$", full.names = TRUE)
 
-years <- c("2003", "2008", "2009", "2014", "2022")
-year_files <- grep(years, spei, value = TRUE)
+years <- 2001:2023 #c("2003", "2008", "2009", "2014", "2022")
+years <- as.character(years)
+#year_files <- grep(years, spei, value = TRUE)
 selectFiles <- function(years){
   grep(years, spei, value = TRUE)
 }
 files <- lapply(years, selectFiles)
 img <- rast(unlist(files))
 df <- terra::extract(img, kenya, bind=T)
+df <- as.data.frame(df)
 # 
 # dff <- reshape(df, 
 #               direction = "long",
