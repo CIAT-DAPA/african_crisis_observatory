@@ -43,9 +43,7 @@ dff <- reshape(temp,
               timevar = "Year_Month",
               times= names(temp)[-c(1:5)],
               )
-lr <- reshape(LR, direction="long", varying = 2:ncol(LR), v.names="NDVI", timevar="year", times=2000:2015)
 
-aa=melt(df, id.vars=c("hv001", "year", "quarter", "FID", "lat", "long"), measure.vars="SPEI")
 # for (year in years) {
 #   yr <- as.character(year)
 #   print(yr)
@@ -73,5 +71,5 @@ aa=melt(df, id.vars=c("hv001", "year", "quarter", "FID", "lat", "long"), measure
 
 #id_cols <- grep("ID", colnames(spei_coords))
 #final <- spei_coords[,-id_cols]
-write.csv(df, "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/raw/HH/SPEI_Values.csv")
+write.csv(dff, "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/raw/HH/SPEI_Values.csv")
 
