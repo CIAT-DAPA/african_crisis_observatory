@@ -33,15 +33,19 @@ files <- lapply(years, selectFiles)
 img <- rast(unlist(files))
 df <- terra::extract(img, kenya, bind=T)
 df <- as.data.frame(df)
-# 
-# dff <- reshape(df, 
-#               direction = "long",
-#               varying = list(names(df)[-c(1:3)]),
-#               v.names = "Spei",
-#               idvar = c("hv001"),
-#               timevar = "YearMonth",
-#               times= 1:length(names(df)[-c(1:3)])
-#               )
+temp <- df[, -4]
+
+dff <- reshape(temp,
+              direction = "long",
+              varying = list(names(temp)[-c(1:5)]),
+              v.names = "Spei",
+              idvar = c("hv001", "year", "quarter", "lat", "long"),
+              timevar = "Year_Month",
+              times= names(temp)[-c(1:5)],
+              )
+lr <- reshape(LR, direction="long", varying = 2:ncol(LR), v.names="NDVI", timevar="year", times=2000:2015)
+
+aa=melt(df, id.vars=c("hv001", "year", "quarter", "FID", "lat", "long"), measure.vars="SPEI")
 # for (year in years) {
 #   yr <- as.character(year)
 #   print(yr)
