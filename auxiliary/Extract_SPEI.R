@@ -33,15 +33,17 @@ files <- lapply(years, selectFiles)
 img <- rast(unlist(files))
 df <- terra::extract(img, kenya, bind=T)
 df <- as.data.frame(df)
-# 
-# dff <- reshape(df, 
-#               direction = "long",
-#               varying = list(names(df)[-c(1:3)]),
-#               v.names = "Spei",
-#               idvar = c("hv001"),
-#               timevar = "YearMonth",
-#               times= 1:length(names(df)[-c(1:3)])
-#               )
+temp <- df[, -4]
+
+dff <- reshape(temp,
+              direction = "long",
+              varying = list(names(temp)[-c(1:5)]),
+              v.names = "Spei",
+              idvar = c("hv001", "year", "quarter", "lat", "long"),
+              timevar = "Year_Month",
+              times= names(temp)[-c(1:5)],
+              )
+
 # for (year in years) {
 #   yr <- as.character(year)
 #   print(yr)
@@ -69,5 +71,5 @@ df <- as.data.frame(df)
 
 #id_cols <- grep("ID", colnames(spei_coords))
 #final <- spei_coords[,-id_cols]
-write.csv(df, "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/raw/HH/SPEI_Values.csv")
+write.csv(dff, "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/raw/HH/SPEI_Values.csv")
 
