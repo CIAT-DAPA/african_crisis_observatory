@@ -61,7 +61,7 @@ Cattle_HSC <- function(shp){
       cat('rhy crop\n')
       HI <- terra::lapp(x = terra::sds(tmx, rhy), fun = calc_HSC)
       cat('hi\n')
-      HI <- sum(HI)
+      HI <- sum(HI)/terra::nlyr(tmx)
       cat('sum\n')
       names(HI) <- lubridate::year(yrs_dts[[i]]) %>% unique() %>% paste0(collapse = '-')
       cat('name\n')
@@ -74,10 +74,10 @@ Cattle_HSC <- function(shp){
 }
 
 Cattle_heat <- Cattle_HSC(shp)
-tmp_path <- "//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/chirps-v2.0.2020.01.01.tif"
-tmp <- terra::rast(tmp_path)
-tmp <- tmp %>% terra::crop(terra::ext(shp)) %>% terra::mask(shp)
-tmp[!is.na(tmp)] <- 1
-#resampling
-HSC_resampled <- Cattle_heat %>% purrr::map(.f = function(r){r <- r %>% terra::resample(x = ., y = tmp) %>% terra::mask(shp); return(r)})
-terra::writeRaster(HSC_resampled, filename="C:/Users/bchepngetich/Documents/Brenda/Heat stress/Cattle_HSI.tif",overwrite = T)
+# tmp_path <- "//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/chirps-v2.0.2020.01.01.tif"
+# tmp <- terra::rast(tmp_path)
+# tmp <- tmp %>% terra::crop(terra::ext(shp)) %>% terra::mask(shp)
+# tmp[!is.na(tmp)] <- 1
+# #resampling
+# HSC_resampled <- Cattle_heat %>% purrr::map(.f = function(r){r <- r %>% terra::resample(x = ., y = tmp) %>% terra::mask(shp); return(r)})
+terra::writeRaster(Cattle_heat, filename="C:/Users/bchepngetich/Documents/Brenda/Heat stress/Cattle_HSI.tif",overwrite = T)
