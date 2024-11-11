@@ -6,18 +6,29 @@
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, gtools, sf, furrr, future))
 
-source('https://raw.githubusercontent.com/CIAT-DAPA/agro-clim-indices/main/_main_functions.R')
 shp <- terra::vect("C:/Users/bchepngetich/Documents/Brenda/karamoja_shp/IGAD_cluster_1_buffer_4km.shp")
 
 #Compute heat stress on humans, tmax greater than 41 degress and relative humidity greater than 50
-calc_HSI <- function(TMAX, RH){
-  HSI <- ifelse(TMAX >= 41 & RH > 50, 1, 0)
-  return(HSI)}
-calc_HSI <- compiler::cmpfun(calc_HSI)
+# Constants
+c1 = -8.78469475556
+c2 =  1.61139411
+c3 =  2.33854883889
+c4 = -0.14611605
+c5 = -0.012308094
+c6 = -0.0164248277778
+c7 =  2.211732 * 10^(-3)
+c8 =  7.2546 * 10^(-4)
+c9 = -3.582 * 10^(-6)
 
-# Human_HSI <- function(shp){
+calc_HSH <- function(tmean, rhum){
+  hi <- ifelse(tmean >= 25,
+               c1 + (c2*tmean) + (c3*rhum) + (c4*tmean*rhum) + (c5*tmean^2) + (c6*rhum^2) + (c7*tmean^2*rhum) + (c8*tmean*rhum^2) + (c9*tmean^2*rhum^2),
+               tmean)
+  return(hi)
+  }
+
+Human_HSI <- function(shp){
   # Tmax
-  #era5Dir <- '//CATALOGUE/Workspace14/WFP_ClimateRiskPr/1.Data/ERA5'
   era5Dir <- '//catalogue/WFP_ClimateRiskPr1/1.Data/AgERA5'
   tmx_pth <- paste0(era5Dir,'/2m_temperature-24_hour_maximum')
   tmx_fls <- gtools::mixedsort(list.files(tmx_pth, pattern = '*.nc$', full.names = T))
@@ -48,7 +59,7 @@ calc_HSI <- compiler::cmpfun(calc_HSI)
   cat("...\n")
   print(length(yrs_dts))
   cat('..... \n')
-  SHI <- 1:length(yrs_dts) %>%
+  HSI <- 1:length(yrs_dts) %>%
     purrr::map(.f = function(i){
       cat("new\n")
       tmx <- terra::rast(tmx_fls[tmx_dts %in% yrs_dts[[i]]])
@@ -61,25 +72,25 @@ calc_HSI <- compiler::cmpfun(calc_HSI)
       cat('rhy rast\n')
       rhy <- rhy %>% terra::crop(terra::ext(shp)) %>% terra::mask(shp)
       cat('rhy crop\n')
-      SHI <- terra::lapp(x = terra::sds(tmx, rhy), fun = calc_HSI)
-      cat('hsi\n')
-      SHI <- sum(SHI)
+      HI <- terra::lapp(x = terra::sds(tmx, rhy), fun = calc_HSH)
+      cat('hi\n')
+      HI <- sum(HI)
       cat('sum\n')
-      names(SHI) <- lubridate::year(yrs_dts[[i]]) %>% unique() %>% paste0(collapse = '-')
+      names(HI) <- lubridate::year(yrs_dts[[i]]) %>% unique() %>% paste0(collapse = '-')
       cat('name\n')
-      return(SHI)
+      return(HI)
     }) %>% terra::rast()
   cat('ahem\n')
-  SHI <- SHI %>% terra::mask(shp)
+  SHI <- HSI %>% terra::mask(shp)
   cat('..... done\n')
   return (SHI)
-# }
+}
 
-HSI <- Human_HSI(shp)
+Human_heat <- Human_HSI(shp)
 tmp_path <- "//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/chirps-v2.0.2020.01.01.tif"
 tmp <- terra::rast(tmp_path)
 tmp <- tmp %>% terra::crop(terra::ext(shp)) %>% terra::mask(shp)
 tmp[!is.na(tmp)] <- 1
 #resampling
-HSI_resampled <- HSI %>% purrr::map(.f = function(r){r <- r %>% terra::resample(x = ., y = tmp) %>% terra::mask(shp); return(r)})
-terra::writeRaster(HSI_resampled, filename="",overwrite = T)
+HSI_resampled <- Human_heat %>% purrr::map(.f = function(r){r <- r %>% terra::resample(x = ., y = tmp) %>% terra::mask(shp); return(r)})
+terra::writeRaster(HSI_resampled, filename="C:/Users/bchepngetich/Documents/Brenda/Heat stress/Human_HSI.tif",overwrite = T)
