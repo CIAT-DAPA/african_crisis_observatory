@@ -1,0 +1,83 @@
+#********
+#*This script compute heat stress on cattle
+#*Author:Brenda Chepngetich, 2024
+#*******
+
+suppressMessages(library(pacman))
+suppressMessages(pacman::p_load(tidyverse, terra, gtools, sf, furrr, future))
+
+shp <- terra::vect("C:/Users/bchepngetich/Documents/Brenda/karamoja_shp/IGAD_cluster_1_buffer_4km.shp")
+
+Calc_HSC <- function(tmax, rhum){
+  thi = (1.8 * tmax + 32) - ((0.55 - 0.0055 * rhum) * (1.8 * tmax - 26.8))
+  return(thi)
+}
+# 
+
+Cattle_HSC <- function(shp){
+  # Tmax
+  era5Dir <- '//catalogue/WFP_ClimateRiskPr1/1.Data/AgERA5'
+  tmx_pth <- paste0(era5Dir,'/2m_temperature-24_hour_maximum')
+  tmx_fls <- gtools::mixedsort(list.files(tmx_pth, pattern = '*.nc$', full.names = T))
+  tmx_dts <- strsplit(x = tmx_fls, split = 'glob-agric_AgERA5_', fixed = T) %>% purrr::map(2) %>% unlist()
+  tmx_dts <- strsplit(x = tmx_dts, split = '_final-v1.0.nc', fixed = T) %>% purrr::map(1) %>% unlist()
+  tmx_dts <- as.Date(tmx_dts, "%Y%m%d")
+  cat('..... tmax\n')
+  
+  # Relative humidity
+  rhy_pth <- paste0(era5Dir,'/2m_relative_humidity')
+  rhy_fls <- gtools::mixedsort(list.files(rhy_pth, pattern = '*.nc$', full.names = T))
+  rhy_dts <- strsplit(x = rhy_fls, split = 'glob-agric_AgERA5_', fixed = T) %>% purrr::map(2) %>% unlist()
+  rhy_dts <- strsplit(x = rhy_dts, split = '_final-v1.0.nc', fixed = T) %>% purrr::map(1) %>% unlist()
+  rhy_dts <- as.Date(rhy_dts, "%Y%m%d")
+  cat('..... rh\n')
+  yrs <- lubridate::year(tmx_dts)
+  yrs <- names(table(yrs)[table(yrs) %in% 365:366])
+  yrs <- yrs[as.integer(yrs) >= 1991 & as.integer(yrs) <= 2020]
+  cat('..... yrs\n')
+  tmx_fls <- tmx_fls[lubridate::year(tmx_dts) %in% yrs]
+  rhy_fls <- rhy_fls[lubridate::year(rhy_dts) %in% yrs]
+  tmx_dts <- tmx_dts[lubridate::year(tmx_dts) %in% yrs]
+  rhy_dts <- rhy_dts[lubridate::year(rhy_dts) %in% yrs]
+  cat('..... rhy\n')
+  yrs <- lubridate::year(tmx_dts)
+  grp <- with(rle(yrs), rep(seq_along(values), lengths))
+  yrs_dts <<- split(tmx_dts, grp)
+  cat("...\n")
+  print(length(yrs_dts))
+  cat('..... \n')
+  HSC <- 1:length(yrs_dts) %>%
+    purrr::map(.f = function(i){
+      cat("new\n")
+      tmx <- terra::rast(tmx_fls[tmx_dts %in% yrs_dts[[i]]])
+      cat('rast\n')
+      tmx <- tmx %>% terra::crop(terra::ext(shp)) %>% terra::mask(shp)
+      cat('crop\n')
+      tmx <- tmx - 273.15
+      cat('kel;vin\n')
+      rhy <- terra::rast(rhy_fls[rhy_dts %in% yrs_dts[[i]]])
+      cat('rhy rast\n')
+      rhy <- rhy %>% terra::crop(terra::ext(shp)) %>% terra::mask(shp)
+      cat('rhy crop\n')
+      HI <- terra::lapp(x = terra::sds(tmx, rhy), fun = calc_HSC)
+      cat('hi\n')
+      HI <- sum(HI)
+      cat('sum\n')
+      names(HI) <- lubridate::year(yrs_dts[[i]]) %>% unique() %>% paste0(collapse = '-')
+      cat('name\n')
+      return(HI)
+    }) %>% terra::rast()
+  cat('ahem\n')
+  SHI <- HSC %>% terra::mask(shp)
+  cat('..... done\n')
+  return (SHI)
+}
+
+Cattle_heat <- Cattle_HSC(shp)
+tmp_path <- "//catalogue/Workspace14/WFP_ClimateRiskPr/1.Data/chirps-v2.0.2020.01.01.tif"
+tmp <- terra::rast(tmp_path)
+tmp <- tmp %>% terra::crop(terra::ext(shp)) %>% terra::mask(shp)
+tmp[!is.na(tmp)] <- 1
+#resampling
+HSC_resampled <- Cattle_heat %>% purrr::map(.f = function(r){r <- r %>% terra::resample(x = ., y = tmp) %>% terra::mask(shp); return(r)})
+terra::writeRaster(HSC_resampled, filename="C:/Users/bchepngetich/Documents/Brenda/Heat stress/Cattle_HSI.tif",overwrite = T)
