@@ -2,7 +2,8 @@
 #*This script compute heat stress on cattle
 #*Author:Brenda Chepngetich, 2024
 #*******
-
+g <- gc(reset = T); rm(list = ls()) # Empty garbage collector
+options(warn = -1, scipen = 999)
 suppressMessages(library(pacman))
 suppressMessages(pacman::p_load(tidyverse, terra, gtools, sf, furrr, future))
 
@@ -59,7 +60,7 @@ Cattle_HSC <- function(shp){
       cat('rhy rast\n')
       rhy <- rhy %>% terra::crop(terra::ext(shp)) %>% terra::mask(shp)
       cat('rhy crop\n')
-      HI <- terra::lapp(x = terra::sds(tmx, rhy), fun = calc_HSC)
+      HI <- terra::lapp(x = terra::sds(tmx, rhy), fun = Calc_HSC)
       cat('hi\n')
       HI <- sum(HI)/terra::nlyr(tmx)
       cat('sum\n')
@@ -80,4 +81,6 @@ Cattle_heat <- Cattle_HSC(shp)
 # tmp[!is.na(tmp)] <- 1
 # #resampling
 # HSC_resampled <- Cattle_heat %>% purrr::map(.f = function(r){r <- r %>% terra::resample(x = ., y = tmp) %>% terra::mask(shp); return(r)})
-terra::writeRaster(Cattle_heat, filename="C:/Users/bchepngetich/Documents/Brenda/Heat stress/Cattle_HSI.tif",overwrite = T)
+terra::writeRaster(x, filename="C:/Users/bchepngetich/Documents/Brenda/Heat stress/mean_Cattle_HSI.tif",overwrite = T)
+x <- terra::rast("C:/Users/bchepngetich/Documents/Brenda/Heat stress/Cattle_HSI.tif")
+x <- mean(x)
