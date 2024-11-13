@@ -81,3 +81,36 @@ Cattle_heat <- Cattle_HSC(shp)
 # #resampling
 # HSC_resampled <- Cattle_heat %>% purrr::map(.f = function(r){r <- r %>% terra::resample(x = ., y = tmp) %>% terra::mask(shp); return(r)})
 terra::writeRaster(Cattle_heat, filename="C:/Users/bchepngetich/Documents/Brenda/Heat stress/Cattle_HSI.tif",overwrite = T)
+
+
+#future computations
+rhy_pth <- paste0(era5Dir,'/2m_relative_humidity')
+rhy_fls <- gtools::mixedsort(list.files(rhy_pth, pattern = '*.nc$', full.names = T))
+rhy_dts <- strsplit(x = rhy_fls, split = 'glob-agric_AgERA5_', fixed = T) %>% purrr::map(2) %>% unlist()
+rhy_dts <- strsplit(x = rhy_dts, split = '_final-v1.0.nc', fixed = T) %>% purrr::map(1) %>% unlist()
+rhy_dts <- as.Date(rhy_dts, "%Y%m%d")
+
+yrs <- lubridate::year(rhy_dts)
+yrs <- yrs[yrs >= "1991" & yrs <= "2020"]
+rhy_fls <- rhy_fls[lubridate::year(rhy_fls) %in% yrs]
+rhy_dts <- rhy_dts[lubridate::year(rhy_dts) %in% yrs]
+monthly_averages <- list()
+
+for (year in 1991:2020){
+  for (month in 1:12){
+    month_files <- rhy_fls[format(rhy_dts, "%Y") == as.character(year) & format(rhy_dts, "%m") == sprintf("%02d", month)]
+    if (length(month_files) > 0) {
+      rasters <- rast(month_files)
+      monthly_mean <- mean(rasters, na.rm = TRUE)
+      monthly_averages[[paste(year, month, sep = "_")]] <- monthly_mean
+    }
+  }}
+  
+rhy_monthly <- terra::rast(monthly_averages) 
+terra::writeRaster(rhy_monthly,filename="C:/Users/bchepngetich/Documents/Brenda/RH_Monthly.tif",overwrite = T)
+
+rh <- terra::rast("C:/Users/bchepngetich/Documents/Brenda/RH_Monthly.tif")
+tmax <- tmax
+future_HSC <- lapp(list(tmax, rh), fun = Calc_HSC)
+future_HSC <- mean(future_HSC)
+
