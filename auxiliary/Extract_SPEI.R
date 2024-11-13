@@ -71,5 +71,11 @@ dff <- reshape(temp,
 
 #id_cols <- grep("ID", colnames(spei_coords))
 #final <- spei_coords[,-id_cols]
-write.csv(dff, "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/raw/HH/SPEI_Values.csv")
+#write.csv(dff, "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/raw/HH/SPEI_Values.csv")
+#write.csv(df, "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/raw/HH/SPEI_Values_wideformat.csv")
+# Loading package
+library(data.table)
+fwrite(dff, "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/raw/HH/SPEI_Values.txt") 
+fwrite(dff, "//alliancedfs.alliance.cgiar.org/WS18_Afrca_K_N_ACO2/FCM/Data/raw/HH/SPEI_Values.csv")           
+
 
