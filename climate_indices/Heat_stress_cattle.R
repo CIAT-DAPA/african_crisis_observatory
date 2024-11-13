@@ -90,6 +90,7 @@ for (year in 1991:2020){
     }
   }}
 
+  
 rhy_monthly <- terra::rast(monthly_averages) 
 terra::writeRaster(rhy_monthly,filename="C:/Users/bchepngetich/Documents/Brenda/RH_Monthly.tif",overwrite = T)
 

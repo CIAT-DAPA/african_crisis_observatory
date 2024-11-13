@@ -36,7 +36,8 @@ Human_HSI <- function(shp){
   tmx_dts <- strsplit(x = tmx_fls, split = 'glob-agric_AgERA5_', fixed = T) %>% purrr::map(2) %>% unlist()
   tmx_dts <- strsplit(x = tmx_dts, split = '_final-v1.0.nc', fixed = T) %>% purrr::map(1) %>% unlist()
   tmx_dts <- as.Date(tmx_dts, "%Y%m%d")
-  
+
+
   # Tmean
   tav_pth <- paste0(era5Dir,'/2m_temperature-24_hour_mean')
   tav_fls <- gtools::mixedsort(list.files(tav_pth, pattern = '*.nc$', full.names = T))
@@ -50,7 +51,7 @@ Human_HSI <- function(shp){
   rhy_dts <- strsplit(x = rhy_fls, split = 'glob-agric_AgERA5_', fixed = T) %>% purrr::map(2) %>% unlist()
   rhy_dts <- strsplit(x = rhy_dts, split = '_final-v1.0.nc', fixed = T) %>% purrr::map(1) %>% unlist()
   rhy_dts <- as.Date(rhy_dts, "%Y%m%d")
-  
+
   yrs <- lubridate::year(tmx_dts)
   yrs <- names(table(yrs)[table(yrs) %in% 365:366])
   yrs <- yrs[as.integer(yrs) >= 1991 & as.integer(yrs) <= 2020]
@@ -59,13 +60,12 @@ Human_HSI <- function(shp){
   yrs <- lubridate::year(tav_dts)
   yrs <- names(table(yrs)[table(yrs) %in% 365:366])
   yrs <- yrs[as.integer(yrs) >= 1991 & as.integer(yrs) <= 2020]
-  
-  
+
   tav_fls <- tav_fls[lubridate::year(tav_dts) %in% yrs]
   rhy_fls <- rhy_fls[lubridate::year(rhy_dts) %in% yrs]
   tav_dts <- tav_dts[lubridate::year(tav_dts) %in% yrs]
   rhy_dts <- rhy_dts[lubridate::year(rhy_dts) %in% yrs]
-  
+
   yrs <- lubridate::year(tmx_dts)
   grp <- with(rle(yrs), rep(seq_along(values), lengths))
   yrs_dts <<- split(tmx_dts, grp)
