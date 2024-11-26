@@ -17,7 +17,7 @@ library(scatterpie)
 library(data.table)
 
 #set working directory
-wd <- "D:/OneDrive - CGIAR/SA_Team/Brenda/IOM"
+wd <- "C:/Users/bchepngetich/OneDrive - CGIAR/SA_Team/Brenda/IOM"
 setwd(wd)
 
 #read fmr data

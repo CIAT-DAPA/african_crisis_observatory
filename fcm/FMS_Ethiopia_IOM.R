@@ -24,11 +24,11 @@ library(tidyr)
 library(scatterpie)
 
 #set working directory
-wd <- "D:/OneDrive - CGIAR/SA_Team/Brenda/IOM"
+wd <- "C:/Users/bchepngetich/OneDrive - CGIAR/SA_Team/Brenda/IOM"
 setwd(wd)
 
 #read fms data
-file <- "D:/OneDrive - CGIAR/IOM - CGIAR Climate Security Coordination/Data/OneDrive_1_7-23-2024/FMS.xlsx"
+file <- "C:/Users/bchepngetich/OneDrive - CGIAR/IOM - CGIAR Climate Security Coordination/Data/OneDrive_1_7-23-2024/FMS.xlsx"
 fms <- read_excel(file)
 
 #data cleaning
@@ -334,14 +334,14 @@ names(c)[names(c) == "Agriculture..Fishery.Forestry"] <- "Agriculture,Fishery&Fo
 names(c)[names(c) == "Elementary.Occupation"] <- "Elementary Occupation"
 names(c)[names(c) == "Services.Sales"] <- "Services&Sales"
 names(c)[names(c) == "Skilled.Manual"] <- "Skilled Manual"
-names(c)[names(c) == "Unskilled.Manual"] <- "Unskilled Manual"
+names(c)[names(c) == "Unskilled.Manual"] <- "Low-Skilled Manual"
 c <- as.data.frame(c)
 
 # Plot the map with pie charts
 within_plot <- ggplot() +
   geom_sf(data = within_pie, fill = "gray80", color = "black")+
   geom_scatterpie(data = c, aes(x = X, y = Y, r = 0.5, group=Region),  # Add pie charts using centroid coordinates
-  cols = c("Pastoralist", "Agriculture,Fishery&Forestry", "Professional","Elementary Occupation", "Skilled Manual","Unskilled Manual","Services&Sales","Others"),
+  cols = c("Pastoralist", "Agriculture,Fishery&Forestry", "Professional","Elementary Occupation", "Skilled Manual","Low-Skilled Manual","Services&Sales","Others"),
   color = "black",
   size=0.3)+
   geom_text(data=labels,
@@ -370,7 +370,7 @@ within_plot <- ggplot() +
     
   )+
   scale_fill_manual(values = c("Agriculture,Fishery&Forestry" = "green", "Others" = "white", "Pastoralist" = "orange","Elementary Occupation" = "thistle",
-                               "Professional"="purple","Services&Sales"="lavender","Skilled Manual"="black", "Unskilled Manual"="blue"))+  # Custom colors
+                               "Professional"="purple","Services&Sales"="lavender","Skilled Manual"="black", "Low-Skilled Manual"="blue"))+  # Custom colors
   labs(title = "",fill="Profession")
 within_plot
 output <- paste0(wd,"/Final results/within_pie.png")
@@ -421,14 +421,14 @@ names(out_c)[names(out_c) == "Agriculture..Fishery.Forestry"] <- "Agriculture,Fi
 names(out_c)[names(out_c) == "Elementary.Occupation"] <- "Elementary Occupation"
 names(out_c)[names(out_c) == "Services.Sales"] <- "Services&Sales"
 names(out_c)[names(out_c) == "Skilled.Manual"] <- "Skilled Manual"
-names(out_c)[names(out_c) == "Unskilled.Manual"] <- "Unskilled Manual"
+names(out_c)[names(out_c) == "Unskilled.Manual"] <- "Low-Skilled Manual"
 out_c <- as.data.frame(out_c)
 
 # Plot the map with pie charts
 outside_plot <- ggplot() +
   geom_sf(data = outside_pie, fill = "gray80", color = "black")+
   geom_scatterpie(data = out_c, aes(x = X, y = Y, r = 0.5, group=Region),  # Add pie charts using centroid coordinates
-                  cols = c("Pastoralist", "Agriculture,Fishery&Forestry", "Professional","Elementary Occupation", "Skilled Manual","Unskilled Manual","Services&Sales","Others"),
+                  cols = c("Pastoralist", "Agriculture,Fishery&Forestry", "Professional","Elementary Occupation", "Skilled Manual","Low-Skilled Manual","Services&Sales","Others"),
                   color = "black",
                   size=0.3)+
   geom_text(data=labels_,
@@ -457,7 +457,7 @@ outside_plot <- ggplot() +
     
   )+
   scale_fill_manual(values = c("Agriculture,Fishery&Forestry" = "green", "Others" = "white", "Pastoralist" = "orange","Elementary Occupation" = "thistle",
-                               "Professional"="purple","Services&Sales"="lavender","Skilled Manual"="black", "Unskilled Manual"="blue"))+  # Custom colors
+                               "Professional"="purple","Services&Sales"="lavender","Skilled Manual"="black", "Low-Skilled Manual"="blue"))+  # Custom colors
   labs(title = "",fill="Profession")
 outside_plot
 output_file <- paste0(wd,"/Final results/outside_pie.png")
