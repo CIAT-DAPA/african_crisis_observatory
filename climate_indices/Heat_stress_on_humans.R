@@ -26,7 +26,7 @@ calc_HSH <- function(tmean, rhum){
                c1 + (c2*tmean) + (c3*rhum) + (c4*tmean*rhum) + (c5*tmean^2) + (c6*rhum^2) + (c7*tmean^2*rhum) + (c8*tmean*rhum^2) + (c9*tmean^2*rhum^2),
                tmean)
   return(hi)
-  }
+}
 
 Human_HSI <- function(shp){
   # Tmax
@@ -36,6 +36,7 @@ Human_HSI <- function(shp){
   tmx_dts <- strsplit(x = tmx_fls, split = 'glob-agric_AgERA5_', fixed = T) %>% purrr::map(2) %>% unlist()
   tmx_dts <- strsplit(x = tmx_dts, split = '_final-v1.0.nc', fixed = T) %>% purrr::map(1) %>% unlist()
   tmx_dts <- as.Date(tmx_dts, "%Y%m%d")
+
 
   # Tmean
   tav_pth <- paste0(era5Dir,'/2m_temperature-24_hour_mean')
@@ -60,7 +61,6 @@ Human_HSI <- function(shp){
   yrs <- names(table(yrs)[table(yrs) %in% 365:366])
   yrs <- yrs[as.integer(yrs) >= 1991 & as.integer(yrs) <= 2020]
 
-  
   tav_fls <- tav_fls[lubridate::year(tav_dts) %in% yrs]
   rhy_fls <- rhy_fls[lubridate::year(rhy_dts) %in% yrs]
   tav_dts <- tav_dts[lubridate::year(tav_dts) %in% yrs]

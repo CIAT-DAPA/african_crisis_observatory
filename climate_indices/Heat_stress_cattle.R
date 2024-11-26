@@ -89,6 +89,7 @@ for (year in 1991:2020){
       monthly_averages[[paste(year, month, sep = "_")]] <- monthly_mean
     }
   }}
+
   
 rhy_monthly <- terra::rast(monthly_averages) 
 terra::writeRaster(rhy_monthly,filename="C:/Users/bchepngetich/Documents/Brenda/RH_Monthly.tif",overwrite = T)
